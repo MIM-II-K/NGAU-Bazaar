@@ -1,0 +1,124 @@
+.footer-main {
+  background-color: #ffffff;
+  border-top: 1px solid #eef2f6;
+  padding-top: 80px;
+  margin-top: auto; /* Pushes footer to bottom if content is short */
+}
+
+.footer-logo {
+  height: 35px;
+  width: auto;
+}
+
+.footer-desc {
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-width: 320px;
+}
+
+.footer-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links li {
+  margin-bottom: 0.75rem;
+}
+
+.footer-links a {
+  text-decoration: none;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.footer-links a:hover {
+  color: #0d6efd;
+  padding-left: 5px; /* Subtle hover effect */
+}
+
+/* Social Media Icons */
+.social-links a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #f1f5f9;
+  color: #1e293b;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+}
+
+.social-links a:hover {
+  background: #0d6efd;
+  color: #fff;
+  transform: translateY(-3px);
+}
+
+/* Newsletter Styles */
+.newsletter-group {
+  display: flex;
+  background: #f1f5f9;
+  padding: 5px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.newsletter-input {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-size: 0.9rem;
+}
+
+.newsletter-btn {
+  border-radius: 8px !important;
+  padding: 8px 20px !important;
+  font-weight: 600 !important;
+}
+
+.footer-divider {
+  margin-top: 60px;
+  border-color: #eef2f6;
+  opacity: 1;
+}
+
+.payment-icons i {
+  font-size: 1.5rem;
+  color: #94a3b8;
+}
+.brand-link {
+  text-decoration: none;
+  color: #1e293b;
+  transition: all 0.2s ease;
+}
+
+/* Responsive stack fix */
+@media (max-width: 768px) {
+  .footer-main {
+    padding-top: 50px;
+    text-align: center;
+  }
+  
+  .footer-desc {
+    margin: 0 auto;
+  }
+  
+  .social-links {
+    justify-content: center;
+  }
+}

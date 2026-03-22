@@ -1,0 +1,123 @@
+:root {
+  --primary-color: #4f46e5;
+  --primary-hover: #4338ca;
+  --bg-color: #f9fafb;
+  --card-bg: #ffffff;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --error: #ef4444;
+  --success: #10b981;
+  --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: var(--bg-gradient);
+  font-family: 'Inter', system-ui, sans-serif;
+  padding: 20px;
+}
+
+.auth-card {
+  background: var(--card-bg);
+  padding: 2.5rem;
+  border-radius: 20px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 420px;
+  animation: slideUp 0.5s ease-out;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scoped Button: This only targets buttons inside the auth card */
+.auth-card .btn-primary {
+  width: 100% !important; /* Force full width ONLY in Auth */
+  padding: 0.9rem;
+  background-color: var(--primary-color) !important;
+  border: none !important;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+  color: white;
+  cursor: pointer;
+  margin-top: 1.5rem;
+  transition: all 0.2s;
+  display: block;
+}
+
+.auth-card .btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-hover) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4);
+}
+
+.auth-card .btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* Inputs and other styles */
+.auth-input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+}
+
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.toggle-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.strength-bar {
+  height: 4px;
+  width: 100%;
+  background: #e5e7eb;
+  margin-top: 8px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.message-box {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.back-link {
+  display: block;
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  color: var(--primary-color);
+  text-decoration: none;
+}

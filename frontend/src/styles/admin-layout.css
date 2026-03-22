@@ -1,0 +1,164 @@
+:root {
+  --admin-sidebar-width: 260px;
+  --admin-primary: #0d6efd;
+  --admin-dark: #1a1d20;
+  --admin-bg: #f8f9fa;
+  --transition-speed: 0.3s;
+}
+
+.admin-container {
+  display: flex;
+  min-vh: 100vh;
+  background-color: var(--admin-bg);
+}
+
+/* Sidebar Styling */
+.admin-sidebar {
+  width: var(--admin-sidebar-width);
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+  transition: all var(--transition-speed) ease;
+}
+
+.sidebar-header {
+  padding: 1.5rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-header h4 {
+  letter-spacing: 1px;
+  margin-bottom: 0;
+}
+
+/* Navigation Links */
+.sidebar-link {
+  color: rgba(255, 255, 255, 0.7) !important;
+  padding: 0.8rem 1.2rem !important;
+  margin: 0.2rem 0;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.sidebar-link:hover {
+  color: #fff !important;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-link.active-link {
+  color: #fff !important;
+  background-color: var(--admin-primary) !important;
+  font-weight: 500;
+}
+
+.sidebar-link i {
+  font-size: 1.2rem;
+  width: 25px;
+}
+
+/* Main Content Area */
+.admin-content {
+  margin-left: var(--admin-sidebar-width);
+  width: calc(100% - var(--admin-sidebar-width));
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top Navbar inside Admin */
+.admin-content .navbar {
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.admin-avatar {
+  width: 40px;
+  height: 40px;
+  background-color: var(--admin-primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.1rem;
+  box-shadow: 0 2px 5px rgba(13, 110, 253, 0.3);
+}
+
+/* Content Container */
+.admin-main-view {
+  padding: 2rem;
+  flex-grow: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .admin-sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .admin-content {
+    margin-left: 0;
+    width: 100%;
+  }
+  
+  /* You can add a toggle class to show sidebar on mobile if needed */
+  .admin-sidebar.show {
+    transform: translateX(0);
+  }
+}
+.admin-container {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Sidebar */
+.admin-sidebar {
+  width: 260px;
+  background: #121212;
+  color: white;
+  padding: 1.5rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  transform: translateX(0);
+  transition: transform 0.3s ease;
+  z-index: 1050;
+}
+
+.admin-content {
+  margin-left: 260px;
+  width: 100%;
+}
+
+/* Overlay */
+.admin-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1040;
+}
+
+/* Mobile behavior */
+@media (max-width: 768px) {
+  .admin-sidebar {
+    transform: translateX(-100%);
+  }
+
+  .admin-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .admin-content {
+    margin-left: 0;
+  }
+}

@@ -1,0 +1,151 @@
+/* ==========================================================================
+   ADMIN LAYOUT STRUCTURE
+   ========================================================================== */
+.admin-wrapper {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f8fafc; /* Light Slate background */
+}
+
+.admin-main {
+    flex-grow: 1;
+    margin-left: 260px; /* Width of the sidebar */
+    padding: 2rem;
+    transition: all 0.3s ease;
+}
+
+/* ==========================================================================
+   SIDEBAR STYLING
+   ========================================================================== */
+.admin-sidebar {
+    width: 260px;
+    height: 100vh;
+    background: #ffffff;
+    position: fixed;
+    left: 0;
+    top: 0;
+    border-right: 1px solid #e2e8f0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-brand {
+    padding: 2rem 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0d6efd;
+    letter-spacing: -0.5px;
+}
+
+.admin-nav-item {
+    color: #64748b !important; /* Muted slate */
+    padding: 0.8rem 1.5rem !important;
+    margin: 0.2rem 1rem;
+    border-radius: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.admin-nav-item i {
+    font-size: 1.2rem;
+}
+
+.admin-nav-item:hover {
+    background: #f1f5f9;
+    color: #0d6efd !important;
+}
+
+.admin-nav-item.active {
+    background: #e0e7ff;
+    color: #4338ca !important;
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   DATA TABLES & CARDS
+   ========================================================================== */
+.admin-card {
+    background: white;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.admin-table thead {
+    background-color: #f8fafc;
+}
+
+.admin-table th {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+    font-weight: 700;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.admin-table td {
+    padding: 1rem 1.5rem;
+    color: #1e293b;
+    vertical-align: middle;
+}
+
+/* ==========================================================================
+   COMPONENTS
+   ========================================================================== */
+.btn-modern {
+    border-radius: 10px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 600;
+    transition: transform 0.2s;
+}
+
+.btn-modern:active {
+    transform: scale(0.95);
+}
+
+.status-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* Stats Widgets (For Overview) */
+.stat-widget {
+    padding: 1.5rem;
+    background: white;
+    border-radius: 18px;
+    border: 1px solid #e2e8f0;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 992px) {
+    .admin-sidebar {
+        transform: translateX(-100%); /* Hide sidebar on mobile */
+    }
+    .admin-main {
+        margin-left: 0;
+    }
+    .admin-sidebar.show {
+        transform: translateX(0);
+    }
+}

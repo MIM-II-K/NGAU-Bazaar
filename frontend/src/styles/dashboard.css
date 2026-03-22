@@ -1,0 +1,159 @@
+:root {
+  --bg-dark: #0a0b10;
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --accent-color: #6366f1; /* Modern Indigo */
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: #e2e8f0;
+  font-family: 'Inter', sans-serif;
+}
+
+.dashboard-wrapper {
+  min-height: 100vh;
+  padding-bottom: 4rem;
+}
+
+/* --- Hero Section --- */
+.dashboard-hero {
+  background: radial-gradient(circle at top left, rgba(99, 102, 241, 0.15), transparent);
+  padding: 80px 0 120px 0;
+}
+
+.hero-glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  padding: 3rem;
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #818cf8, #c084fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-title { font-weight: 800; letter-spacing: -1px; }
+
+.text-count {
+  color: blue;
+  font-weight: bold;
+}
+
+/* --- Stats Cards --- */
+.content-shift { margin-top: -60px; }
+
+.stat-glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 1.5rem;
+  transition: transform 0.3s ease;
+}
+
+.stat-glass-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent-color);
+}
+
+.stat-icon {
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 1.2rem;
+}
+
+/* --- Bento Grid Cards --- */
+.bento-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  padding: 2rem;
+}
+
+.activity-list .list-group-item {
+  background: transparent;
+  border-bottom: 1px solid var(--glass-border);
+  padding: 1.2rem 0;
+}
+
+.order-dot {
+  width: 10px;
+  height: 10px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  margin-right: 15px;
+  box-shadow: 0 0 10px var(--accent-color);
+}
+
+/* --- Buttons --- */
+.btn-action {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: white;
+  padding: 12px;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.btn-action:hover {
+  background: var(--accent-color);
+  color: white;
+}
+
+/* --- Avatar Visual --- */
+.avatar-portal {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.avatar-main {
+  width: 100%;
+  height: 100%;
+  background: var(--accent-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: bold;
+  z-index: 2;
+  position: relative;
+}
+
+.avatar-ring {
+  position: absolute;
+  top: -10px; left: -10px; right: -10px; bottom: -10px;
+  border: 2px dashed var(--glass-border);
+  border-radius: 50%;
+  animation: rotate 20s linear infinite;
+}
+.activity-list .text-muted.small {
+  max-width: 250px; /* Adjust based on your layout */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+/* On hover, you might want to show the full list if it's truncated */
+.activity-list .text-muted.small:hover {
+  white-space: normal;
+  overflow: visible;
+}
+
+.card {
+    transition: transform 0.2s ease;
+}
+.card:hover {
+    transform: translateY(-5px);
+}
+@keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

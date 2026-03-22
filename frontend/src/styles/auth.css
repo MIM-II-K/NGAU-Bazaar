@@ -1,0 +1,209 @@
+:root {
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --shadow-color: rgba(118, 75, 162, 0.3);
+}
+
+.auth-wrapper {
+  background: #f8faff;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Floating Background Shapes */
+.bg-shape {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+}
+
+.shape-1 {
+  width: 400px;
+  height: 400px;
+  background: rgba(102, 126, 234, 0.15);
+  top: -100px;
+  right: -100px;
+}
+
+.shape-2 {
+  width: 300px;
+  height: 300px;
+  background: rgba(118, 75, 162, 0.15);
+  bottom: -50px;
+  left: -50px;
+}
+
+/* Card Styling */
+.auth-card {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px !important;
+  z-index: 1;
+}
+
+.brand-logo-container {
+  width: 60px;
+  height: 60px;
+  background: var(--primary-gradient);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  border-radius: 16px;
+  margin: 0 auto;
+  box-shadow: 0 10px 20px var(--shadow-color);
+}
+
+/* Input Styling */
+.custom-input-group .form-control, 
+.custom-input-group .input-group-text {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  border-color: #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.custom-input-group .form-control:focus {
+  box-shadow: none;
+  border-color: #667eea;
+}
+
+.custom-input-group:focus-within .input-group-text {
+  border-color: #667eea;
+}
+
+/* Button Styling */
+.login-btn {
+  background: var(--primary-gradient) !important;
+  border: none !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--shadow-color) !important;
+}
+
+.login-btn:active {
+  transform: translateY(0);
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.admin-link:hover {
+  color: #764ba2 !important;
+}
+
+/* Color Variants */
+.bg-success-gradient {
+  background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%) !important;
+  box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3) !important;
+}
+
+.shadow-success {
+  box-shadow: 0 8px 20px rgba(40, 167, 69, 0.2) !important;
+}
+
+/* Button Refinement */
+.register-btn {
+  background: linear-gradient(135deg, #28a745 0%, #218838 100%) !important;
+  border: none !important;
+  transition: all 0.3s ease !important;
+}
+
+.register-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(40, 167, 69, 0.3) !important;
+}
+
+/* Validation Styling */
+.custom-input-group.is-invalid {
+  border: 1px solid #dc3545;
+  border-radius: 8px;
+}
+
+/* Form Helper Text */
+.form-text {
+  font-size: 0.75rem;
+  margin-top: 0.4rem;
+}
+/* Admin Specific Styles */
+.admin-bg {
+  background-color: #0f172a; /* Deep Navy/Black */
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-grid-overlay {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+.admin-badge-icon {
+  width: 70px;
+  height: 70px;
+  background: #fff;
+  color: #dc3545;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin: 0 auto;
+  box-shadow: 0 10px 30px rgba(220, 53, 69, 0.4);
+}
+
+.admin-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+/* Red Pulsing Dot for "Secure Access" */
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #dc3545;
+  border-radius: 50%;
+  display: inline-block;
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+}
+
+.admin-submit-btn {
+  background: #1e293b;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.admin-submit-btn:hover {
+  background: #dc3545 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(220, 53, 69, 0.3);
+}
+
+.hover-danger:hover {
+  color: #dc3545 !important;
+}
+
+.text-muted-v2 {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.extra-small {
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+}

@@ -1,0 +1,82 @@
+/* Wrapper & Background */
+.privacy-page-wrapper {
+    background-color: #fdfdfd;
+    min-height: 100vh;
+}
+
+/* Glassmorphic Policy Card */
+.policy-card {
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+    border: 1px solid #f0f0f0;
+}
+
+/* Section Headings */
+.policy-card h3 {
+    font-weight: 700;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: #2d3436;
+}
+
+/* Sticky Sidebar Customization */
+.sticky-sidebar {
+    position: sticky;
+    top: 100px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid #eee;
+}
+
+.toc-list .list-group-item {
+    border: none;
+    font-size: 0.9rem;
+    color: #636e72;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    transition: all 0.2s ease;
+}
+
+.toc-list .list-group-item:hover {
+    background-color: #f0f7ff;
+    color: #0d6efd;
+    transform: translateX(5px);
+}
+
+/* Usage Grid */
+.usage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.usage-item {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    border-left: 4px solid #0d6efd;
+}
+
+.bg-primary-soft {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+/* Animations */
+.animate-fade-in {
+    animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 991px) {
+    .policy-card {
+        padding: 30px 20px !important;
+    }
+}

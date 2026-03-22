@@ -1,0 +1,100 @@
+/* order-detail.css */
+
+/* Custom Variables for a Premium Look */
+:root {
+    --admin-primary: #2563eb;
+    --admin-dark: #0f172a;
+    --admin-surface: #ffffff;
+    --admin-bg: #f8fafc;
+    --admin-border: #e2e8f0;
+}
+
+body {
+    background-color: var(--admin-bg);
+}
+
+/* Breadcrumb Styling */
+.back-nav-btn {
+    color: #64748b;
+    font-size: 0.9rem;
+    padding: 0;
+    transition: all 0.2s ease;
+}
+
+.back-nav-btn:hover {
+    color: var(--admin-primary);
+    transform: translateX(-4px);
+}
+
+/* Header Card Section */
+.order-header-section {
+    background: linear-gradient(135deg, var(--admin-dark) 0%, #1e293b 100%);
+    border-radius: 20px 20px 0 0;
+    padding: 2.5rem;
+}
+
+/* Glassmorphism Effect for Detail Boxes */
+.detail-info-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--admin-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.detail-info-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Refined Item Rows */
+.order-item-row {
+    background: var(--admin-surface);
+    border-radius: 16px;
+    border: 1px solid var(--admin-border);
+    margin-bottom: 1rem;
+    padding: 1rem 1.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.order-item-row:hover {
+    border-color: var(--admin-primary);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+}
+
+.product-thumb {
+    border-radius: 12px;
+    object-fit: cover;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Status Select Styling */
+.status-select-custom {
+    background-color: white !important;
+    border: 1px solid var(--admin-border) !important;
+    font-weight: 600 !important;
+    color: var(--admin-dark) !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+}
+
+/* Grand Total Section */
+.total-footer-card {
+    background: var(--admin-dark);
+    color: white;
+    border-radius: 20px;
+    padding: 2rem;
+    margin-top: 3rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.total-footer-card::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: rgba(37, 99, 235, 0.1);
+    border-radius: 50%;
+}

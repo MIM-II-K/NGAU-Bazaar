@@ -1,0 +1,299 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+
+.bazaar-cart-bg {
+    background-color: #ffffff;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    min-height: 100vh;
+}
+
+/* Safe Zone for Footer */
+.content-wrapper {
+    padding-bottom: 120px; 
+}
+
+.fw-black { font-weight: 800; }
+
+.bazaar-loader {
+    height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Item Row Styling */
+.bazaar-item-row {
+    background: #fff;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 1.5rem;
+}
+
+/* Image Completeness Fix */
+.item-img-container {
+    background: #f8f9fa;
+    border-radius: 20px;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid #f1f5f9;
+}
+
+.full-photo {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain; /* Shows entire photo without cropping */
+    padding: 10px;
+}
+
+.product-img-anchor:hover .full-photo {
+    transform: scale(1.05);
+    transition: transform 0.3s ease;
+}
+
+/* Remove Button - Strategic Placement */
+.bazaar-remove-btn {
+    background: #fef2f2;
+    color: #ef4444;
+    border: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.bazaar-remove-btn:hover {
+    background: #ef4444;
+    color: white;
+    transform: rotate(10deg);
+}
+
+/* Modern Stepper */
+.bazaar-stepper {
+    display: flex;
+    align-items: center;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 50px;
+}
+
+.bazaar-stepper button {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: #fff;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.bazaar-stepper button:hover:not(:disabled) {
+    background: #0d6efd;
+    color: white;
+}
+
+.bazaar-stepper span {
+    margin: 0 15px;
+    font-weight: 700;
+}
+
+/* Sidebar & Sticky Fix */
+.sticky-sidebar {
+    position: sticky;
+    top: 100px;
+    z-index: 5;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.grand-total-display {
+    background: #f0f7ff;
+    border: 1px dashed #0d6efd44;
+}
+
+.btn-checkout-bazaar {
+    background: #000;
+    color: #fff;
+    border: none;
+    font-size: 1.1rem;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.btn-checkout-bazaar:hover {
+    background: #0d6efd;
+    transform: translateY(-3px);
+    box-shadow: 0 15px 30px rgba(13, 110, 253, 0.3);
+}
+
+.item-name {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    .item-img-container { height: 110px; }
+    .sticky-sidebar { position: static; }
+}
+/* Product Link Hover Effect */
+.item-name-link {
+    transition: color 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+.item-name-link:hover {
+    color: #0d6efd !important; /* Changes to primary color on hover */
+    text-decoration: underline;
+}
+
+/* Flash Sale Badge on Image */
+.flash-sale-badge-mini {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: #ff4757;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 50px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.item-img-container {
+    position: relative; /* Needed for the absolute badge */
+}
+
+/* Discount Pill */
+.discount-pill {
+    font-size: 0.65rem;
+    letter-spacing: 0.5px;
+    padding: 4px 8px;
+    font-weight: 700;
+}
+
+/* Strike-through Price */
+.text-decoration-line-through {
+    opacity: 0.6;
+}
+/* Premium Color Palette */
+:root {
+  --bazaar-primary: #4f46e5; /* Modern Indigo */
+  --bazaar-text: #0f172a;    /* Slate 900 */
+  --bazaar-bg-hover: #f1f5f9; /* Slate 100 */
+}
+
+.bazaar-product-link {
+  text-decoration: none !important;
+  color: var(--bazaar-text) !important;
+  display: inline-block;
+  padding: 4px 10px;
+  margin-left: -10px; /* Aligns text with the rest of the content */
+  border-radius: 8px;
+  position: relative;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* The Hover Effect: A soft, rounded background "pill" */
+.bazaar-product-link:hover {
+  background-color: var(--bazaar-bg-hover);
+  color: var(--bazaar-primary) !important;
+  transform: translateX(5px); /* Subtle "nudge" interaction */
+}
+
+/* Product Title Styling */
+.bazaar-product-link h5 {
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+/* Clean Checkout Button */
+.btn-checkout-bazaar {
+  background: var(--bazaar-primary) !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+  transition: all 0.3s ease;
+}
+
+.btn-checkout-bazaar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+}
+/* Modal Base */
+.modal-content {
+  border: none !important;
+  border-radius: 24px !important;
+  padding: 1.5rem !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Title as the primary question */
+.modal-title {
+  font-size: 1.1rem !important;
+  font-weight: 800 !important;
+  color: #1e293b;
+  letter-spacing: -0.02em;
+}
+
+/* Highlight the Product Name */
+.product-removal-preview {
+  background: #f1f5f9; /* Ultra-soft slate */
+  color: #0f172a;      /* Deep slate */
+  padding: 12px 24px;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 1rem;
+  border: 1px solid #e2e8f0;
+  display: inline-block;
+  max-width: 100%;
+  text-align: center;
+  /* Adds a subtle "pop" animation */
+  animation: modalPop 0.3s ease-out;
+}
+
+@keyframes modalPop {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Footer - Button Aesthetics */
+.modal-footer {
+  border: none !important;
+  gap: 12px;
+  padding: 1rem 0 0 0 !important;
+}
+
+/* "Keep" Button */
+.modal-footer .btn-secondary {
+  background: transparent !important;
+  color: #64748b !important;
+  border: none !important;
+  font-weight: 600 !important;
+  flex: 1;
+}
+
+/* "Remove" Button - Minimalist Slate */
+.modal-footer .btn-danger {
+  background: #1e293b !important; /* Dark & Sophisticated */
+  border: none !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  flex: 1.5; /* Slightly wider for visual hierarchy */
+  padding: 12px !important;
+  transition: all 0.2s ease;
+}
+
+.modal-footer .btn-danger:hover {
+  background: #ef4444 !important; /* Warning red only on intent */
+  transform: translateY(-1px);
+}
