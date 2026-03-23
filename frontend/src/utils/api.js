@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = "https://ngau\-bazaar.onrender.com";
+const API_BASE_URL = "https://ngau-bazaar.onrender.com";
 
 /**
  * Create an Axios instance with base configuration

@@ -7,7 +7,7 @@ import apiClient from '../utils/api';
 import { createSlug } from '../utils/urlHelper' 
 import '../styles/flash-deals.css';
 
-const BASE_URL = "https://ngau\-bazaar.onrender.com";
+const BASE_URL = "https://ngau-bazaar.onrender.com";
 
 const FlashDeals = () => {
   const [deals, setDeals] = useState([]);
