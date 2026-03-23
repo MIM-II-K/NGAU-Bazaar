@@ -48,6 +48,7 @@ origins = [
     "http://127.0.0.1:5173",
     "http://192.168.100.4:3000",
     "https://ngau-bazaar.vercel.app",
+    "https://ngau-bazaar.onrender.com",
 ]
 
 app.add_middleware(
