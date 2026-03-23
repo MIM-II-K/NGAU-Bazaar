@@ -3,7 +3,7 @@ import { Container, Table, Button, Modal, Form, Row, Col, Badge } from 'react-bo
 import { productApi } from '../../utils/productApi';
 import AOS from 'aos';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = "https://ngau-bazaar.onrender.com";
 const fallbackImage =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Crect width='60' height='60' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='10' fill='%23999'%3ENo Image%3C/text%3E%3C/svg%3E";
 

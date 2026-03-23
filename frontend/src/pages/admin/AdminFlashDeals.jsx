@@ -75,7 +75,7 @@ const AdminFlashDeals = () => {
         } finally { setLoading(false); }
     };
 
-    const IMAGE_BASE_URL = "http://localhost:8000";
+    const IMAGE_BASE_URL = "https://ngau-bazaar.onrender.com";
 
     // FIXED: Image Resolver handles strings OR nested arrays
     const getImageUrl = (item) => {
