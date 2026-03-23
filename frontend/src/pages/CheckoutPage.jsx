@@ -5,7 +5,7 @@ import apiClient from "../utils/api";
 import { getCart, checkoutCart } from "../utils/cartApi";
 import "../styles/CheckoutPage.css";
 
-const API_BASE_URL = "http://192.168.100.4:8000";
+const API_BASE_URL = "https://ngau-bazaar.onrender.com";
 
 const NEPAL_DATA = {
   "Koshi": ["Bhojpur", "Dhankuta", "Ilam", "Jhapa", "Khotang", "Morang", "Okhaldhunga", "Panchthar", "Sankhuwasabha", "Solukhumbu", "Sunsari", "Taplejung", "Terhathum", "Udayapur"],

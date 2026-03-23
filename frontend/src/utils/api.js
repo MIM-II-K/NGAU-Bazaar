@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://192.168.100.4:8000';
+const API_BASE_URL = "https://ngau\-bazaar.onrender.com";
 
 /**
  * Create an Axios instance with base configuration

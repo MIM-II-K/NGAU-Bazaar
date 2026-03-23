@@ -7,7 +7,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://192.168.100.4:8000'
+  const API_URL = import.meta.env.VITE_API_URL || "https://ngau-bazaar.onrender.com"
 
   // Initialize auth state from localStorage
   useEffect(() => {
