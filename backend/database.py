@@ -11,9 +11,15 @@ engine = create_engine(DATABASE_URL,
                        pool_size=20,
                        max_overflow=30,
                        pool_timeout=30,
-                       echo=False
+                       pool_pre_ping=True,
+                       echo=False,
+                       connect_args={"sslmode": "require"}
                        )
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+    )
 
 class Base(DeclarativeBase):
     pass

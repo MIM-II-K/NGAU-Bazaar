@@ -1,34 +1,26 @@
-# --- 1. Use official Python image ---
 FROM python:3.11-slim
 
-# --- 2. Set environment variables ---
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-ENV ENV=production
-
-# --- 3. Set work directory ---
 WORKDIR /app
 
-# --- 4. Install system dependencies ---
-RUN apt-get update && \
-    apt-get install -y build-essential libpq-dev gcc && \
-    rm -rf /var/lib/apt/lists/*
+# Install system deps (Added --no-install-recommends to keep the image small)
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# --- 5. Copy dependencies ---
+# Copy requirements
 COPY requirements.txt .
-
-# --- 6. Install Python dependencies ---
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# --- 7. Copy project files ---
+# Copy backend code
 COPY . .
 
-# --- 8. Create static directories if not present ---
+# (Optional) Still create the folder for local testing
 RUN mkdir -p static/product_images
 
-# --- 9. Expose port ---
+# Render ignores EXPOSE, but it's good practice for local documentation
 EXPOSE 8000
 
-# --- 10. Start FastAPI with Uvicorn ---
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Flexible command for both Local and Render environments
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
