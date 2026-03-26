@@ -11,8 +11,8 @@ from decimal import Decimal
 
 from supabase import create_client, Client
 
-SUPABASE_URL = 
-SUPABASE_KEY =
+SUPABASE_URL = "https://punvzbjvgphhjcgsgzhd.supabase.co"
+SUPABASE_KEY = "sb_secret_6hkPhTcNQLtX-rVRgJCoWw_VSRMuj8q"
 BUCKET_NAME = "product-images"
 
 supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
