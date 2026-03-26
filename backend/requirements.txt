@@ -15,4 +15,3 @@ requests
 typing-inspect==0.9.0
 reportlab
 argon2-cffi
-supabase
