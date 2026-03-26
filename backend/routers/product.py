@@ -9,6 +9,14 @@ from sqlalchemy import asc, desc, or_, String
 from typing import List, Optional
 from decimal import Decimal
 
+from supabase import create_client, Client
+
+SUPABASE_URL = 
+SUPABASE_KEY =
+BUCKET_NAME = "product-images"
+
+supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 from models.user import User
 from models.category import Category
 from models.product import Product, ProductImage, ProductVariant
@@ -223,23 +231,30 @@ async def add_product(
         # Generate unique filename
         file_extension = file.filename.split(".")[-1]
         unique_filename = f"{uuid.uuid4()}.{file_extension}"
-        file_path = os.path.join(UPLOAD_DIR, unique_filename)
 
-        # Save file to disk
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        try:
+            file_content = await file.read()
 
+            supabase_client.storage.from_(BUCKET_NAME).upload(
+                path=unique_filename,
+                file=file_content,
+                file_options={"content-type": file.content_type}
+            )
+
+            res = supabase_client.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
         # Create ProductImage entry linking to this product
-        new_image = ProductImage(
-            product_id=db_product.id,
-            url=f"/static/product_images/{unique_filename}"
-        )
-        db.add(new_image)
+            new_image = ProductImage(
+                product_id=db_product.id,
+                url=str(res)
+            )
+            db.add(new_image)
+        except Exception as e:
+            print(f"upload failed: {e}")
+            continue
 
     # 4. Final Commit
     db.commit()
     db.refresh(db_product)
-
     return db_product
 
 
@@ -260,7 +275,6 @@ async def update_product(
     admin: User = Depends(admin_only),
 ):
     product = db.query(Product).filter(Product.id == product_id).first()
-
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     
@@ -275,6 +289,7 @@ async def update_product(
     product.quantity = quantity
     product.stock = stock
     product.description = description if description is not None else ""
+    
 
     # --- CRITICAL JSON FIX FOR TAGS ---
     if tags:
@@ -293,29 +308,30 @@ async def update_product(
             ).all()
 
             for img in images_to_delete:
-                # Optional: Delete the actual file from storage
-                # file_path = img.url.lstrip('/')
-                # if os.path.exists(file_path): os.remove(file_path)
+                # Optional: Delete the file from supabase storage
+                # filename = img.url.lstrip("/")[-1]
+                # subase_client.storage.from_(BUCKET_NAME).remove([filename])
                 db.delete(img)
         except ValueError:
             pass
         
     # 2. Handle Image Updates
     if files and len(files) > 0:
-        db.query(ProductImage).filter(ProductImage.product_id == product_id).delete()
+        # db.query(ProductImage).filter(ProductImage.product_id == product_id).delete()
 
         for file in files:
             file_extension = file.filename.split(".")[-1]
             unique_filename = f"{uuid.uuid4()}.{file_extension}"
-            file_path = os.path.join(UPLOAD_DIR, unique_filename)
+            file_content = await file.read()
 
-            with open(file_path, "wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
-        
-            new_img = ProductImage(
-                product_id=product.id, 
-                url=f"/static/product_images/{unique_filename}"
+            supabase_client.storage.from_(BUCKET_NAME).upload(
+                path=unique_filename,
+                file=file_content,
+                file_options={"content-type":file.content_type}
             )
+
+            res = supabase_client.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
+            new_img = ProductImage(product_id=product.id, url=str(res))
             db.add(new_img)
 
     db.commit()
