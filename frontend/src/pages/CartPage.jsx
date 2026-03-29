@@ -141,7 +141,7 @@ const CartPage = () => {
                 const rawPath =
                   (item.product?.images && item.product.images.length > 0)
                     ? item.product.images[0].url
-                    : (item.image_url || item.product?.image_url);
+                    : (item.product?.image_url || item.image_url);
 
                 const finalImageUrl = getProductImageUrl(rawPath, API_BASE_URL);
                 return (
