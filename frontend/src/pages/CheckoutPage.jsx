@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import apiClient from "../utils/api";
 import { getCart, checkoutCart } from "../utils/cartApi";
+import { getProductImageUrl } from "../utils/urlHelper"; // Added Import
 import "../styles/CheckoutPage.css";
 
 const API_BASE_URL = "https://ngau-bazaar.onrender.com";
@@ -181,22 +182,32 @@ const CheckoutPage = () => {
           <h2 className="pane-header">Review Order</h2>
           <div className="items-list">
             <AnimatePresence>
-              {cart.items.map((item, idx) => (
-                <motion.div 
-                  key={item.product_id}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  className="mini-item-card"
-                >
-                  <img src={`${API_BASE_URL}/static/product_images/${item.image_url}`} alt="" className="mini-thumb" />
-                  <div className="mini-details">
-                    <p className="mini-name">{item.product_name}</p>
-                    <p className="mini-qty">Qty: {item.quantity}</p>
-                  </div>
-                  <p className="mini-price">Rs. {Number(item.price * item.quantity).toFixed(2)}</p>
-                </motion.div>
-              ))}
+              {cart.items.map((item, idx) => {
+                // Resolved the image path using the helper to match Cart and Detail logic
+                const finalImageUrl = getProductImageUrl(item.image_url || item.product?.images?.[0]?.url, API_BASE_URL);
+                
+                return (
+                  <motion.div 
+                    key={item.product_id}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className="mini-item-card"
+                  >
+                    <img 
+                      src={finalImageUrl} 
+                      alt={item.product_name} 
+                      className="mini-thumb" 
+                      onError={(e) => { e.target.src = "https://via.placeholder.com/50"; }}
+                    />
+                    <div className="mini-details">
+                      <p className="mini-name">{item.product_name}</p>
+                      <p className="mini-qty">Qty: {item.quantity}</p>
+                    </div>
+                    <p className="mini-price">Rs. {Number(item.price * item.quantity).toFixed(2)}</p>
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
           </div>
 
