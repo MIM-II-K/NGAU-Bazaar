@@ -133,19 +133,18 @@ const CartPage = () => {
           <Row className="g-5">
             {/* ITEM LIST */}
             <Col lg={8}>
+              // --- FIND THIS SECTION AND UPDATE TO THIS ---
               {cart.items.map((item) => {
                 const productSlug = item.product?.slug || item.slug;
                 const hasDiscount = item.discount_percentage > 0;
 
-                // FIX: Build path manually and use getProductImageUrl
-                let rawPath = item.image_url || item.product?.images?.[0]?.url;
-                if (rawPath && !rawPath.startsWith('http') && !rawPath.includes('static/')) {
-                  rawPath = `static/product_images/${rawPath.replace(/^\/+/, '')}`;
-                }
+                // UPDATED: Simply grab the URL and let the helper handle the path formatting
+                const rawPath = item.image_url || item.product?.images?.[0]?.url || item.product?.image_url;
                 const finalImageUrl = getProductImageUrl(rawPath, API_BASE_URL);
 
                 return (
                   <div key={item.product_id} className="bazaar-item-row mb-4" data-aos="fade-up">
+// --- REST OF CODE REMAINS THE SAME ---
                     <Row className="align-items-center g-0">
                       {/* Image Section */}
                       <Col xs={4} md={3}>
