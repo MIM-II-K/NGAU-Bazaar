@@ -152,8 +152,17 @@ const ProductDetail = () => {
                 </div>
 
                 <Row className="gx-lg-5 align-items-center">
+
                     <Col lg={6} data-aos="zoom-in">
-                        <div className="detail-image-card shadow-lg overflow-hidden rounded-4 position-relative mb-3">
+                        {/* Added product-image-stage class and inline height constraints */}
+                        <div className="detail-image-card shadow-lg overflow-hidden rounded-4 position-relative mb-3 product-image-stage"
+                            style={{
+                                height: '500px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: '#fff'
+                            }}>
                             <img
                                 src={
                                     product.images && product.images.length > 0
@@ -161,6 +170,13 @@ const ProductDetail = () => {
                                         : fallbackImage
                                 }
                                 alt={product.name}
+                                // Added objectFit and maxHeight to keep it within view
+                                style={{
+                                    maxHeight: '100%',
+                                    maxWidth: '100%',
+                                    objectFit: 'contain',
+                                    transition: 'transform 0.3s ease'
+                                }}
                                 onError={(e) => { e.currentTarget.src = fallbackImage; }}
                             />
                             {product.is_flash_deal && (
@@ -170,22 +186,30 @@ const ProductDetail = () => {
                             )}
                         </div>
 
+                        {/* Thumbnail Gallery - Ensured consistent sizing */}
                         {product.images && product.images.length > 1 && (
                             <div className="d-flex gap-2 overflow-auto pb-2 custom-scrollbar">
                                 {product.images.map((img, index) => (
                                     <div
                                         key={index}
                                         className={`thumbnail-item rounded-3 border ${activeImage === index ? 'border-primary border-2' : ''}`}
-                                        style={{ width: '80px', height: '80px', cursor: 'pointer', overflow: 'hidden', flexShrink: 0 }}
+                                        style={{
+                                            width: '80px',
+                                            height: '80px',
+                                            cursor: 'pointer',
+                                            overflow: 'hidden',
+                                            flexShrink: 0,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            backgroundColor: '#fff'
+                                        }}
                                         onClick={() => setActiveImage(index)}
                                     >
                                         <img
-                                            src={
-                                                product.images && product.images.length > 0
-                                                    ? getProductImageUrl(product.images[activeImage].url, API_BASE_URL)
-                                                    : fallbackImage
-                                            }
-                                            alt={product.name}
+                                            src={getProductImageUrl(img.url, API_BASE_URL)}
+                                            alt={`${product.name} thumbnail ${index}`}
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                             onError={(e) => { e.currentTarget.src = fallbackImage; }}
                                         />
                                     </div>
