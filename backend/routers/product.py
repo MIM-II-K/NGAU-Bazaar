@@ -118,7 +118,7 @@ def get_products(
     return query.offset(offset).limit(limit).all()
 
 
-@router.get("/slug/{slug}", response_model=ProductResponse)
+@router.get("/{slug}", response_model=ProductResponse)
 def get_product_by_slug(slug: str, db: Session = Depends(get_db)):
     # First, try to find by the actual slug column (most efficient)
     product = db.query(Product).options(
@@ -274,7 +274,7 @@ async def update_product(
         if images_to_delete:
             filename = [get_filename_from_url(img.url) for img in images_to_delete]
             supabase_client.storage.from_(BUCKET_NAME).remove(filename)
-            
+
             for img in images_to_delete:
                 db.delete(img)
         
