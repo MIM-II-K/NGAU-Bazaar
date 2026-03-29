@@ -1,0 +1,31 @@
+name: FastAPI CI
+
+on:
+  push:
+    branches: [ "main" ]  # Change to "master" if that is your main branch name
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # This pulls the Secrets you created in the GitHub UI 
+    # and gives them to your Python code.
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      SUPABASE_BUCKET: ${{ secrets.SUPABASE_BUCKET }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Check Code Syntax
+        run: python -m compileall .
