@@ -3,6 +3,7 @@ import os
 import json
 import shutil
 import uuid
+from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, Query, File, UploadFile, Form
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import asc, desc, or_, String
@@ -11,9 +12,11 @@ from decimal import Decimal
 
 from supabase import create_client, Client
 
-SUPABASE_URL = "https://punvzbjvgphhjcgsgzhd.supabase.co"
-SUPABASE_KEY = "sb_secret_6hkPhTcNQLtX-rVRgJCoWw_VSRMuj8q"
-BUCKET_NAME = "product-images"
+load_dotenv()
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+BUCKET_NAME = os.getenv("SUPABASE_BUCKET")
 
 supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -162,15 +165,15 @@ def get_product_by_slug(slug: str, db: Session = Depends(get_db)):
     
     # If not found in slug column, fallback to the regex matching logic
     if not product:
-        products = db.query(Product).all()
-        for p in products:
-            normalized_name = re.sub(r'[^\w\s-]', '', p.name.lower())
-            generated_slug = re.sub(r'[\s_-]+', '-', normalized_name).strip('-')
-            if generated_slug == slug:
-                product = p
-                break
+    #     products = db.query(Product).all()
+    #     for p in products:
+    #         normalized_name = re.sub(r'[^\w\s-]', '', p.name.lower())
+    #         generated_slug = re.sub(r'[\s_-]+', '-', normalized_name).strip('-')
+    #         if generated_slug == slug:
+    #             product = p
+    #             break
 
-    if not product:
+    # if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     
     return product
@@ -203,36 +206,34 @@ async def add_product(
     admin: User = Depends(admin_only),
 ):
     # 1. Verify Category
-    category = db.query(Category).filter(Category.id == category_id).first()
-    if not category:
+    if not db.query(Category).filter(Category.id == category_id).first():
         raise HTTPException(status_code=404, detail="Category not found")
     
-    proudct_slug = generate_slug(name)
+    tags_list=[t.strip() for t in tags.split(",") if t.strip()] if tags else []
+    
 
     # 2. Initialize Product (Note: we no longer pass image_url here)
     db_product = Product(
         name=name,
-        slug=proudct_slug,
+        slug=generate_slug(name),
         price=price,
         unit=unit,
         category_id=category_id,
         quantity=quantity or 0,
         stock=stock or 0,
         description=description or "",
-        tags=[t.strip() for t in tags.split(",") if t.strip()] if tags else []
-    )
-    
-    db.add(db_product)
-    db.commit() # Commit to get the db_product.id
-    db.refresh(db_product)
+        tags=tags_list
+     )
+    try:
+        db.add(db_product)
+        db.flush()
 
     # 3. Handle Multiple Image Uploads
-    for file in files:
+        for file in files:
         # Generate unique filename
-        file_extension = file.filename.split(".")[-1]
-        unique_filename = f"{uuid.uuid4()}.{file_extension}"
-
-        try:
+            file_extension = file.filename.split(".")[-1]
+            unique_filename = f"{uuid.uuid4()}.{file_extension}"
+            
             file_content = await file.read()
 
             supabase_client.storage.from_(BUCKET_NAME).upload(
@@ -242,20 +243,14 @@ async def add_product(
             )
 
             res = supabase_client.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
-        # Create ProductImage entry linking to this product
-            new_image = ProductImage(
-                product_id=db_product.id,
-                url=str(res)
-            )
-            db.add(new_image)
-        except Exception as e:
-            print(f"upload failed: {e}")
-            continue
+            db.add(ProductImage(product_id = db_product.id, url=str(res)))
 
-    # 4. Final Commit
-    db.commit()
-    db.refresh(db_product)
-    return db_product
+        db.commit()
+        db.refresh(db_product)
+        return db_product
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create to create product: {str(e)}")
 
 
 @router.put("/{product_id}", response_model=ProductResponse)
