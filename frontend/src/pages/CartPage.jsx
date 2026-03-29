@@ -138,9 +138,12 @@ const CartPage = () => {
                 const hasDiscount = item.discount_percentage > 0;
 
                 // UPDATED: Simply grab the URL and let the helper handle the path formatting
-                const rawPath = item.image_url || item.product?.images?.[0]?.url || item.product?.image_url;
-                const finalImageUrl = getProductImageUrl(rawPath, API_BASE_URL);
+                const rawPath =
+                  (item.product?.images && item.product.images.length > 0)
+                    ? item.product.images[0].url
+                    : (item.image_url || item.product?.image_url);
 
+                const finalImageUrl = getProductImageUrl(rawPath, API_BASE_URL);
                 return (
                   <div key={item.product_id} className="bazaar-item-row mb-4" data-aos="fade-up">
                     <Row className="align-items-center g-0">
