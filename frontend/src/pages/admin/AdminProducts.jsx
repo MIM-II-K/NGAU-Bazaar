@@ -14,11 +14,13 @@ const AdminProducts = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [imagesToRemove, setImagesToRemove] = useState([]);
 
-  // Pagination State
+  // NEW: UX & Feedback States
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState({ type: '', msg: '' }); // 'success' or 'danger'
+
   const [currentPage, setCurrentPage] = useState(1);
   const [limit] = useState(10);
 
-  // Form State - Initialized with empty strings to keep inputs 'controlled'
   const [formData, setFormData] = useState({
     name: '', price: '', unit: 'pc', category_id: '', quantity: '', files: [], description: '', tags: []
   });
@@ -56,9 +58,10 @@ const AdminProducts = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const data = new FormData();
+    setLoading(true); // Start Loading UX
+    setStatus({ type: '', msg: '' });
 
-    // 1. FIXED: Explicit Mapping
+    const data = new FormData();
     data.append('name', formData.name || '');
     data.append('price', String(formData.price || '0'));
     data.append('unit', formData.unit || 'pc');
@@ -66,16 +69,12 @@ const AdminProducts = () => {
     data.append('quantity', String(formData.quantity || '0'));
     data.append('stock', String(formData.quantity || '0'));
     data.append('description', formData.description || '');
-    
-    // Stringify tags for FastAPI's JSONB/String parsing
     data.append('tags', formData.tags ? formData.tags.join(',') : '');
 
-    // Add list of image IDs to be removed from the gallery
     if (imagesToRemove.length > 0){
       data.append('remove_image_ids', imagesToRemove.join(','));
     }
 
-    // 2. Append Multiple Files Correctly
     if (formData.files && formData.files.length > 0) {
       formData.files.forEach(file => {
         data.append('files', file); 
@@ -85,23 +84,32 @@ const AdminProducts = () => {
     try {
       if (editingProduct) {
         await productApi.update(editingProduct.id, data);
+        setStatus({ type: 'success', msg: 'Product updated successfully!' });
       } else {
         await productApi.create(data);
+        setStatus({ type: 'success', msg: 'New product created!' });
       }
       
-      setShowModal(false);
-      loadProducts();
-
-      // Reset form to empty state (controlled)
-      setFormData({ 
-        name: '', price: '', unit: 'pc', category_id: '', 
-        quantity: '', files: [], description: '', tags: [] 
-      });
-      setImagesToRemove([]);
+      // Delay to show success message before closing
+      setTimeout(() => {
+        setShowModal(false);
+        loadProducts();
+        setFormData({ 
+          name: '', price: '', unit: 'pc', category_id: '', 
+          quantity: '', files: [], description: '', tags: [] 
+        });
+        setImagesToRemove([]);
+        setLoading(false);
+        setStatus({ type: '', msg: '' });
+      }, 1500);
 
     } catch (err) {
+      setLoading(false);
       const errorMsg = err.response?.data?.detail || err.message;
-      alert("Upload failed: " + (typeof errorMsg === 'object' ? JSON.stringify(errorMsg) : errorMsg));
+      setStatus({ 
+        type: 'danger', 
+        msg: "Upload failed: " + (typeof errorMsg === 'object' ? JSON.stringify(errorMsg) : errorMsg) 
+      });
     }
   };
 
@@ -114,7 +122,6 @@ const AdminProducts = () => {
     }
   };
 
-  // Helper to handle tag changes
   const handleTagInput = (e) => {
     if (e.key === 'Enter' && e.target.value.trim() !== '') {
       e.preventDefault();
@@ -153,6 +160,7 @@ const AdminProducts = () => {
             setEditingProduct(null);
             setFormData({ name: '', price: '', category_id: '', quantity: '', files: [], description: '', unit: 'pc', tags: [] });
             setImagesToRemove([]);
+            setStatus({ type: '', msg: '' });
             setShowModal(true);
           }}>
             <i className="bi bi-plus-lg me-2"></i> Add New Product
@@ -207,6 +215,7 @@ const AdminProducts = () => {
                       setEditingProduct(p);
                       setFormData({ ...p, files: [], tags: p.tags || [] });
                       setImagesToRemove([]);
+                      setStatus({ type: '', msg: '' });
                       setShowModal(true);
                     }}>
                       <i className="bi bi-pencil-square"></i>
@@ -244,12 +253,47 @@ const AdminProducts = () => {
         </div>
       </Container>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg">
-        <Modal.Header closeButton className="border-0 px-4 pt-4">
+      <Modal show={showModal} onHide={() => !loading && setShowModal(false)} centered size="lg">
+        <Modal.Header closeButton={!loading} className="border-0 px-4 pt-4">
           <Modal.Title className="fw-bold">{editingProduct ? 'Edit Product' : 'Add New Product'}</Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleSubmit}>
-          <Modal.Body className="px-4 pb-4">
+          <Modal.Body className="px-4 pb-4 position-relative">
+            
+            {/* CINEMATIC LOADING & TOAST OVERLAY */}
+            {(loading || status.msg) && (
+              <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center rounded-4" 
+                   style={{ 
+                     backgroundColor: 'rgba(255, 255, 255, 0.8)', 
+                     backdropFilter: 'blur(8px)', 
+                     zIndex: 100,
+                     transition: 'all 0.3s ease'
+                   }}>
+                <div className="text-center" data-aos="zoom-in">
+                  {loading && !status.msg && (
+                    <>
+                      <div className="spinner-border text-primary mb-3" style={{ width: '3rem', height: '3rem' }}></div>
+                      <h5 className="fw-bold text-dark">Processing...</h5>
+                      <p className="text-muted small">Syncing with cloud storage</p>
+                    </>
+                  )}
+                  {status.msg && (
+                    <div className="p-4">
+                      <div className={`bg-${status.type} text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3`} style={{ width: '60px', height: '60px' }}>
+                        <i className={`bi bi-${status.type === 'success' ? 'check-lg' : 'exclamation-triangle'} fs-2`}></i>
+                      </div>
+                      <h5 className={`fw-bold text-${status.type === 'success' ? 'dark' : 'danger'}`}>{status.msg}</h5>
+                      {status.type === 'danger' && (
+                        <Button variant="outline-danger" size="sm" className="mt-2" onClick={() => setStatus({ type: '', msg: '' })}>
+                          Try Again
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             <Row className="g-3">
               <Col md={12}>
                 <Form.Group>
@@ -276,7 +320,6 @@ const AdminProducts = () => {
                 </Form.Group>
               </Col>
 
-              {/* Existing Images Gallery Section */}
               {editingProduct && editingProduct.images?.length > 0 && (
                 <Col md={12}>
                   <Form.Label className="small fw-bold text-uppercase text-muted">Current Product Gallery</Form.Label>
@@ -286,8 +329,8 @@ const AdminProducts = () => {
                         <img
                           src={img.url.startsWith('http') ? img.url : `${API_BASE_URL}${img.url}`}
                           alt="existing"
-                          className={`rounded border w-100 h-100 ${imagesToRemove.includes(img.id) ? 'opacity-25 grayscale' : ''}`}
-                          style={{ objectFit: 'cover', transition: '0.3s' }}
+                          className={`rounded border w-100 h-100 ${imagesToRemove.includes(img.id) ? 'opacity-25' : ''}`}
+                          style={{ objectFit: 'cover', transition: '0.3s', filter: imagesToRemove.includes(img.id) ? 'grayscale(100%)' : 'none' }}
                         />
                         <Button
                           variant={imagesToRemove.includes(img.id) ? "success" : "danger"}
@@ -301,7 +344,6 @@ const AdminProducts = () => {
                       </div>
                     ))}
                   </div>
-                  <small className="text-muted mt-1 d-block">Images faded with an 'X' will be deleted when you save.</small>
                 </Col>
               )}
 
@@ -321,25 +363,17 @@ const AdminProducts = () => {
                       onChange={e => setFormData({ ...formData, unit: e.target.value })}
                     >
                       <optgroup label="Solid/Weight">
-                        <option value="5kg">5 (kg)</option>
                         <option value="kg">Kilogram (kg)</option>
                         <option value="g">Gram (g)</option>
                         <option value="500g">500 (g)</option>
-                        <option value="250g">250 (g)</option>
-                        <option value="200g">200 (g)</option>
-                        <option value="100g">100 (g)</option>
-                        <option value="50g">50 (g)</option>
                       </optgroup>
                       <optgroup label="Liquid/Volume">
                         <option value="liter">Liter (L)</option>
                         <option value="ml">Milliliter (ml)</option>
-                        <option value="500ml">500 (ml)</option>
-                        <option value="250ml">250 (ml)</option>
                       </optgroup>
                       <optgroup label="Individual/Count">
                         <option value="pc">Piece (pc)</option>
                         <option value="pkt">Packet (pkt)</option>
-                        <option value="dz">Dozen (12pcs) (dz)</option>
                       </optgroup>
                     </Form.Select>
                   </div>
@@ -390,19 +424,14 @@ const AdminProducts = () => {
                     type="file" multiple
                     onChange={e => setFormData({ ...formData, files: Array.from(e.target.files) })}
                   />
-                  {formData.files?.length > 0 && (
-                    <small className="text-primary d-block mt-1">
-                      {formData.files.length} new files selected
-                    </small>
-                  )}
                 </Form.Group>
               </Col>
             </Row>
           </Modal.Body>
           <Modal.Footer className="border-0 px-4 pb-4">
-            <Button variant="light" onClick={() => setShowModal(false)}>Cancel</Button>
-            <Button type="submit" variant="primary">
-              {editingProduct ? 'Save Changes' : 'Create Product'}
+            <Button variant="light" onClick={() => setShowModal(false)} disabled={loading}>Cancel</Button>
+            <Button type="submit" variant="primary" disabled={loading}>
+              {loading ? 'Saving...' : editingProduct ? 'Save Changes' : 'Create Product'}
             </Button>
           </Modal.Footer>
         </Form>
