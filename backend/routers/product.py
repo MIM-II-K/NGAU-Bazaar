@@ -263,6 +263,8 @@ async def update_product(
     else:
         product.tags = [] # Send an empty list, which Postgres saves as '[]' (valid JSON)
     try:
+        images_to_delete = []
+
         if remove_image_ids:
             id_list = [int(id_str) for id_str in remove_image_ids.split(",") if id_str.strip()]
             images_to_delete = db.query(ProductImage).filter(
@@ -272,6 +274,7 @@ async def update_product(
         if images_to_delete:
             filename = [get_filename_from_url(img.url) for img in images_to_delete]
             supabase_client.storage.from_(BUCKET_NAME).remove(filename)
+            
             for img in images_to_delete:
                 db.delete(img)
         
