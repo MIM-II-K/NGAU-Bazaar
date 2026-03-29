@@ -343,7 +343,12 @@ const Products = () => {
                       <div className="image-zoom-container position-relative">
                         <Card.Img
                           variant="top"
-                          src={product.images && product.images.length > 0 ? `${API_BASE_URL}${product.images[0].url}` : fallbackImage}
+                          src={
+                            product.images && product.images.length > 0
+                            ? product.images[0].url.startsWith('http')
+                              ? product.images[0].url
+                              : `${API_BASE_URL}${product.images[0].url}`
+                            : fallbackImage}
                           onError={e => { e.currentTarget.src = fallbackImage; }}
                         />
 

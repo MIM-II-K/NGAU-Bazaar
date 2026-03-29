@@ -327,7 +327,11 @@ const AdminProducts = () => {
                     {editingProduct.images.map((img) => (
                       <div key={img.id} className="position-relative shadow-sm" style={{ width: '80px', height: '80px' }}>
                         <img
-                          src={img.url.startsWith('http') ? img.url : `${API_BASE_URL}${img.url}`}
+                          src={
+                            img.url.startsWith('http')
+                            ? img.url
+                            : `${API_BASE_URL}${img.url}`
+                          }
                           alt="existing"
                           className={`rounded border w-100 h-100 ${imagesToRemove.includes(img.id) ? 'opacity-25' : ''}`}
                           style={{ objectFit: 'cover', transition: '0.3s', filter: imagesToRemove.includes(img.id) ? 'grayscale(100%)' : 'none' }}
