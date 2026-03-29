@@ -134,6 +134,7 @@ const CartPage = () => {
             {/* ITEM LIST */}
             <Col lg={8}>
               {cart.items.map((item) => {
+                console.log("DEBUG ITEM:", item);
                 const productSlug = item.product?.slug || item.slug;
                 const hasDiscount = item.discount_percentage > 0;
 
