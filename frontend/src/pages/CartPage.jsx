@@ -132,21 +132,32 @@ const CartPage = () => {
         ) : (
           <Row className="g-5">
             {/* ITEM LIST */}
+            {/* ITEM LIST */}
             <Col lg={8}>
               {cart.items.map((item) => {
                 console.log("DEBUG ITEM:", item);
                 const productSlug = item.product?.slug || item.slug;
                 const hasDiscount = item.discount_percentage > 0;
 
-                // UPDATED: Simply grab the URL and let the helper handle the path formatting
-                const rawPath =
+                // --- FIXED IMAGE LOGIC ---
+                // 1. Get the raw string from whichever field exists
+                const rawValue =
                   (item.product?.images && item.product.images.length > 0)
                     ? item.product.images[0].url
                     : (item.product?.image_url || item.image_url);
 
+                // 2. Fix: If it's just a filename (no slashes), prepend the uploads path
+                // Most FastAPI/Render setups serve from /uploads/ or /static/
+                const rawPath = (rawValue && !rawValue.includes('/'))
+                  ? `/uploads/${rawValue}`
+                  : rawValue;
+
                 const finalImageUrl = getProductImageUrl(rawPath, API_BASE_URL);
+                // -------------------------
+
                 return (
                   <div key={item.product_id} className="bazaar-item-row mb-4" data-aos="fade-up">
+                    {/* ... rest of your existing JSX ... */}
                     <Row className="align-items-center g-0">
                       {/* Image Section */}
                       <Col xs={4} md={3}>
