@@ -3,9 +3,9 @@ import { getCart, updateCart, removeFromCart } from "../utils/cartApi";
 import { Container, Row, Col, Card, Button, Spinner, Badge } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from '../contexts/CartContext';
-import { getProductImageUrl } from "../utils/urlHelper";
 import ToastMessage from "../components/ToastMessage";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
+import { getProductImageUrl } from "../utils/urlHelper";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import '../styles/cart.css';
@@ -35,6 +35,13 @@ const CartPage = () => {
     fetchCart();
     return () => Object.values(debounceTimer.current).forEach(clearTimeout);
   }, []);
+
+  const resolveImageUrl = (path) => {
+    if (!path) return fallbackImage;
+    if (path.startsWith("http")) return path;
+    let cleanPath = path.replace(/^\/+/, '');
+    return `${API_BASE_URL}/${cleanPath.startsWith("static/") ? cleanPath : "static/product_images/" + cleanPath}`;
+  };
 
   const fetchCart = async () => {
     try {
@@ -132,39 +139,24 @@ const CartPage = () => {
         ) : (
           <Row className="g-5">
             {/* ITEM LIST */}
-            {/* ITEM LIST */}
             <Col lg={8}>
               {cart.items.map((item) => {
-                console.log("DEBUG ITEM:", item);
                 const productSlug = item.product?.slug || item.slug;
                 const hasDiscount = item.discount_percentage > 0;
 
-                // --- FIXED IMAGE LOGIC ---
-                // 1. Get the raw string from whichever field exists
-                const rawValue =
-                  (item.product?.images && item.product.images.length > 0)
-                    ? item.product.images[0].url
-                    : (item.product?.image_url || item.image_url);
-
-                // 2. Fix: If it's just a filename (no slashes), prepend the uploads path
-                // Most FastAPI/Render setups serve from /uploads/ or /static/
-                const rawPath = (rawValue && !rawValue.includes('/'))
-                  ? `/uploads/${rawValue}`
-                  : rawValue;
-
-                const finalImageUrl = getProductImageUrl(rawPath, API_BASE_URL);
-                // -------------------------
-
                 return (
                   <div key={item.product_id} className="bazaar-item-row mb-4" data-aos="fade-up">
-                    {/* ... rest of your existing JSX ... */}
                     <Row className="align-items-center g-0">
                       {/* Image Section */}
                       <Col xs={4} md={3}>
                         <Link to={`/products/${productSlug}`} className="d-block product-img-anchor">
                           <div className="item-img-container">
                             <img
-                              src={finalImageUrl || fallbackImage}
+                              src={
+                                getProductImageUrl(
+                                  item.product?.images?.[0]?.url || item.image_url
+                                )
+                              }
                               alt={item.product_name}
                               className="img-fluid full-photo"
                               onError={(e) => { e.target.src = fallbackImage; }}
