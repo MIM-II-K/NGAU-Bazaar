@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import flashDealsApi from '../utils/flashDealsApi';
 import apiClient from '../utils/api';
-import { createSlug } from '../utils/urlHelper' 
+import { createSlug, getProductImageUrl } from '../utils/urlHelper' 
 import '../styles/flash-deals.css';
 
 const BASE_URL = "https://ngau-bazaar.onrender.com";
@@ -92,7 +92,7 @@ const ProductCard = ({ product, idx, onAdd, isAdding }) => {
   const [timeLeft, setTimeLeft] = useState(null);
 
   // Use backend slug if available, otherwise generate it using the helper
-  const productSlug = product.slug ?? createSlug(product.name);
+  const productSlug = createSlug(product.name);
 
   const firstImage = product.images && product.images.length > 0
     ? product.images[0].url
@@ -139,10 +139,11 @@ const ProductCard = ({ product, idx, onAdd, isAdding }) => {
         {/* Link using the generated productSlug */}
         <Link to={`/products/${productSlug}`} className='text-decoration-none'>
           <img
-            src={firstImage ? `${BASE_URL}${firstImage}` : '/placeholder.png'}
+            src={getProductImageUrl(firstImage)} // <--- UPDATED IMAGE FETCH
             alt={product.name}
             className="clickable-img"
-            style={{ cursor: 'pointer' }}
+            style={{ cursor: 'pointer', objectFit: 'cover' }}
+            onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}
           />
         </Link>
 

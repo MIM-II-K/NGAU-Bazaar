@@ -120,24 +120,25 @@ def get_products(
 
 @router.get("/{slug}", response_model=ProductResponse)
 def get_product_by_slug(slug: str, db: Session = Depends(get_db)):
-    # First, try to find by the actual slug column (most efficient)
+    # 1. Try exact match in the DB column
     product = db.query(Product).options(
         joinedload(Product.images),
         joinedload(Product.variants),
         joinedload(Product.category)
     ).filter(Product.slug == slug).first()
     
-    # If not found in slug column, fallback to the regex matching logic
+    # 2. If not found, manually check against generated slugs (Temporary Fix)
     if not product:
-    #     products = db.query(Product).all()
-    #     for p in products:
-    #         normalized_name = re.sub(r'[^\w\s-]', '', p.name.lower())
-    #         generated_slug = re.sub(r'[\s_-]+', '-', normalized_name).strip('-')
-    #         if generated_slug == slug:
-    #             product = p
-    #             break
+        products = db.query(Product).options(joinedload(Product.images)).all()
+        for p in products:
+            # This generates 'coffee-beans' from 'Coffee Beans' on the fly
+            normalized = re.sub(r'[^\w\s-]', '', p.name.lower())
+            generated = re.sub(r'[\s_-]+', '-', normalized).strip('-')
+            if generated == slug:
+                product = p
+                break
 
-    # if not product:
+    if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     
     return product

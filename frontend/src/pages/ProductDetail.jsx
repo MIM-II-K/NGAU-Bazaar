@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Button, Badge, Spinner, Breadcrumb } from 'react-bootstrap';
 import { productApi } from '../utils/productApi';
 import { addToCart } from '../utils/cartApi';
+import { getProductImageUrl } from '../utils/urlHelper';
 import { useCart } from '../contexts/CartContext';
 import AOS from 'aos';
 import ToastMessage from '../components/ToastMessage';
@@ -156,12 +157,10 @@ const ProductDetail = () => {
                             <img
                                 src={
                                     product.images && product.images.length > 0
-                                        ? `${API_BASE_URL}${product.images[activeImage].url}`
+                                        ? getProductImageUrl(product.images[activeImage].url, API_BASE_URL)
                                         : fallbackImage
                                 }
                                 alt={product.name}
-                                className="img-fluid w-100 main-product-img"
-                                style={{ minHeight: '400px', objectFit: 'cover' }}
                                 onError={(e) => { e.currentTarget.src = fallbackImage; }}
                             />
                             {product.is_flash_deal && (
@@ -181,10 +180,13 @@ const ProductDetail = () => {
                                         onClick={() => setActiveImage(index)}
                                     >
                                         <img
-                                            src={`${API_BASE_URL}${img.url}`}
-                                            alt={`view-${index}`}
-                                            className="w-100 h-100"
-                                            style={{ objectFit: 'cover' }}
+                                            src={
+                                                product.images && product.images.length > 0
+                                                    ? getProductImageUrl(product.images[activeImage].url, API_BASE_URL)
+                                                    : fallbackImage
+                                            }
+                                            alt={product.name}
+                                            onError={(e) => { e.currentTarget.src = fallbackImage; }}
                                         />
                                     </div>
                                 ))}
@@ -247,7 +249,7 @@ const ProductDetail = () => {
                                 ))}
                             </div>
                         )}
-                        
+
                         <p className="lead text-muted mb-4">
                             {product.description || "This premium product is crafted with the highest quality materials."}
                         </p>
