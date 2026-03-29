@@ -133,7 +133,6 @@ const CartPage = () => {
           <Row className="g-5">
             {/* ITEM LIST */}
             <Col lg={8}>
-              // --- FIND THIS SECTION AND UPDATE TO THIS ---
               {cart.items.map((item) => {
                 const productSlug = item.product?.slug || item.slug;
                 const hasDiscount = item.discount_percentage > 0;
@@ -144,7 +143,6 @@ const CartPage = () => {
 
                 return (
                   <div key={item.product_id} className="bazaar-item-row mb-4" data-aos="fade-up">
-// --- REST OF CODE REMAINS THE SAME ---
                     <Row className="align-items-center g-0">
                       {/* Image Section */}
                       <Col xs={4} md={3}>
