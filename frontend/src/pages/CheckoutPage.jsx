@@ -3,13 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import apiClient from "../utils/api";
 import { getCart, checkoutCart } from "../utils/cartApi";
-import { getProductImageUrl } from "../utils/urlHelper"; // Added Import
+import { getProductImageUrl } from "../utils/urlHelper";
 import "../styles/CheckoutPage.css";
 
 const API_BASE_URL = "https://ngau-bazaar.onrender.com";
 
 const NEPAL_DATA = {
-  "Koshi": ["Bhojpur", "Dhankuta", "Ilam", "Jhapa", "Khotang", "Morang", "Okhaldhunga", "Panchthar", "Sankhuwasabha", "Solukhumbu", "Sunsari", "Taplejung", "Terhathum", "Udayapur"],
+  "Koshi": ["Bhojpur", "Dhankuta", "Ilam", "Jhapa", "Khotang", "Morang", "Okhaldhunga", "Panchthar", "Sankhuwasabha", "Solukkumbu", "Sunsari", "Taplejung", "Terhathum", "Udayapur"],
   "Madhesh": ["Bara", "Dhanusha", "Mahottari", "Parsa", "Rautahat", "Saptari", "Sarlahi", "Siraha"],
   "Bagmati": ["Bhaktapur", "Chitwan", "Dhading", "Dolakha", "Kathmandu", "Kavrepalanchok", "Lalitpur", "Makwanpur", "Nuwakot", "Ramechhap", "Rasuwa", "Sindhuli", "Sindhupalchok"],
   "Gandaki": ["Baglung", "Gorkha", "Kaski", "Lamjung", "Manang", "Mustang", "Myagdi", "Nawalpur", "Parbat", "Syangja", "Tanahu"],
@@ -183,8 +183,12 @@ const CheckoutPage = () => {
           <div className="items-list">
             <AnimatePresence>
               {cart.items.map((item, idx) => {
-                // Resolved the image path using the helper to match Cart and Detail logic
-                const finalImageUrl = getProductImageUrl(item.image_url || item.product?.images?.[0]?.url, API_BASE_URL);
+                // FIX: Build path manually to ensure it targets the static/product_images/ folder
+                let rawPath = item.image_url || item.product?.images?.[0]?.url;
+                if (rawPath && !rawPath.startsWith('http') && !rawPath.includes('static/')) {
+                  rawPath = `static/product_images/${rawPath.replace(/^\/+/, '')}`;
+                }
+                const finalImageUrl = getProductImageUrl(rawPath, API_BASE_URL);
                 
                 return (
                   <motion.div 

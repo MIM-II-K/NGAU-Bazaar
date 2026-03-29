@@ -3,7 +3,7 @@ import { getCart, updateCart, removeFromCart } from "../utils/cartApi";
 import { Container, Row, Col, Card, Button, Spinner, Badge } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from '../contexts/CartContext';
-import { getProductImageUrl } from '../utils/urlHelper'; // Import the helper
+import { getProductImageUrl } from "../utils/urlHelper";
 import ToastMessage from "../components/ToastMessage";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 import AOS from 'aos';
@@ -36,8 +36,6 @@ const CartPage = () => {
     return () => Object.values(debounceTimer.current).forEach(clearTimeout);
   }, []);
 
-  // UPDATED: Removed local resolveImageUrl and using centralized helper instead
-
   const fetchCart = async () => {
     try {
       setLoading(true);
@@ -59,6 +57,7 @@ const CartPage = () => {
   const handleUpdate = (product_id, newQty) => {
     if (newQty < 1) return;
 
+    // Optimistic UI Update
     setCart(prev => {
       const updatedItems = prev.items.map(item =>
         item.product_id === product_id ? { ...item, quantity: newQty } : item
@@ -132,18 +131,23 @@ const CartPage = () => {
           </div>
         ) : (
           <Row className="g-5">
+            {/* ITEM LIST */}
             <Col lg={8}>
               {cart.items.map((item) => {
                 const productSlug = item.product?.slug || item.slug;
                 const hasDiscount = item.discount_percentage > 0;
-                
-                // UPDATED: Logic to find the correct path and resolve it via helper
-                const rawImagePath = item.product?.images?.[0]?.url || item.image_url;
-                const finalImageUrl = getProductImageUrl(rawImagePath, API_BASE_URL);
+
+                // FIX: Build path manually and use getProductImageUrl
+                let rawPath = item.image_url || item.product?.images?.[0]?.url;
+                if (rawPath && !rawPath.startsWith('http') && !rawPath.includes('static/')) {
+                  rawPath = `static/product_images/${rawPath.replace(/^\/+/, '')}`;
+                }
+                const finalImageUrl = getProductImageUrl(rawPath, API_BASE_URL);
 
                 return (
                   <div key={item.product_id} className="bazaar-item-row mb-4" data-aos="fade-up">
                     <Row className="align-items-center g-0">
+                      {/* Image Section */}
                       <Col xs={4} md={3}>
                         <Link to={`/products/${productSlug}`} className="d-block product-img-anchor">
                           <div className="item-img-container">
@@ -160,12 +164,15 @@ const CartPage = () => {
                         </Link>
                       </Col>
 
+                      {/* Content Section */}
                       <Col xs={8} md={9} className="ps-3 ps-md-4">
                         <div className="d-flex justify-content-between align-items-start">
                           <div className="pe-2">
+                            {/* Navigation via name (Slug-based) */}
                             <Link to={`/products/${productSlug}`} className="bazaar-product-link">
                               <h5 className="fw-bold mb-1">{item.product_name}</h5>
                             </Link>
+
                             <div className="price-container d-flex align-items-center gap-2 flex-wrap">
                               <h4 className="text-primary fw-black mb-0">Rs.{Number(item.price).toLocaleString()}</h4>
                               {hasDiscount && (
@@ -178,6 +185,7 @@ const CartPage = () => {
                               )}
                             </div>
                           </div>
+
                           <button
                             className="bazaar-remove-btn"
                             onClick={() => { setItemToDelete(item); setShowDeleteModal(true); }}
@@ -205,11 +213,13 @@ const CartPage = () => {
               })}
             </Col>
 
+            {/* SUMMARY SIDEBAR */}
             <Col lg={4}>
               <div className="sticky-sidebar">
                 <Card className="checkout-summary-card border-0 shadow-lg rounded-5 overflow-hidden">
                   <Card.Body className="p-4">
                     <h5 className="fw-black mb-4">Summary</h5>
+
                     <div className="summary-row mb-3">
                       <span className="text-muted">Bag Subtotal</span>
                       <span className="fw-bold">Rs.{subtotal.toLocaleString()}</span>
@@ -222,10 +232,12 @@ const CartPage = () => {
                       <span className="text-muted">Delivery Charge</span>
                       <span className="text-success fw-bold">+ Rs.{DELIVERY_CHARGE}</span>
                     </div>
+
                     <div className="grand-total-display rounded-4 p-3 mb-4">
                       <p className="text-uppercase small fw-bold text-muted mb-0">Grand Total</p>
                       <h2 className="fw-black text-primary mb-0">Rs.{grandTotal.toLocaleString()}</h2>
                     </div>
+
                     <Button
                       onClick={() => navigate('/checkout')}
                       className="btn-checkout-bazaar w-100 py-3 rounded-pill fw-bold"
@@ -260,6 +272,7 @@ const CartPage = () => {
             setShowDeleteModal(false);
           }}
         />
+
         <ToastMessage show={showToast} onClose={() => setShowToast(false)} message={toastMessage} type={toastType} />
       </Container>
     </div>
