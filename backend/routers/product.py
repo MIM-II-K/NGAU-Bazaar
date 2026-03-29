@@ -9,8 +9,14 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import asc, desc, or_, String
 from typing import List, Optional
 from decimal import Decimal
-
 from supabase import create_client, Client
+
+from models.user import User
+from models.category import Category
+from models.product import Product, ProductImage, ProductVariant
+from schemas.product import ProductCreate, ProductResponse
+from database import SessionLocal
+from utils.dependencies import admin_only
 
 load_dotenv()
 
@@ -20,23 +26,16 @@ BUCKET_NAME = os.getenv("SUPABASE_BUCKET")
 
 supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-from models.user import User
-from models.category import Category
-from models.product import Product, ProductImage, ProductVariant
-from schemas.product import ProductCreate, ProductResponse
-from database import SessionLocal
-from utils.dependencies import admin_only
-
 router = APIRouter(prefix="/products", tags=["products"])
-
-UPLOAD_DIR = "static/product_images"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def generate_slug(name: str) -> str:
     normalized = re.sub(r'[^\w\s-]', '', name.lower())
     slug = re.sub('[\s_-]+', '-', normalized).strip('-')
 
     return f"{slug}-{str(uuid.uuid4())[:8]}"
+
+def get_filename_from_url(url: str) -> str:
+    return url.split("/")[-1]
 
 # ---------------- DB Dependency ----------------
 def get_db():
@@ -73,7 +72,7 @@ def get_products(
         joinedload(Product.category),
         joinedload(Product.images))
 
-    # 🔍 Search
+    #Search
     if search:
         query = query.filter(
             or_(
@@ -82,7 +81,7 @@ def get_products(
                 )
         )
 
-    # 📂 Category filter
+    #Category filter
     if category:
     # numeric → category_id
         if category.isdigit():
@@ -94,67 +93,32 @@ def get_products(
                 .join(Category)
                 .filter(Category.name.ilike(f"%{category}%"))
             )
-        if tag:
-            query = query.filter(Product.tags.cast(String).ilike(f"%{tag}%"))
+    if tag:
+        query = query.filter(Product.tags.cast(String).ilike(f"%{tag}%"))
 
-    # 💰 Price filters
+    #Price filters
     if min_price is not None:
         query = query.filter(Product.price >= min_price)
-
     if max_price is not None:
         query = query.filter(Product.price <= max_price)
 
-    # 🔃 Sorting
-    if sort == "price_asc":
-        query = query.order_by(asc(Product.price))
-    elif sort == "price_desc":
-        query = query.order_by(desc(Product.price))
-    elif sort == "name_asc":
-        query = query.order_by(asc(Product.name))
-    elif sort == "name_desc":
-        query = query.order_by(desc(Product.name))
-    elif sort == "popularity":
-        query = query.order_by(desc(Product.view_count))
-    elif sort == "newest":
-        query = query.order_by(desc(Product.created_at)) 
-    else:
-        query = query.order_by(desc(Product.id))  # newest first
+    #Sorting
+    sort_map = {
+        "price_asc": asc(Product.price),
+        "price_desc": desc(Product.price),
+        "name_asc": asc(Product.name),
+        "name_desc": desc(Product.name),
+        "popularity": desc(Product.view_count),
+        "newest": desc(Product.created_at)
+    }
+    query = query.order_by(sort_map.get(sort, desc(Product.id)))
 
-    # 📄 Pagination
+    #Pagination
     offset = (page - 1) * limit
-    products = query.offset(offset).limit(limit).all()
+    return query.offset(offset).limit(limit).all()
 
-    for p in products:
-        if not isinstance(p.tags, list):
-            p.tags = []
 
-    return products
-
-@router.get("/{product_id}/related", response_model=List[ProductResponse])
-def get_related_products(product_id: int, db: Session = Depends(get_db)):
-    target = db.query(Product).filter(Product.id == product_id).first()
-    if not target:
-        raise HTTPException(status_code=404, detail="Product not found")
-    
-    related = db.query(Product).options(
-        joinedload(Product.images),
-        joinedload(Product.category)
-    ).filter(
-        Product.category_id == target.category_id,
-        Product.id != product_id
-    ).limit(4).all()
-
-    return related
-
-@router.post("/{product_id}/view")
-def increment_view(product_id: int, db: Session = Depends(get_db)):
-    product = db.query(Product).filter(Product.id == product_id).first()
-    if product:
-        product.view_count = (product.view_count or 0) + 1
-        db.commit()
-    return {"status": "success"}
-
-@router.get("/{slug}", response_model=ProductResponse)
+@router.get("/slug/{slug}", response_model=ProductResponse)
 def get_product_by_slug(slug: str, db: Session = Depends(get_db)):
     # First, try to find by the actual slug column (most efficient)
     product = db.query(Product).options(
@@ -241,13 +205,18 @@ async def add_product(
                 file=file_content,
                 file_options={"content-type": file.content_type}
             )
+            public_url = supabase_client.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
+            url_str = public_url if isinstance(public_url, str) else public_url.get("publicURL", str(public_url))
 
-            res = supabase_client.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
-            db.add(ProductImage(product_id = db_product.id, url=str(res)))
+            db.add(ProductImage(
+                product_id = db_product.id,
+                url=url_str
+           ))
 
         db.commit()
         db.refresh(db_product)
         return db_product
+    
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to create to create product: {str(e)}")
@@ -293,54 +262,43 @@ async def update_product(
         product.tags = tag_list # SQLAlchemy handles the JSON serialization if the column type is JSON
     else:
         product.tags = [] # Send an empty list, which Postgres saves as '[]' (valid JSON)
-
-    if remove_image_ids:
-        try:
+    try:
+        if remove_image_ids:
             id_list = [int(id_str) for id_str in remove_image_ids.split(",") if id_str.strip()]
             images_to_delete = db.query(ProductImage).filter(
-                ProductImage.id.in_(id_list),
-                ProductImage.product_id == product_id
+                ProductImage.id.in_(id_list)
             ).all()
 
+        if images_to_delete:
+            filename = [get_filename_from_url(img.url) for img in images_to_delete]
+            supabase_client.storage.from_(BUCKET_NAME).remove(filename)
             for img in images_to_delete:
-                # Optional: Delete the file from supabase storage
-                # filename = img.url.lstrip("/")[-1]
-                # subase_client.storage.from_(BUCKET_NAME).remove([filename])
                 db.delete(img)
-        except ValueError:
-            pass
         
     # 2. Handle Image Updates
-    if files and len(files) > 0:
-        # db.query(ProductImage).filter(ProductImage.product_id == product_id).delete()
+        if files:
+            for file in files:
+                file_extension = file.filename.split(".")[-1]
+                unique_filename = f"{uuid.uuid4()}.{file_extension}"
+                file_content = await file.read()
 
-        for file in files:
-            file_extension = file.filename.split(".")[-1]
-            unique_filename = f"{uuid.uuid4()}.{file_extension}"
-            file_content = await file.read()
+                supabase_client.storage.from_(BUCKET_NAME).upload(
+                    path=unique_filename,
+                    file=file_content,
+                    file_options={"content-type":file.content_type}
+                )
 
-            supabase_client.storage.from_(BUCKET_NAME).upload(
-                path=unique_filename,
-                file=file_content,
-                file_options={"content-type":file.content_type}
-            )
-
-            res = supabase_client.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
-            new_img = ProductImage(product_id=product.id, url=str(res))
-            db.add(new_img)
-
-    db.commit()
-    
-    # 3. Refresh with joined options
-    product = db.query(Product).options(
-        joinedload(Product.images),
-        joinedload(Product.category)
-    ).filter(Product.id == product_id).first()
-
-    if not isinstance(product.tags, list):
-        product.tags = []
-
-    return product
+                res = supabase_client.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
+                db.add(ProductImage(
+                    product_id=product.id,
+                    url=str(res)
+                ))
+        db.commit()
+        db.refresh(product) 
+        return product
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update product: {str(e)}")  
 
 
 # ---------------- DELETE PRODUCT (ADMIN) ----------------
@@ -352,23 +310,40 @@ def delete_product(product_id: int, db: Session = Depends(get_db), admin: User =
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
+    filenames = [get_filename_from_url(img.url) for img in product.images]
+
     try:
-        # 2. Attempt the delete
         db.delete(product)
         db.commit()
-        return {"detail": "Product deleted successfully"}
-        
+        if filenames:
+            supabase_client.storage.from_(BUCKET_NAME).remove(filenames)
+        return {"detail": "Product and files deleted successfully"}
     except Exception as e:
-        # 3. CRITICAL: Rollback on error
         db.rollback()
-        print(f"DELETE ERROR: {str(e)}") # Check your terminal to see the exact SQL error
-        
-        # Check if the error is due to an existing order
         if "foreign key" in str(e).lower():
-            raise HTTPException(
-                status_code=400, 
-                detail="Cannot delete product: It is linked to existing orders or cart items."
-            )
-            
-        raise HTTPException(status_code=500, detail="An internal server error occurred during deletion.")
+            raise HTTPException(status_code=400, detail="Linked to existing orders/carts.")
+        raise HTTPException(status_code=500, detail="Internal server error.")
+
+@router.get("/{product_id}/related", response_model=List[ProductResponse])
+def get_related_products(product_id: int, db: Session = Depends(get_db)):
+    target = db.query(Product).filter(Product.id == product_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Product not found")
     
+    related = db.query(Product).options(
+        joinedload(Product.images),
+        joinedload(Product.category)
+    ).filter(
+        Product.category_id == target.category_id,
+        Product.id != product_id
+    ).limit(4).all()
+
+    return related
+
+@router.post("/{product_id}/view")
+def increment_view(product_id: int, db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if product:
+        product.view_count = (product.view_count or 0) + 1
+        db.commit()
+    return {"status": "success"}
