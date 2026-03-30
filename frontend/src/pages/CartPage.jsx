@@ -37,10 +37,7 @@ const CartPage = () => {
   }, []);
 
   const resolveImageUrl = (path) => {
-    if (!path) return fallbackImage;
-    if (path.startsWith("http")) return path;
-    let cleanPath = path.replace(/^\/+/, '');
-    return `${API_BASE_URL}/${cleanPath.startsWith("static/") ? cleanPath : "static/product_images/" + cleanPath}`;
+    return getProductImageUrl(path, API_BASE_URL);
   };
 
   const fetchCart = async () => {
@@ -148,18 +145,26 @@ const CartPage = () => {
                   <div key={item.product_id} className="bazaar-item-row mb-4" data-aos="fade-up">
                     <Row className="align-items-center g-0">
                       {/* Image Section */}
+                      {/* Image Section inside cart.items.map */}
                       <Col xs={4} md={3}>
                         <Link to={`/products/${productSlug}`} className="d-block product-img-anchor">
                           <div className="item-img-container">
                             <img
                               src={
+                                // Try item level first, then nested product images array, then product level
                                 getProductImageUrl(
-                                  item.product?.images?.[0]?.url || item.image_url
+                                  item.image_url ||
+                                  item.product?.images?.[0]?.url ||
+                                  item.product?.image_url
                                 )
                               }
                               alt={item.product_name}
                               className="img-fluid full-photo"
-                              onError={(e) => { e.target.src = fallbackImage; }}
+                              onError={(e) => {
+                                if (e.target.src !== fallbackImage) {
+                                  e.target.src = fallbackImage;
+                                }
+                              }}
                             />
                             {hasDiscount && (
                               <div className="flash-sale-badge-mini">-{Math.round(item.discount_percentage)}%</div>

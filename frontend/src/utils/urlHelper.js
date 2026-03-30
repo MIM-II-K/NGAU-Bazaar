@@ -8,21 +8,21 @@ export const createSlug = (name) => {
     .replace(/^-+|-+$/g, ""); 
 };
 
-// ADD THIS HELPER for your images
 export const getProductImageUrl = (url, baseUrl = "https://ngau-bazaar.onrender.com") => {
-  if (!url) return "/placeholder.png";
+  if (!url || url === "null" || url === "undefined") return "/placeholder.png";
   if (url.startsWith('http')) return url;
 
-  // Your main.py uses app.mount("/static", ...)
-  // If your DB stores "product_images/img.jpg", we need to ensure it becomes "/static/product_images/img.jpg"
   const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
   
-  let cleanPath = url;
-  if (!url.startsWith('/static') && !url.startsWith('static')) {
-      cleanPath = `/static/${url.startsWith('/') ? url.slice(1) : url}`;
-  } else {
-      cleanPath = url.startsWith('/') ? url : `/${url}`;
+  // 1. Strip leading slashes and any existing "static/" prefix to normalize
+  let path = url.replace(/^\/+/, '').replace(/^static\//, '');
+  
+  // 2. If it's just a filename (e.g., "kiwi.jpg"), ensure "product_images/" is added
+  // If your DB already stores "product_images/kiwi.jpg", this won't double it.
+  if (!path.includes('product_images/')) {
+    path = `product_images/${path}`;
   }
 
-  return `${cleanBase}${cleanPath}`;
+  // 3. Return the fully qualified Render URL
+  return `${cleanBase}/static/${path}`;
 };
