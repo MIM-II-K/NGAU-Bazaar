@@ -151,18 +151,7 @@ const CartPage = () => {
                         <Link to={`/products/${productSlug}`} className="d-block product-img-anchor">
                           <div className="item-img-container">
                             <img
-                              src={
-                                getProductImageUrl(
-                                  // 1. Check if the backend sent a direct 'image_url' in the cart row
-                                  item.image_url ||
-                                  // 2. Check if it's nested in the product object (Common in Supabase Joins)
-                                  item.product?.image_url ||
-                                  // 3. Check the images array (Which you mentioned works on other pages)
-                                  (item.product?.images && item.product.images[0]?.url) ||
-                                  // 4. Check if the array is directly on the item
-                                  (item.images && item.images[0]?.url)
-                                )
-                              }
+                              src={getProductImageUrl(item.image_url)} // Direct access based on your console log
                               alt={item.product_name}
                               className="img-fluid full-photo"
                               onError={(e) => {
