@@ -47,6 +47,11 @@ const CartPage = () => {
     try {
       setLoading(true);
       const res = await getCart();
+      
+      console.log("Full cart response:", res);
+      console.log("First item image_url:", res?.items?.[0]);
+      console.log("Image_url value:", res?.items?.[0]?.image_url);  
+      
       if (res && Array.isArray(res.items)) {
         setCart({
           ...res,
