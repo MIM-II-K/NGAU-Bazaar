@@ -3,30 +3,59 @@ from sqlalchemy.orm import Session
 from database import SessionLocal
 from models.product import Product
 
-def generate_slug(name: str) -> str:
+def generate_clean_slug(name: str, db: Session, current_product_id: int) -> str:
+    """
+    Generates a URL-friendly slug and ensures uniqueness within the database.
+    """
     if not name:
-        return ""
-    # Matches your urlHelper.js and FastAPI logic
-    normalized_name = re.sub(r'[^\w\s-]', '', name.lower())
-    return re.sub(r'[\s_-]+', '-', normalized_name).strip('-')
+        return f"product-{current_product_id}"
+
+    # 1. Basic normalization (lowercase, remove special chars)
+    normalized = re.sub(r'[^\w\s-]', '', name.lower())
+    # 2. Replace spaces/underscores with dashes
+    base_slug = re.sub(r'[\s_-]+', '-', normalized).strip('-')
+    
+    # 3. Collision Handling: Check if this slug is already taken by ANOTHER product
+    slug = base_slug
+    counter = 1
+    
+    while True:
+        existing = db.query(Product).filter(
+            Product.slug == slug, 
+            Product.id != current_product_id
+        ).first()
+        
+        if not existing:
+            break
+        
+        # If slug exists, append a counter (e.g., organic-kiwi-1)
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+        
+    return slug
 
 def migrate_slugs():
     db: Session = SessionLocal()
     try:
-        # 1. Fetch all products
+        # Fetch all products to update
         products = db.query(Product).all()
-        print(f"Found {len(products)} products. Starting migration...")
+        print(f"Found {len(products)} products. Starting slug cleanup...")
 
+        updated_count = 0
         for product in products:
-            new_slug = generate_slug(product.name)
+            old_slug = product.slug
+            new_slug = generate_clean_slug(product.name, db, product.id)
             
-            # 2. Update the slug column
-            product.slug = new_slug
-            print(f"Updated: {product.name} -> {new_slug}")
+            if old_slug != new_slug:
+                product.slug = new_slug
+                print(f"Updated: '{product.name}'\n   From: {old_slug}\n   To:   {new_slug}\n")
+                updated_count += 1
+            else:
+                print(f"ℹSkipping: '{product.name}' (Slug already clean)")
 
-        # 3. Save changes
+        # Save changes to the database
         db.commit()
-        print("Successfully updated all product slugs!")
+        print(f"Successfully updated {updated_count} product slugs!")
         
     except Exception as e:
         db.rollback()

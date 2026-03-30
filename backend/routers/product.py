@@ -28,11 +28,31 @@ supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 router = APIRouter(prefix="/products", tags=["products"])
 
-def generate_slug(name: str) -> str:
+def generate_slug(name: str, db: Session, current_id: int = None) -> str:
+    # 1. Standardize the name (lowercase, remove special chars)
     normalized = re.sub(r'[^\w\s-]', '', name.lower())
-    slug = re.sub('[\s_-]+', '-', normalized).strip('-')
+    base_slug = re.sub(r'[\s_-]+', '-', normalized).strip('-')
 
-    return f"{slug}-{str(uuid.uuid4())[:8]}"
+    # 2. Start with the base name
+    slug = base_slug
+    counter = 1
+
+    # 3. Collision Check: Ensure this slug isn't already used by another product
+    while True:
+        # Check if any OTHER product already has this slug
+        exists = db.query(Product).filter(
+            Product.slug == slug, 
+            Product.id != current_id
+        ).first()
+        
+        if not exists:
+            break
+            
+        # If it exists, append a number (e.g., organic-kiwi-1)
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+
+    return slug
 
 def get_filename_from_url(url: str) -> str:
     return url.split("/")[-1]
@@ -128,15 +148,15 @@ def get_product_by_slug(slug: str, db: Session = Depends(get_db)):
     ).filter(Product.slug == slug).first()
     
     # 2. If not found, manually check against generated slugs (Temporary Fix)
-    if not product:
-        products = db.query(Product).options(joinedload(Product.images)).all()
-        for p in products:
-            # This generates 'coffee-beans' from 'Coffee Beans' on the fly
-            normalized = re.sub(r'[^\w\s-]', '', p.name.lower())
-            generated = re.sub(r'[\s_-]+', '-', normalized).strip('-')
-            if generated == slug:
-                product = p
-                break
+    # if not product:
+    #     products = db.query(Product).options(joinedload(Product.images)).all()
+    #     for p in products:
+    #         # This generates 'coffee-beans' from 'Coffee Beans' on the fly
+    #         normalized = re.sub(r'[^\w\s-]', '', p.name.lower())
+    #         generated = re.sub(r'[\s_-]+', '-', normalized).strip('-')
+    #         if generated == slug:
+    #             product = p
+    #             break
 
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -180,7 +200,7 @@ async def add_product(
     # 2. Initialize Product (Note: we no longer pass image_url here)
     db_product = Product(
         name=name,
-        slug=generate_slug(name),
+        slug=generate_slug(name, db),
         price=price,
         unit=unit,
         category_id=category_id,
@@ -244,7 +264,7 @@ async def update_product(
         raise HTTPException(status_code=404, detail="Product not found")
     
     if product.name != name:
-        product.slug = generate_slug(name)
+        product.slug = generate_slug(name, db, current_id=product_id)
 
     # 1. Update text fields
     product.name = name
