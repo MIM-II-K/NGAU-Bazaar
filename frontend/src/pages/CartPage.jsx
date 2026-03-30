@@ -151,7 +151,7 @@ const CartPage = () => {
                         <Link to={`/products/${productSlug}`} className="d-block product-img-anchor">
                           <div className="item-img-container">
                             <img
-                              src={getProductImageUrl(item.image_url)}
+                              src={resolveImageUrl(item.image_url)}
                               alt={item.product_name}
                               className="img-fluid full-photo"
                               onError={(e) => {
