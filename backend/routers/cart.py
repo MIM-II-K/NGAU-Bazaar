@@ -23,7 +23,16 @@ def get_db():
 
 # 🔹 Get or create user's cart
 def get_or_create_cart(db: Session, user_id: int):
-    cart = db.query(Cart).options(joinedload(Cart.items).joinedload(CartItem.product)).filter(Cart.user_id == user_id).first()
+    cart = (
+        db.query(Cart)
+        .options(
+            joinedload(Cart.items)
+            .joinedload(CartItem.product)
+            .joinedload(Product.images)
+            )
+            .filter(Cart.user_id == user_id)
+            .first()
+    )
 
     if not cart:
         cart = Cart(user_id=user_id)
@@ -74,7 +83,7 @@ def serialize_cart(cart):
         
         subtotal = final_price * item.quantity
         # Grabs the first image from the gallery, or None if no images exist
-        image_url = item.product.images[0].url.split("/")[-1] if item.product.images else None
+        image_url = item.product.images[0].url if item.product.images else None
         
         items.append({
             "id": item.id,
@@ -162,11 +171,16 @@ def add_to_cart(item: CartItemCreate, db: Session = Depends(get_db), user=Depend
 
     # 4. RE-FETCH with joinedload so images are included in the response
     # This is the "magic" that fixes your frontend image issue
-    final_cart = db.query(Cart).options(
+    final_cart = (
+        db.query(Cart)
+        .options(
         joinedload(Cart.items)
         .joinedload(CartItem.product)
         .joinedload(Product.images)
-    ).filter(Cart.id == cart.id).first()
+    )
+    .filter(Cart.id == cart.id)
+    .first()
+)
 
     return serialize_cart(final_cart)
 # ---------------- UPDATE ITEM QUANTITY ----------------
@@ -191,8 +205,19 @@ def update_cart_item(item: CartItemCreate, db: Session = Depends(get_db), user=D
         cart_item.quantity = item.quantity
 
     db.commit()
-    db.refresh(cart)
-    return serialize_cart(cart)
+
+    final_cart = (
+        db.query(Cart)
+        .options(
+            joinedload(Cart.items)
+            .joinedload(CartItem.product)
+            .joinedload(Product.images)
+        )
+        .filter(Cart.id == cart.id)
+        .first()
+    )
+
+    return serialize_cart(final_cart)
 
 
 # ---------------- REMOVE ITEM FROM CART ----------------
@@ -212,8 +237,19 @@ def remove_from_cart(product_id: int, db: Session = Depends(get_db), user=Depend
 
     db.delete(cart_item)
     db.commit()
-    db.refresh(cart)
-    return serialize_cart(cart)
+
+    final_cart = (
+        db.query(Cart)
+        .options(
+            joinedload(Cart.items)
+            .joinedload(CartItem.product)
+            .joinedload(Product.images)
+        )
+        .filter(Cart.id == cart.id)
+        .first()
+    )
+
+    return serialize_cart(final_cart)
 
 @router.post("/checkout")
 def checkout_cart(data: CartCheckoutResponse, db: Session = Depends(get_db), user=Depends(get_current_user)):
