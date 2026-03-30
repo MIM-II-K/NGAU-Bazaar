@@ -138,6 +138,7 @@ const CartPage = () => {
             {/* ITEM LIST */}
             <Col lg={8}>
               {cart.items.map((item) => {
+                console.log("Rendering item:", item);
                 const productSlug = item.product?.slug || item.slug;
                 const hasDiscount = item.discount_percentage > 0;
 
@@ -151,11 +152,15 @@ const CartPage = () => {
                           <div className="item-img-container">
                             <img
                               src={
-                                // Try item level first, then nested product images array, then product level
                                 getProductImageUrl(
+                                  // 1. Check if the backend sent a direct 'image_url' in the cart row
                                   item.image_url ||
-                                  item.product?.images?.[0]?.url ||
-                                  item.product?.image_url
+                                  // 2. Check if it's nested in the product object (Common in Supabase Joins)
+                                  item.product?.image_url ||
+                                  // 3. Check the images array (Which you mentioned works on other pages)
+                                  (item.product?.images && item.product.images[0]?.url) ||
+                                  // 4. Check if the array is directly on the item
+                                  (item.images && item.images[0]?.url)
                                 )
                               }
                               alt={item.product_name}
