@@ -12,7 +12,7 @@ import '../styles/cart.css';
 
 const API_BASE_URL = "https://ngau-bazaar.onrender.com";
 const DELIVERY_CHARGE = 100;
-const TAX_RATE = 0.13; // 13% Tax
+const TAX_RATE = 0.13;
 const fallbackImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23f8f9fa'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='%23adb5bd'%3ENo Image%3C/text%3E%3C/svg%3E";
 
 const CartPage = () => {
@@ -36,6 +36,9 @@ const CartPage = () => {
     return () => Object.values(debounceTimer.current).forEach(clearTimeout);
   }, []);
 
+  // ✅ FIX: This is now the single image resolver used everywhere in this file.
+  // It passes API_BASE_URL as a fallback so images load even if VITE_API_URL
+  // is not set in Vercel environment variables.
   const resolveImageUrl = (path) => {
     return getProductImageUrl(path, API_BASE_URL);
   };
@@ -61,7 +64,6 @@ const CartPage = () => {
   const handleUpdate = (product_id, newQty) => {
     if (newQty < 1) return;
 
-    // Optimistic UI Update
     setCart(prev => {
       const updatedItems = prev.items.map(item =>
         item.product_id === product_id ? { ...item, quantity: newQty } : item
@@ -138,19 +140,22 @@ const CartPage = () => {
             {/* ITEM LIST */}
             <Col lg={8}>
               {cart.items.map((item) => {
-                console.log("Rendering item:", item);
                 const productSlug = item.product?.slug || item.slug;
                 const hasDiscount = item.discount_percentage > 0;
 
                 return (
                   <div key={item.product_id} className="bazaar-item-row mb-4" data-aos="fade-up">
                     <Row className="align-items-center g-0">
+
                       {/* Image Section */}
-                      {/* Image Section inside cart.items.map */}
                       <Col xs={4} md={3}>
                         <Link to={`/products/${productSlug}`} className="d-block product-img-anchor">
                           <div className="item-img-container">
                             <img
+                              // ✅ FIX: was getProductImageUrl(item.image_url) — no base URL passed.
+                              // Now uses resolveImageUrl() which includes API_BASE_URL as fallback,
+                              // so relative paths like "static/product-images/photo.jpg" resolve correctly
+                              // even when VITE_API_URL is not set in Vercel.
                               src={resolveImageUrl(item.image_url)}
                               alt={item.product_name}
                               className="img-fluid full-photo"
@@ -171,7 +176,6 @@ const CartPage = () => {
                       <Col xs={8} md={9} className="ps-3 ps-md-4">
                         <div className="d-flex justify-content-between align-items-start">
                           <div className="pe-2">
-                            {/* Navigation via name (Slug-based) */}
                             <Link to={`/products/${productSlug}`} className="bazaar-product-link">
                               <h5 className="fw-bold mb-1">{item.product_name}</h5>
                             </Link>
