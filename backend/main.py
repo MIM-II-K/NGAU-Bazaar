@@ -28,6 +28,7 @@ from routers.payment import router as payment_router
 from routers.flash_deals import router as flash_deals_router
 from routers.otp import router as otp_router
 from routers.set_password import router as set_password_router
+from routers.invoice import router as invoice_router
 
 # --- 3. Database Initialization ---
 # This creates the new tables (ProductImage, ProductVariant, Review) automatically in dev
@@ -79,6 +80,7 @@ app.include_router(payment_router)
 app.include_router(flash_deals_router)
 app.include_router(otp_router)
 app.include_router(set_password_router)
+app.include_router(invoice_router)
 
 # --- 7. Static Files Setup ---
 # Main directory for all uploads
