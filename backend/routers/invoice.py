@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
 from models.order import Order, OrderItem
@@ -80,6 +80,7 @@ def download_invoice(
 @router.post("/{order_id}/send-email")
 def resend_invoice_email(
     order_id: str, 
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db), 
     user=Depends(get_current_user)
 ):
@@ -97,11 +98,19 @@ def resend_invoice_email(
     filename = f"invoice_order_{order.id}.pdf"
     generate_invoice_pro(order, order.user, filename)
 
-    send_email(
-        to_email=order.user.email,
-        subject=f"Your Invoice for Order #{order.id[:8]}",
-        body=f"Hello {order.user.username}, please find your requested invoice attached.",
-        attachment_path=filename
-    )
+    def process_email():
+        filename = f"temp_invoice_{order.id}.pdf"
+        generate_invoice_pro(order, order.user, filename)
 
+        body = f"<h2>Payment verified</h2><p>Hello {order.user.username}, your invoice is attached.</p>"
+        send_email(
+            order.user.email,
+            f"Invoice #{order.id[:8]} - NGAU Bazaar",
+            body,
+            filename
+        )
+
+        if os.path.exists(filename):
+            os.remove(filename)
+    background_tasks.add_task(process_email)
     return {"message": "Invoice email sent successfully"}

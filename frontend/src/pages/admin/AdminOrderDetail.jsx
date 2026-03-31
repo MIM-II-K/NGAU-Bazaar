@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Card, Button, Spinner, Alert, Row, Col, Image, Container, Form } from "react-bootstrap";
-import { FiPackage, FiTruck, FiCheckCircle, FiPrinter, FiMail, FiMapPin, FiCreditCard } from "react-icons/fi";
+import { FiPackage, FiTruck, FiCheckCircle, FiPrinter, FiMail, FiMapPin, FiCreditCard, FiDownload } from "react-icons/fi";
 import apiClient from "../../utils/api";
 import "../../styles/order-detail.css";
 
@@ -21,7 +21,6 @@ const AdminOrderDetail = () => {
     try {
       setLoading(true);
       setError("");
-      // This path must match your FastAPI route: @router.get("/admin/{order_id}")
       const data = await apiClient.get(`/orders/admin/${orderId}`);
       setOrder(data);
     } catch (err) {
@@ -36,10 +35,37 @@ const AdminOrderDetail = () => {
       setUpdating(true);
       await apiClient.put(`/orders/${orderId}/status?status=${newStatus}`);
       setOrder({ ...order, status: newStatus });
+      
+      // Auto-trigger invoice if status changed to paid
+      if (newStatus === "paid") {
+        handleSendInvoice(true); 
+      }
     } catch (err) {
       alert("Error: " + (err.response?.data?.detail || "Update failed"));
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleSendInvoice = async (isAuto = false) => {
+    try {
+      setUpdating(true);
+      await apiClient.post(`/invoices/${orderId}/send-email`);
+      if (!isAuto) alert("Invoice sent successfully to " + order.email);
+    } catch (err) {
+      if (!isAuto) alert("Failed to send: " + (err.response?.data?.detail || "Network error"));
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleDownloadInvoice = async () => {
+    try {
+      // Use window.open or a direct link for the FileResponse
+      const baseURL = apiClient.defaults.baseURL;
+      window.open(`${baseURL}/invoices/${orderId}`, '_blank');
+    } catch (err) {
+      alert("Could not download invoice.");
     }
   };
 
@@ -57,7 +83,6 @@ const AdminOrderDetail = () => {
     </div>
   );
 
-  // FIX: Early return if order is null to prevent "Cannot read property of null"
   if (error || !order) return (
     <Container className="py-5">
       <Alert variant="danger" className="rounded-4 shadow-sm text-center">
@@ -68,9 +93,8 @@ const AdminOrderDetail = () => {
     </Container>
   );
 
-  // SAFE CALCULATIONS
   const subtotal = order?.items?.reduce((sum, item) => sum + (Number(item.price || 0) * (item.quantity || 0)), 0) || 0;
-  const tax = subtotal * 0.13; 
+  const tax = subtotal * 0.13;
   const delivery = 100;
   const total = subtotal + tax + delivery;
 
@@ -87,11 +111,11 @@ const AdminOrderDetail = () => {
         </div>
 
         <div className="d-flex gap-2">
-          <Button variant="outline-dark" className="d-flex align-items-center gap-2">
-            <FiPrinter /> Print Invoice
+          <Button variant="outline-dark" className="d-flex align-items-center gap-2" onClick={handleDownloadInvoice}>
+            <FiDownload /> Download PDF
           </Button>
-          <Button variant="primary" className="d-flex align-items-center gap-2">
-            <FiMail /> Contact Customer
+          <Button variant="primary" className="d-flex align-items-center gap-2" onClick={() => handleSendInvoice(false)} disabled={updating}>
+            <FiMail /> {updating ? "Sending..." : "Email Invoice"}
           </Button>
         </div>
       </div>
@@ -231,7 +255,15 @@ const AdminOrderDetail = () => {
               </div>
               <h6 className="fw-bold">Payment Status: {order?.status?.toUpperCase()}</h6>
               <p className="text-muted small">Method: Online Wire Transfer</p>
-              <Button variant="outline-primary" size="sm" className="w-100">Verify Payment</Button>
+              <Button 
+                variant={order.status === 'pending' ? "primary" : "outline-success"} 
+                size="sm" 
+                className="w-100"
+                onClick={() => handleStatusChange('paid')}
+                disabled={updating || order.status !== 'pending'}
+              >
+                {updating ? 'Processing...' : order.status === 'pending' ? 'Verify & Send Invoice' : 'Payment Verified'}
+              </Button>
             </Card.Body>
           </Card>
         </Col>

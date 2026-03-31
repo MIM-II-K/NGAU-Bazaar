@@ -5,7 +5,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 
-def send_email(to_email, subject, body, attachment_path=None):
+def send_email(to_email, subject, body_html, attachment_path=None):
     EMAIL_HOST = os.getenv("EMAIL_HOST")
     EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
     EMAIL_USER = os.getenv("EMAIL_USER")
@@ -16,16 +16,13 @@ def send_email(to_email, subject, body, attachment_path=None):
     msg["From"] = f"NGAU Bazaar <{EMAIL_USER}>"
     msg["To"] = to_email
     msg["Subject"] = subject
-    msg.attach(MIMEText(body, "plain"))
+    msg.attach(MIMEText(body_html, "html"))
 
     if attachment_path and os.path.exists(attachment_path):
-        try:
-            with open(attachment_path, "rb") as f:
-                part = MIMEApplication(f.read(), Name=os.path.basename(attachment_path))
-                part["Content-Disposition"] = f'attachment; filename="{os.path.basename(attachment_path)}"'
-                msg.attach(part)
-        except Exception as e:
-            print(f"File attachment error: {e}")
+        with open(attachment_path, "rb") as f:
+            part = MIMEApplication(f.read(), Name=os.path.basename(attachment_path))
+            part["Content-Disposition"] = f'attachment; filename="{os.path.basename(attachment_path)}"'
+            msg.attach(part)
 
     # 2. The Connection Logic
     server = None
