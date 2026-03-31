@@ -1,16 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session, joinedload
+from datetime import datetime
+from decimal import Decimal
+
+from database import SessionLocal
 from models.order import Order, OrderItem
 from models.product import Product
 from schemas.order import (
     OrderItemHistoryResponse, OrderResponse, OrderCreate, 
     OrderHistoryResponse, OrderAdminResponse, OrderItemAdminResponse
 )
-from database import SessionLocal
 from utils.dependencies import get_current_user, admin_only
 from utils.email import send_email
-from datetime import datetime
-from decimal import Decimal
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -48,17 +49,22 @@ def get_all_orders(
     
     result = []
     for order in orders:
-        items = [
-            OrderItemAdminResponse(
+        items_list = []
+        for i in order.items:
+            # Null-safety for deleted products
+            p_name = i.product.name if i.product else "Deleted Product"
+            p_unit = i.product.unit if i.product else "pc"
+            img_url = i.product.images[0].url if (i.product and i.product.images) else ""
+
+            items_list.append(OrderItemAdminResponse(
                 id=i.id,
                 product_id=i.product_id,
-                product_name=i.product.name if i.product else "Unknown",
-                product_image=i.product.images[0].url if i.product and i.product.images else "",
-                price=i.price,
-                quantity=i.quantity,
-                unit=i.product.unit if i.product else "pc"
-            ) for i in order.items
-        ]
+                product_name=p_name,
+                product_image=img_url,
+                price=Decimal(str(i.price or 0)),
+                quantity=i.quantity or 0,
+                unit=p_unit
+            ))
         
         result.append(OrderAdminResponse(
             id=order.id,
@@ -72,9 +78,9 @@ def get_all_orders(
             province=order.province or "N/A",
             district=order.district or "N/A",
             address=order.address or "N/A",
-            postal_code=order.postal_code,
-            notes=order.notes,
-            items=items
+            postal_code=order.postal_code or "",
+            notes=order.notes or "",
+            items=items_list
         ))
     return result
 
@@ -83,6 +89,7 @@ def get_all_orders(
 def update_order_status(
     order_id: str,
     status: str,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     user=Depends(admin_only)
 ):
@@ -94,6 +101,7 @@ def update_order_status(
     if status not in allowed_status:
         raise HTTPException(status_code=400, detail=f"Invalid status. Allowed: {allowed_status}")
 
+    # Logic-based status transitions
     transitions = {
         "pending": ["paid", "cancelled"],
         "paid": ["shipped", "cancelled"],
@@ -103,16 +111,19 @@ def update_order_status(
     }
 
     if status not in transitions[order.status]:
-        raise HTTPException(status_code=400, detail=f"Cannot change status from {order.status} to {status}")
+        raise HTTPException(status_code=400, detail=f"Cannot change from {order.status} to {status}")
 
     order.status = status
     db.commit()
+    db.refresh(order)
 
+    # Use background task for shipping notification email
     if status in ["shipped", "delivered"]:
-        send_email(
+        background_tasks.add_task(
+            send_email,
             to_email=order.user.email,
-            subject=f"Your Order #{order.id} is now {status}",
-            body=f"Hello {order.user.username}, your order status is now {status}."
+            subject=f"NGAU Bazaar: Order #{order.id} is now {status}",
+            body=f"Hello {order.user.username}, your order has been marked as {status}."
         )
 
     return {"message": "Status updated", "order_id": order.id, "new_status": order.status}
@@ -157,7 +168,7 @@ def get_order_history(db: Session = Depends(get_db), user=Depends(get_current_us
                     product_id=item.product_id,
                     product_name=item.product.name if item.product else "Unknown",
                     quantity=item.quantity or 0,
-                    price=Decimal(item.price or 0)
+                    price=Decimal(str(item.price or 0))
                 ) for item in order.items
             ]
         ) for order in orders
@@ -176,16 +187,17 @@ def get_order_detail(order_id: str, db: Session = Depends(get_db), user=Depends(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
+    total = sum(item.quantity * item.price for item in order.items)
     return {
         "id": order.id,
         "status": order.status,
         "items": [
             {
-                "product_name": item.product.name,
+                "product_name": item.product.name if item.product else "Deleted Product",
                 "quantity": item.quantity,
                 "price": float(item.price),
                 "subtotal": float(item.quantity * item.price)
             } for item in order.items
         ],
-        "total": float(sum(item.quantity * item.price for item in order.items))
+        "total": float(total)
     }
