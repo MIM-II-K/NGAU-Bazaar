@@ -64,17 +64,10 @@ app.add_middleware(
 async def debug_exception_handler(request: Request, exc: Exception):
     print(f"Global Error caught: {exc}")
     traceback.print_exc()
-    
-    # Manually add the CORS origin to the error response
-    origin = request.headers.get("origin")
-    response = JSONResponse(
+    return JSONResponse(
         status_code=500,
         content={"detail": "Internal Server Error", "traceback": str(exc)}
     )
-    if origin in origins:
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-    return response
 
 # --- 6. Include Routers ---
 app.include_router(user_router)
