@@ -67,7 +67,7 @@ def get_all_orders(
             ))
         
         result.append(OrderAdminResponse(
-            id=order.id,
+            id=str(order.id),
             user_id=order.user_id,
             username=order.user.username if order.user else "Deleted User",
             email=order.user.email if order.user else "N/A",
