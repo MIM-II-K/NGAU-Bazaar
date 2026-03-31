@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Card, Button, Spinner, Alert, Row, Col, Image, Container, Form } from "react-bootstrap";
+import { Card, Badge, Button, Spinner, Alert, Row, Col, Image, Container, Form, ListGroup } from "react-bootstrap";
+import { motion } from "framer-motion";
 import { FiPackage, FiTruck, FiCheckCircle, FiPrinter, FiMail, FiMapPin, FiCreditCard } from "react-icons/fi";
 import apiClient from "../../utils/api";
 import "../../styles/order-detail.css";
@@ -12,21 +13,16 @@ const AdminOrderDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updating, setUpdating] = useState(false);
-  
-  useEffect(() => { 
-    if (orderId) fetchOrder(); 
-  }, [orderId]);
+
+  useEffect(() => { if (orderId) fetchOrder(); }, [orderId]);
 
   const fetchOrder = async () => {
     try {
       setLoading(true);
-      setError("");
-      // Ensure this matches your backend @router.get("/admin/{order_id}")
       const data = await apiClient.get(`/orders/admin/${orderId}`);
       setOrder(data);
     } catch (err) {
-      console.error("Fetch error:", err);
-      setError(err?.response?.data?.detail || "Order not found or access denied.");
+      setError(err?.response?.data?.detail || "Order not found");
     } finally {
       setLoading(false);
     }
@@ -35,7 +31,7 @@ const AdminOrderDetail = () => {
   const handleStatusChange = async (newStatus) => {
     try {
       setUpdating(true);
-      // Standard status update endpoint
+      // REMOVE "/admin" from the URL below
       await apiClient.put(`/orders/${orderId}/status?status=${newStatus}`);
       setOrder({ ...order, status: newStatus });
     } catch (err) {
@@ -59,25 +55,10 @@ const AdminOrderDetail = () => {
     </div>
   );
 
-  // CRITICAL FIX: Prevent rendering logic if order is null/error exists
-  if (error || !order) return (
-    <Container className="py-5">
-      <Alert variant="danger" className="rounded-4 shadow-sm">
-        <Alert.Heading>Unable to load order</Alert.Heading>
-        <p>{error || "The requested order could not be found."}</p>
-        <hr />
-        <Button variant="outline-danger" onClick={() => navigate(-1)}>
-          Return to Dashboard
-        </Button>
-      </Alert>
-    </Container>
-  );
-
-  // Calculations with Null-Safety and Type Casting
-  const items = order.items || [];
-  const subtotal = items.reduce((sum, item) => sum + (Number(item.price || 0) * (item.quantity || 0)), 0);
-  const tax = order.tax_amount ? Number(order.tax_amount) : (subtotal * 0.13); 
-  const delivery = order.delivery_charge ? Number(order.delivery_charge) : 100;
+  // Logic matched with CheckoutPage.js
+  const subtotal = order.items?.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0) || 0;
+  const tax = subtotal * 0.13; // VAT 13%
+  const delivery = 100; // Fixed delivery fee
   const total = subtotal + tax + delivery;
 
   return (
@@ -88,12 +69,8 @@ const AdminOrderDetail = () => {
           <Button variant="outline-secondary" size="sm" className="mb-2" onClick={() => navigate(-1)}>
             ← Back to Fleet
           </Button>
-          <h2 className="fw-bold mb-0">
-            Order <span className="text-primary">#{order.id?.substring(0, 8)}</span>
-          </h2>
-          <small className="text-muted">
-            Placed on {order.created_at ? new Date(order.created_at).toLocaleString('en-GB') : 'Unknown Date'}
-          </small>
+          <h2 className="fw-bold mb-0">Order <span className="text-primary">#{order.id.substring(0, 8)}</span></h2>
+          <small className="text-muted">Placed on {new Date(order.created_at).toLocaleString('en-GB')}</small>
         </div>
 
         <div className="d-flex gap-2">
@@ -109,6 +86,7 @@ const AdminOrderDetail = () => {
       <Row className="g-4">
         {/* LEFT COLUMN: Order Items & Timeline */}
         <Col lg={8}>
+          {/* Status Tracker */}
           <Card className="border-0 shadow-sm rounded-4 mb-4">
             <Card.Body className="p-4">
               <h6 className="fw-bold mb-4">Order Progress</h6>
@@ -126,9 +104,10 @@ const AdminOrderDetail = () => {
             </Card.Body>
           </Card>
 
+          {/* Items Table */}
           <Card className="border-0 shadow-sm rounded-4">
             <Card.Header className="bg-white border-0 py-3">
-              <h6 className="fw-bold mb-0">Package Contents ({items.length} items)</h6>
+              <h6 className="fw-bold mb-0">Package Contents ({order.items.length} items)</h6>
             </Card.Header>
             <Card.Body className="p-0">
               <div className="table-responsive">
@@ -142,7 +121,7 @@ const AdminOrderDetail = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map((item) => (
+                    {order.items.map((item) => (
                       <tr key={item.id}>
                         <td className="ps-4">
                           <div className="d-flex align-items-center gap-3">
@@ -152,19 +131,16 @@ const AdminOrderDetail = () => {
                               width={45}
                               height={45}
                               style={{ objectFit: 'cover' }}
-                              alt={item.product_name}
                             />
                             <div>
                               <div className="fw-bold text-dark">{item.product_name}</div>
-                              <small className="text-muted">ID: {item.product_id}</small>
+                              <small className="text-muted">SKU: {item.product_id}</small>
                             </div>
                           </div>
                         </td>
-                        <td>Rs. {Number(item.price).toFixed(2)}</td>
+                        <td>Rs. {item.price}</td>
                         <td>x{item.quantity}</td>
-                        <td className="text-end pe-4 fw-bold">
-                          Rs. {(Number(item.price) * item.quantity).toFixed(2)}
-                        </td>
+                        <td className="text-end pe-4 fw-bold">Rs. {(item.price * item.quantity).toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -197,7 +173,7 @@ const AdminOrderDetail = () => {
           </Card>
         </Col>
 
-        {/* RIGHT COLUMN: Controls & Customer Info */}
+        {/* RIGHT COLUMN: Customer & Internal Controls */}
         <Col lg={4}>
           <Card className="border-0 shadow-sm rounded-4 mb-4 bg-primary text-white">
             <Card.Body className="p-4">
@@ -208,11 +184,9 @@ const AdminOrderDetail = () => {
                 disabled={updating}
                 onChange={(e) => handleStatusChange(e.target.value)}
               >
-                {Object.keys(statusMap).map(s => (
-                  <option key={s} value={s} style={{color: '#000'}}>{s.toUpperCase()}</option>
-                ))}
+                {Object.keys(statusMap).map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
               </Form.Select>
-              <small className="opacity-75">Update status to notify the customer automatically.</small>
+              <small className="opacity-75">Update status to trigger customer notification.</small>
             </Card.Body>
           </Card>
 
@@ -224,13 +198,13 @@ const AdminOrderDetail = () => {
                 </div>
                 <div>
                   <h6 className="fw-bold mb-0">Delivery Address</h6>
-                  <small className="text-muted">Contact Info</small>
+                  <small className="text-muted">Customer Details</small>
                 </div>
               </div>
-              <div className="fw-bold">{order.username || "Guest"}</div>
-              <div className="text-muted small mb-3">{order.email || "No Email Provided"}</div>
+              <div className="fw-bold">{order.username}</div>
+              <div className="text-muted small mb-3">{order.email}</div>
               <div className="p-3 bg-light rounded-3 text-secondary small">
-                <strong>{order.full_name}</strong><br />
+                {order.full_name}<br />
                 {order.address}<br />
                 {order.district}, {order.province}<br />
                 Phone: {order.phone}
@@ -240,12 +214,12 @@ const AdminOrderDetail = () => {
 
           <Card className="border-0 shadow-sm rounded-4">
             <Card.Body className="p-4 text-center">
-              <div className={`display-6 mb-2 text-${statusMap[order.status]?.variant || 'secondary'}`}>
-                {statusMap[order.status]?.icon}
+              <div className={`display-6 mb-2 text-${statusMap[order.status].variant}`}>
+                {statusMap[order.status].icon}
               </div>
-              <h6 className="fw-bold">Payment Status: {order.status?.toUpperCase()}</h6>
-              <p className="text-muted small">Via: Online Marketplace Gateway</p>
-              <Button variant="outline-primary" size="sm" className="w-100">Verify Transaction</Button>
+              <h6 className="fw-bold">Payment Status: {order.status.toUpperCase()}</h6>
+              <p className="text-muted small">Method: Online Wire Transfer</p>
+              <Button variant="outline-primary" size="sm" className="w-100">Verify Payment</Button>
             </Card.Body>
           </Card>
         </Col>
