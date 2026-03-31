@@ -1,7 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Card, Badge, Button, Spinner, Alert, Row, Col, Image, Container, Form, ListGroup } from "react-bootstrap";
-import { motion } from "framer-motion";
+import { Card, Button, Spinner, Alert, Row, Col, Image, Container, Form } from "react-bootstrap";
 import { FiPackage, FiTruck, FiCheckCircle, FiPrinter, FiMail, FiMapPin, FiCreditCard } from "react-icons/fi";
 import apiClient from "../../utils/api";
 import "../../styles/order-detail.css";
@@ -14,15 +13,19 @@ const AdminOrderDetail = () => {
   const [error, setError] = useState("");
   const [updating, setUpdating] = useState(false);
 
-  useEffect(() => { if (orderId) fetchOrder(); }, [orderId]);
+  useEffect(() => {
+    if (orderId) fetchOrder();
+  }, [orderId]);
 
   const fetchOrder = async () => {
     try {
       setLoading(true);
+      setError("");
+      // This path must match your FastAPI route: @router.get("/admin/{order_id}")
       const data = await apiClient.get(`/orders/admin/${orderId}`);
       setOrder(data);
     } catch (err) {
-      setError(err?.response?.data?.detail || "Order not found");
+      setError(err?.response?.data?.detail || "Order not found. Please check the ID.");
     } finally {
       setLoading(false);
     }
@@ -31,7 +34,6 @@ const AdminOrderDetail = () => {
   const handleStatusChange = async (newStatus) => {
     try {
       setUpdating(true);
-      // REMOVE "/admin" from the URL below
       await apiClient.put(`/orders/${orderId}/status?status=${newStatus}`);
       setOrder({ ...order, status: newStatus });
     } catch (err) {
@@ -55,10 +57,21 @@ const AdminOrderDetail = () => {
     </div>
   );
 
-  // Logic matched with CheckoutPage.js
-  const subtotal = order.items?.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0) || 0;
-  const tax = subtotal * 0.13; // VAT 13%
-  const delivery = 100; // Fixed delivery fee
+  // FIX: Early return if order is null to prevent "Cannot read property of null"
+  if (error || !order) return (
+    <Container className="py-5">
+      <Alert variant="danger" className="rounded-4 shadow-sm text-center">
+        <h4 className="fw-bold">Order Not Found</h4>
+        <p>{error || "We couldn't find the details for this order ID."}</p>
+        <Button variant="danger" onClick={() => navigate(-1)}>Back to List</Button>
+      </Alert>
+    </Container>
+  );
+
+  // SAFE CALCULATIONS
+  const subtotal = order?.items?.reduce((sum, item) => sum + (Number(item.price || 0) * (item.quantity || 0)), 0) || 0;
+  const tax = subtotal * 0.13; 
+  const delivery = 100;
   const total = subtotal + tax + delivery;
 
   return (
@@ -69,8 +82,8 @@ const AdminOrderDetail = () => {
           <Button variant="outline-secondary" size="sm" className="mb-2" onClick={() => navigate(-1)}>
             ← Back to Fleet
           </Button>
-          <h2 className="fw-bold mb-0">Order <span className="text-primary">#{order.id.substring(0, 8)}</span></h2>
-          <small className="text-muted">Placed on {new Date(order.created_at).toLocaleString('en-GB')}</small>
+          <h2 className="fw-bold mb-0">Order <span className="text-primary">#{order?.id?.substring(0, 8)}</span></h2>
+          <small className="text-muted">Placed on {order?.created_at ? new Date(order.created_at).toLocaleString('en-GB') : "N/A"}</small>
         </div>
 
         <div className="d-flex gap-2">
@@ -84,7 +97,6 @@ const AdminOrderDetail = () => {
       </div>
 
       <Row className="g-4">
-        {/* LEFT COLUMN: Order Items & Timeline */}
         <Col lg={8}>
           {/* Status Tracker */}
           <Card className="border-0 shadow-sm rounded-4 mb-4">
@@ -107,7 +119,7 @@ const AdminOrderDetail = () => {
           {/* Items Table */}
           <Card className="border-0 shadow-sm rounded-4">
             <Card.Header className="bg-white border-0 py-3">
-              <h6 className="fw-bold mb-0">Package Contents ({order.items.length} items)</h6>
+              <h6 className="fw-bold mb-0">Package Contents ({order?.items?.length || 0} items)</h6>
             </Card.Header>
             <Card.Body className="p-0">
               <div className="table-responsive">
@@ -121,7 +133,7 @@ const AdminOrderDetail = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {order.items.map((item) => (
+                    {order?.items?.map((item) => (
                       <tr key={item.id}>
                         <td className="ps-4">
                           <div className="d-flex align-items-center gap-3">
@@ -138,9 +150,9 @@ const AdminOrderDetail = () => {
                             </div>
                           </div>
                         </td>
-                        <td>Rs. {item.price}</td>
+                        <td>Rs. {Number(item.price).toFixed(2)}</td>
                         <td>x{item.quantity}</td>
-                        <td className="text-end pe-4 fw-bold">Rs. {(item.price * item.quantity).toFixed(2)}</td>
+                        <td className="text-end pe-4 fw-bold">Rs. {(Number(item.price) * item.quantity).toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -201,23 +213,23 @@ const AdminOrderDetail = () => {
                   <small className="text-muted">Customer Details</small>
                 </div>
               </div>
-              <div className="fw-bold">{order.username}</div>
-              <div className="text-muted small mb-3">{order.email}</div>
+              <div className="fw-bold">{order?.username}</div>
+              <div className="text-muted small mb-3">{order?.email}</div>
               <div className="p-3 bg-light rounded-3 text-secondary small">
-                {order.full_name}<br />
-                {order.address}<br />
-                {order.district}, {order.province}<br />
-                Phone: {order.phone}
+                {order?.full_name}<br />
+                {order?.address}<br />
+                {order?.district}, {order?.province}<br />
+                Phone: {order?.phone}
               </div>
             </Card.Body>
           </Card>
 
           <Card className="border-0 shadow-sm rounded-4">
             <Card.Body className="p-4 text-center">
-              <div className={`display-6 mb-2 text-${statusMap[order.status].variant}`}>
-                {statusMap[order.status].icon}
+              <div className={`display-6 mb-2 text-${statusMap[order.status]?.variant || "secondary"}`}>
+                {statusMap[order.status]?.icon}
               </div>
-              <h6 className="fw-bold">Payment Status: {order.status.toUpperCase()}</h6>
+              <h6 className="fw-bold">Payment Status: {order?.status?.toUpperCase()}</h6>
               <p className="text-muted small">Method: Online Wire Transfer</p>
               <Button variant="outline-primary" size="sm" className="w-100">Verify Payment</Button>
             </Card.Body>
