@@ -47,18 +47,18 @@ class OrderAdminResponse(BaseModel):
     status: str
     created_at: datetime
 
-    full_name: str
-    phone: str
-    province: str
-    district: str
-    address: str
+    full_name: str | None
+    phone: str | None
+    province: str | None
+    district: str | None
+    address: str | None
     postal_code: str | None
     notes: str | None
 
-    tax_amount: Decimal
-    delivery_charge: Decimal
-    business_pan: str
-    business_reg_no: str
+    tax_amount: Decimal =Decimal("0.00")
+    delivery_charge: Decimal = Decimal("100.00")
+    business_pan: str | None
+    business_reg_no: str | None 
 
 
     items: List[OrderItemAdminResponse]
