@@ -80,6 +80,10 @@ def get_all_orders(
             address=order.address or "N/A",
             postal_code=order.postal_code or "",
             notes=order.notes or "",
+            tax_amount=Decimal(str(getattr(order, 'tax_amount', 0))),
+            delivery_charge=Decimal(str(getattr(order, 'delivery_charge', 100))),
+            business_pan=getattr(order, 'business_pan', None),
+            business_reg_no=getattr(order, 'business_reg_no', None),
             items=items_list
         ))
     return result
