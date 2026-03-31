@@ -88,6 +88,66 @@ def get_all_orders(
         ))
     return result
 
+# ---------------- ADMIN: GET SINGLE ORDER DETAIL ----------------
+@router.get("/admin/{order_id}", response_model=OrderAdminResponse)
+def get_admin_order_detail(
+    order_id: str, 
+    db: Session = Depends(get_db), 
+    user=Depends(admin_only)
+):
+    # Fetch the order with all necessary relations (user, items, products, images)
+    order = (
+        db.query(Order)
+        .options(
+            joinedload(Order.user),
+            joinedload(Order.items).joinedload(OrderItem.product).joinedload(Product.images)
+        )
+        .filter(Order.id == order_id)
+        .first()
+    )
+
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    # Map items to the admin response schema
+    items_list = []
+    for i in order.items:
+        p_name = i.product.name if i.product else "Deleted Product"
+        p_unit = i.product.unit if i.product else "pc"
+        img_url = i.product.images[0].url if (i.product and i.product.images) else ""
+
+        items_list.append(OrderItemAdminResponse(
+            id=i.id,
+            product_id=i.product_id,
+            product_name=p_name,
+            product_image=img_url,
+            price=Decimal(str(i.price or 0)),
+            quantity=i.quantity or 0,
+            unit=p_unit
+        ))
+
+    # Return the full admin-level order data
+    return OrderAdminResponse(
+        id=str(order.id),
+        user_id=order.user_id,
+        username=order.user.username if order.user else "Deleted User",
+        email=order.user.email if order.user else "N/A",
+        status=order.status,
+        created_at=order.created_at,
+        full_name=order.full_name or "N/A",
+        phone=order.phone or "N/A",
+        province=order.province or "N/A",
+        district=order.district or "N/A",
+        address=order.address or "N/A",
+        postal_code=order.postal_code or "",
+        notes=order.notes or "",
+        tax_amount=Decimal(str(getattr(order, 'tax_amount', 0))),
+        delivery_charge=Decimal(str(getattr(order, 'delivery_charge', 100))),
+        business_pan=getattr(order, 'business_pan', None),
+        business_reg_no=getattr(order, 'business_reg_no', None),
+        items=items_list
+    )
+
 # ---------------- ADMIN: UPDATE STATUS ----------------
 @router.put("/{order_id}/status")
 def update_order_status(
