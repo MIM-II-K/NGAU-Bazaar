@@ -31,6 +31,9 @@ class Order(Base):
     postal_code = Column(String, nullable=True)
     notes = Column(String, nullable=True)
 
+    business_pan = Column(String, default="612345678")  # for business customers
+    business_reg_no = Column(String, default="REG-12345-PALPA")  # for business customers
+
     # created_at in naive Nepal time
     created_at = Column(DateTime, default=nepal_now)
 
@@ -40,6 +43,9 @@ class Order(Base):
     payment_ref = Column(String, nullable=True)  # e.g. Stripe payment intent ID
     payment_method = Column(String, nullable=True)  # e.g. card, mobile_wallet
     paid_at = Column(DateTime, nullable=True)  # when payment was completed
+
+    tax_amount = Column(Numeric(10, 2), default=0.00)
+    delivery_charge = Column(Numeric(10, 2), default=100.00)
 
     # Relationships
     user = relationship("User", back_populates="orders")

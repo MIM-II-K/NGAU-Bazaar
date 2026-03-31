@@ -67,9 +67,13 @@ const ProductDetail = () => {
     useEffect(() => {
         AOS.init({ duration: 800, once: true });
         if (slug) {
+            setProduct(null);
+            setRelatedProducts([]);
+            setLoading(true);
+            setActiveImage(0);
             fetchProduct();
         }
-        window.scrollTo(0, 0); // Ensure page scrolls to top on product change
+        window.scrollTo({top: 0, behavior: 'smooth'}); // Ensure page scrolls to top on product change
     }, [slug]);
 
 

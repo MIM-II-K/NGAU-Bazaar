@@ -15,7 +15,8 @@ const ProductCard = ({ product }) => {
     const [loading, setLoading] = useState(false);
 
     const handleCardClick = () => {
-        navigate(`/products/${product.slug}`);
+        const identifier = product.slug || product.id
+        navigate(`/products/${identifier}`);
     };
 
     const handleQuickAdd = async (e) => {
@@ -52,7 +53,7 @@ const ProductCard = ({ product }) => {
                 <img
                     // 2. USE THE HELPER HERE
                     src={
-                        product.images && product.images.length > 0 
+                        product.images?.length > 0 
                         ? getProductImageUrl(product.images[0].url, API_BASE_URL) 
                         : fallbackImage
                     }

@@ -4,22 +4,18 @@ from database import SessionLocal
 from models.product import Product
 
 def generate_clean_slug(name: str, db: Session, current_product_id: int) -> str:
-    """
-    Generates a URL-friendly slug and ensures uniqueness within the database.
-    """
     if not name:
         return f"product-{current_product_id}"
 
-    # 1. Basic normalization (lowercase, remove special chars)
+    # Normalize: lower, remove special chars, replace spaces with dashes
     normalized = re.sub(r'[^\w\s-]', '', name.lower())
-    # 2. Replace spaces/underscores with dashes
     base_slug = re.sub(r'[\s_-]+', '-', normalized).strip('-')
     
-    # 3. Collision Handling: Check if this slug is already taken by ANOTHER product
     slug = base_slug
     counter = 1
     
     while True:
+        # Optimization: Only check for collisions with OTHER products
         existing = db.query(Product).filter(
             Product.slug == slug, 
             Product.id != current_product_id
@@ -28,7 +24,6 @@ def generate_clean_slug(name: str, db: Session, current_product_id: int) -> str:
         if not existing:
             break
         
-        # If slug exists, append a counter (e.g., organic-kiwi-1)
         slug = f"{base_slug}-{counter}"
         counter += 1
         
@@ -37,29 +32,26 @@ def generate_clean_slug(name: str, db: Session, current_product_id: int) -> str:
 def migrate_slugs():
     db: Session = SessionLocal()
     try:
-        # Fetch all products to update
         products = db.query(Product).all()
-        print(f"Found {len(products)} products. Starting slug cleanup...")
+        print(f"Found {len(products)} products. Starting migration...")
 
         updated_count = 0
         for product in products:
-            old_slug = product.slug
-            new_slug = generate_clean_slug(product.name, db, product.id)
+            # Explicitly store name to handle None types
+            product_name = product.name or f"Product {product.id}"
+            new_slug = generate_clean_slug(product_name, db, product.id)
             
-            if old_slug != new_slug:
+            if product.slug != new_slug:
+                print(f"Updating: '{product_name}' | {product.slug} -> {new_slug}")
                 product.slug = new_slug
-                print(f"Updated: '{product.name}'\n   From: {old_slug}\n   To:   {new_slug}\n")
                 updated_count += 1
-            else:
-                print(f"ℹSkipping: '{product.name}' (Slug already clean)")
-
-        # Save changes to the database
+        
         db.commit()
-        print(f"Successfully updated {updated_count} product slugs!")
+        print(f"Success! Updated {updated_count} slugs.")
         
     except Exception as e:
         db.rollback()
-        print(f"Error during migration: {e}")
+        print(f"Migration failed: {e}")
     finally:
         db.close()
 

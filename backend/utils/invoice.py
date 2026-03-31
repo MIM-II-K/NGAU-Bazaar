@@ -24,6 +24,9 @@ except:
     COMPANY_NAME = "NGAU Bazaar"
     COMPANY_ADDRESS = "Dholimara, Jalpa, Palpa, Nepal"
     SUPPORT_EMAIL = "support@ngau-bazaar.com"
+    COMPANY_PAN = "612345678"
+    COMPANY_REG_NO = "REG-12345-PALPA"
+    RETURN_POLICY = "Returns accepted within 7 days of delivery. Contact support for assistance."
 
     TAX_PERCENT = 13
     SHIPPING_COST = 150.00
@@ -65,6 +68,7 @@ def generate_invoice_pro(order, user, filename=None):
 
     header_left.extend([
         Paragraph(COMPANY_NAME, styles['ModernTitle']),
+        Paragraph(f"PAN: {COMPANY_PAN} | Reg: {COMPANY_REG_NO}", styles['MutedText']),
         Paragraph(COMPANY_ADDRESS, styles['MutedText'])
     ])
 
@@ -217,6 +221,12 @@ def generate_invoice_pro(order, user, filename=None):
 
 
     # ---------------- FOOTER ----------------
+    elements.append(Spacer(1, 20))
+    elements.append(
+        Paragraph(f"Return Policy: </b> {RETURN_POLICY}",
+            styles['MutedText']
+        )
+    )
     elements.append(Spacer(1, 45))
     elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.lightgrey))
     elements.append(Spacer(1, 10))

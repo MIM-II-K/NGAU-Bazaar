@@ -372,7 +372,7 @@ def get_order_detail(order_id: str, db: Session = Depends(get_db), user=Depends(
     }
 
 @router.get("/{order_id}/invoice")
-def download_invoice(order_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def download_invoice(order_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
     order = db.query(Order).options(joinedload(Order.items).joinedload(OrderItem.product)) \
               .filter(Order.id == order_id, Order.user_id == user.id).first()
     

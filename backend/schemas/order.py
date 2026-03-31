@@ -55,6 +55,12 @@ class OrderAdminResponse(BaseModel):
     postal_code: str | None
     notes: str | None
 
+    tax_amount: Decimal
+    delivery_charge: Decimal
+    business_pan: str
+    business_reg_no: str
+
+
     items: List[OrderItemAdminResponse]
 
     class Config:

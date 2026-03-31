@@ -13,7 +13,7 @@ const AdminOrderDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updating, setUpdating] = useState(false);
-
+  
   useEffect(() => { if (orderId) fetchOrder(); }, [orderId]);
 
   const fetchOrder = async () => {
