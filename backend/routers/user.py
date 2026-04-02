@@ -29,6 +29,8 @@ from utils.email import send_email
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
+avatar_bucket = os.getenv("AVATAR_BUCKET", "profiles")
+
 router = APIRouter(prefix="/users", tags=["users"])
 
 # ------------------------------------------------------------------
@@ -150,12 +152,16 @@ async def update_current_user(
             content = await profile_image.read()
             
             # FIX: Uploading with correct content-type helps prevent 500 errors
-            supabase.storage.from_("profiles").upload(
+            supabase.storage.from_(avatar_bucket).upload(
                 path=file_path, 
                 file=content,
-                file_options={"content-type": profile_image.content_type}
+                file_options={
+                    "content-type": profile_image.content_type,
+                    "x-upsert": "true"}  # Ensure it overwrites existing file
             )
-            current_user.profile_image_url = supabase.storage.from_("profiles").get_public_url(file_path)
+
+            public_url = supabase.storage.from_("profiles").get_public_url(file_path)
+            current_user.profile_image_url = public_url
 
         db.commit()
         db.refresh(current_user)
