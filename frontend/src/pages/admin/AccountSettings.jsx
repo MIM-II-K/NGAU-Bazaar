@@ -46,6 +46,11 @@ const AccountSettings = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (formData.password && formData.password !== formData.confirmPassword) {
+      setStatus({ type: 'danger', msg: 'Passwords do not match.' });
+      return;
+    }
+
     setLoading(true);
     try {
       const data = new FormData();
@@ -56,12 +61,14 @@ const AccountSettings = () => {
       if (formData.password) data.append('password', formData.password);
       if (profileImage) data.append('profile_image', profileImage);
 
-      const updatedUser = await userApi.updateProfile(data);
+      const response = await userApi.updateProfile(data);
+      const {user: updatedUser, access_token} = response;
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
+      localStorage.setItem('token', access_token);
       setStatus({ type: 'success', msg: 'Profile synced!' });
     } catch (err) {
-      setStatus({ type: 'danger', msg: 'Update failed.' });
+      setStatus({ type: 'danger', msg: err.message || 'Update failed.' });
     } finally {
       setLoading(false);
     }

@@ -156,7 +156,13 @@ async def update_current_user(
 
     db.commit()
     db.refresh(current_user)
-    return current_user
+
+    new_token = create_access_token(user_id=current_user.id, role=current_user.role)
+    return {
+        "user": current_user,
+        "access_token": new_token,
+        "token_type": "bearer",
+    }
 
 # ------------------------------------------------------------------
 # GET USER BY ID
