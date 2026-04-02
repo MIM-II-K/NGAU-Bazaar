@@ -124,8 +124,7 @@ def get_current_user_profile(
 # ------------------------------------------------------------------
 # UPDATE PROFILE
 # ------------------------------------------------------------------
-
-@router.put("/me", response_model=UserResponse)
+@router.put("/me") # Remove response_model to send the token back too
 async def update_current_user(
     username: str = Form(...),
     email: str = Form(...),
@@ -136,27 +135,43 @@ async def update_current_user(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # Update logic
-    current_user.username = username
-    current_user.email = email
-    current_user.phone = phone
-    current_user.bio = bio
-    
-    if password:
-        current_user.hashed_password = hash_password(password)
-
-    if profile_image:
-        file_ext = profile_image.filename.split(".")[-1]
-        file_path = f"avatars/{current_user.id}_{uuid.uuid4()}.{file_ext}"
-        content = await profile_image.read()
+    try:
+        current_user.username = username
+        current_user.email = email
+        current_user.phone = phone
+        current_user.bio = bio
         
-        # Upload to Supabase 'profiles' bucket
-        supabase.storage.from_("profiles").upload(path=file_path, file=content)
-        current_user.profile_image_url = supabase.storage.from_("profiles").get_public_url(file_path)
+        if password:
+            current_user.hashed_password = hash_password(password)
 
-    db.commit()
-    db.refresh(current_user)
-    return current_user
+        if profile_image:
+            file_ext = profile_image.filename.split(".")[-1]
+            file_path = f"avatars/{current_user.id}_{uuid.uuid4()}.{file_ext}"
+            content = await profile_image.read()
+            
+            # FIX: Uploading with correct content-type helps prevent 500 errors
+            supabase.storage.from_("profiles").upload(
+                path=file_path, 
+                file=content,
+                file_options={"content-type": profile_image.content_type}
+            )
+            current_user.profile_image_url = supabase.storage.from_("profiles").get_public_url(file_path)
+
+        db.commit()
+        db.refresh(current_user)
+
+        # Generate fresh token to keep the session in sync (Fixes 401)
+        new_token = create_access_token(user_id=current_user.id, role=current_user.role)
+
+        return {
+            "user": current_user, 
+            "access_token": new_token,
+            "token_type": "bearer"
+        }
+    except Exception as e:
+        db.rollback()
+        print(f"Update Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ------------------------------------------------------------------
 # GET USER BY ID
