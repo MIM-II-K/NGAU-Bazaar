@@ -11,5 +11,9 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
 
     role = Column(String, default="user")
+
+    phone = Column(String, nullable=True)
+    bio = Column(String, nullable=True)
+    profile_image_url = Column(String, nullable=True)
     
     orders = relationship("Order", back_populates="user")

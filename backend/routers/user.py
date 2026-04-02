@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from sqlalchemy import or_
 import os
+from supabase import create_client, Client
+import uuid
 
 from schemas.user import (
     UserResponse,
@@ -24,6 +26,9 @@ from utils.auth import (
 from utils.dependencies import get_db, get_current_user, admin_only
 from utils.email import send_email
 
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_KEY")
+supabase: Client = create_client(supabase_url, supabase_key)
 router = APIRouter(prefix="/users", tags=["users"])
 
 # ------------------------------------------------------------------
@@ -121,41 +126,36 @@ def get_current_user_profile(
 # ------------------------------------------------------------------
 
 @router.put("/me", response_model=UserResponse)
-def update_current_user(
-    data: UserUpdate,
+async def update_current_user(
+    username: str = Form(...),
+    email: str = Form(...),
+    phone: Optional[str] = Form(None),
+    bio: Optional[str] = Form(None),
+    password: Optional[str] = Form(None),
+    profile_image: Optional[UploadFile] = File(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # Update logic
+    current_user.username = username
+    current_user.email = email
+    current_user.phone = phone
+    current_user.bio = bio
+    
+    if password:
+        current_user.hashed_password = hash_password(password)
 
-    if (
-        db.query(User)
-        .filter(User.email == data.email, User.id != current_user.id)
-        .first()
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already in use",
-        )
-
-    if (
-        db.query(User)
-        .filter(User.username == data.username, User.id != current_user.id)
-        .first()
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already taken",
-        )
-
-    current_user.username = data.username
-    current_user.email = data.email
-
-    if data.password:
-        current_user.hashed_password = hash_password(data.password)
+    if profile_image:
+        file_ext = profile_image.filename.split(".")[-1]
+        file_path = f"avatars/{current_user.id}_{uuid.uuid4()}.{file_ext}"
+        content = await profile_image.read()
+        
+        # Upload to Supabase 'profiles' bucket
+        supabase.storage.from_("profiles").upload(path=file_path, file=content)
+        current_user.profile_image_url = supabase.storage.from_("profiles").get_public_url(file_path)
 
     db.commit()
     db.refresh(current_user)
-
     return current_user
 
 # ------------------------------------------------------------------

@@ -21,6 +21,9 @@ class UserResponse(BaseModel):
     email: EmailStr
     username: str
     role: str
+    phone: Optional[str] = None
+    bio: Optional[str] = None
+    profile_image_url: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -28,6 +31,8 @@ class UserResponse(BaseModel):
 class UserUpdate(BaseModel):
     username: str
     email: EmailStr
+    phone: Optional[str] = None
+    bio: Optional[str] = None
     password: Optional[str] = Field(
         default = None,
         min_length=6,

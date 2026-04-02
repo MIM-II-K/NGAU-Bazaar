@@ -46,26 +46,22 @@ const AccountSettings = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (formData.password && formData.password !== formData.confirmPassword) {
-      return setStatus({ type: 'danger', msg: 'Passwords do not match!' });
-    }
-
     setLoading(true);
-    setStatus({ type: '', msg: '' });
-
     try {
       const data = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (formData[key]) data.append(key, formData[key]);
-      });
+      data.append('username', formData.username);
+      data.append('email', formData.email);
+      data.append('phone', formData.phone || '');
+      data.append('bio', formData.bio || '');
+      if (formData.password) data.append('password', formData.password);
       if (profileImage) data.append('profile_image', profileImage);
 
       const updatedUser = await userApi.updateProfile(data);
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
-      setStatus({ type: 'success', msg: 'Profile synchronized successfully!' });
+      setStatus({ type: 'success', msg: 'Profile synced!' });
     } catch (err) {
-      setStatus({ type: 'danger', msg: err.message || 'Update failed.' });
+      setStatus({ type: 'danger', msg: 'Update failed.' });
     } finally {
       setLoading(false);
     }
@@ -97,7 +93,7 @@ const AccountSettings = () => {
                 <h4 className="fw-bold mt-3 mb-1">{formData.username || 'Bazaar User'}</h4>
                 <p className="text-muted small mb-3">{formData.email}</p>
                 <Badge bg="soft-primary" className="text-primary rounded-pill px-3 mb-4">Verified Member</Badge>
-                
+
                 <div className="d-flex justify-content-around border-top border-bottom py-3 mb-4">
                   <div><h6 className="mb-0 fw-bold">12</h6><small className="text-muted">Orders</small></div>
                   <div><h6 className="mb-0 fw-bold">4</h6><small className="text-muted">Reviews</small></div>
