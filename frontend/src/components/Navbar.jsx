@@ -10,7 +10,7 @@ const Navbar = () => {
   const { cartCount, refreshCart } = useCart() // Dynamic count from Context
   const navigate = useNavigate()
   const location = useLocation()
-  
+
   const [showSidebar, setShowSidebar] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
@@ -39,7 +39,7 @@ const Navbar = () => {
       <BSNavbar expand="lg" className="navbar-main">
         <Container fluid className="px-3 px-md-5">
           <div className="navbar-mobile-container">
-            
+
             {/* LEFT: Logo Section */}
             <div className="nav-left-zone">
               <BSNavbar.Brand as={Link} to="/shop" className="d-flex align-items-center m-0">
@@ -77,7 +77,20 @@ const Navbar = () => {
                   <Dropdown align="end" className="profile-dropdown">
                     <Dropdown.Toggle variant="none" className="p-0 border-0 shadow-none">
                       <div className="nav-avatar">
-                        {user?.username?.charAt(0).toUpperCase()}
+                        {user?.profile_image_url ? (
+                          <img
+                            src={user.profile_image_url}
+                            alt="Profile"
+                            className="nav-avatar-img"
+                            onError={(e) => {
+                              // Fallback if the URL breaks or 404s
+                              e.target.style.display = 'none';
+                              e.target.parentElement.innerText = user?.username?.charAt(0).toUpperCase();
+                            }}
+                          />
+                        ) : (
+                          user?.username?.charAt(0).toUpperCase()
+                        )}
                       </div>
                     </Dropdown.Toggle>
                     <Dropdown.Menu className="dropdown-menu-modern shadow-lg border-0">
@@ -102,8 +115,8 @@ const Navbar = () => {
               </div>
 
               {/* MODERN HAMBURGER: Minimalist 2-bar toggle */}
-              <button 
-                className={`hamburger-toggle d-lg-none ${showSidebar ? 'active' : ''}`} 
+              <button
+                className={`hamburger-toggle d-lg-none ${showSidebar ? 'active' : ''}`}
                 onClick={() => setShowSidebar(true)}
               >
                 <span className="bar"></span>
@@ -122,7 +135,7 @@ const Navbar = () => {
             NGAU<span className="text-primary">BAZAAR</span>
           </Offcanvas.Title>
         </Offcanvas.Header>
-        
+
         <Offcanvas.Body className="d-flex flex-column">
           <Nav className="flex-column gap-2">
             <Link to="/shop" className="sidebar-item" onClick={() => setShowSidebar(false)}>
@@ -138,7 +151,7 @@ const Navbar = () => {
               <i className="bi bi-person"></i> Profile
             </Link>
           </Nav>
-          
+
           <div className="sidebar-footer mt-auto pt-4 border-top">
             {!isAuthenticated() ? (
               <Button as={Link} to="/login" variant="primary" className="w-100 py-3 fw-bold rounded-4" onClick={() => setShowSidebar(false)}>
