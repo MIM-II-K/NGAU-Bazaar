@@ -92,7 +92,20 @@ const UserDashboard = () => {
                   <div className="avatar-portal">
                     <div className="avatar-ring"></div>
                     <div className="avatar-main">
-                      {profile?.username?.charAt(0).toUpperCase() || 'U'}
+                      {profile?.profile_image_url ? (
+                        <img
+                          src={profile.profile_image_url}
+                          alt="Profile"
+                          className="dashboard-avatar-img"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            // Fallback to initial if image fails to load
+                            e.target.parentElement.innerText = profile?.username?.charAt(0).toUpperCase() || 'U';
+                          }}
+                        />
+                      ) : (
+                        profile?.username?.charAt(0).toUpperCase() || 'U'
+                      )}
                     </div>
                   </div>
                 </Col>

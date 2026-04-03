@@ -42,7 +42,39 @@ body {
   color: blue;
   font-weight: bold;
 }
+/* dashboard.css */
 
+.avatar-main {
+  width: 120px; /* Adjust based on your current .avatar-main size */
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden; /* This is crucial for the circular crop */
+  background: var(--glass-bg); /* Matches your glassmorphism theme */
+  position: relative;
+  z-index: 2;
+}
+
+.dashboard-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Ensures the photo fills the circle without stretching */
+  transition: transform 0.3s ease;
+}
+
+.avatar-portal:hover .dashboard-avatar-img {
+  transform: scale(1.1); /* Subtle zoom effect on hover */
+}
+
+/* Ensure the initial fallback looks good if no image is present */
+.avatar-main {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 15px rgba(255,255,255,0.3);
+}
 /* --- Stats Cards --- */
 .content-shift { margin-top: -60px; }
 
