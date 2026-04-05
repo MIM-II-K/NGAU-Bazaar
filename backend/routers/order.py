@@ -152,7 +152,7 @@ def get_admin_order_detail(
 
 # ---------------- ADMIN: UPDATE STATUS ----------------
 @router.put("/{order_id}/status")
-def update_order_status(
+async def update_order_status(
     order_id: str,
     status: str,
     background_tasks: BackgroundTasks,
