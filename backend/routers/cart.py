@@ -108,7 +108,7 @@ def serialize_cart(cart):
         "total_price": float(total_price)
     }
 
-@router.get("", response_model=CartResponse)
+@router.get("/", response_model=CartResponse)
 def get_my_cart(db: Session = Depends(get_db), user=Depends(get_current_user)):
 
     cart = (
