@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional
 
 
@@ -44,6 +44,8 @@ class Token(BaseModel):
     """Schema for JWT token response."""
     access_token: str
     token_type: str
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TokenPayload(BaseModel):
