@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List
 from decimal import Decimal
 
@@ -19,8 +19,7 @@ class CartItemResponse(BaseModel):
     image_url: str | None = None
     subtotal: Decimal
 
-    class Config:
-        from_attributes = True
+    model_config  = ConfigDict(from_attributes=True)
 
 class CartResponse(BaseModel):
     id: int
@@ -28,8 +27,7 @@ class CartResponse(BaseModel):
     total_items: int
     total_price: Decimal
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class CartCheckoutResponse(BaseModel):
     full_name: str

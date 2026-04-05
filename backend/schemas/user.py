@@ -24,9 +24,8 @@ class UserResponse(BaseModel):
     phone: Optional[str] = None
     bio: Optional[str] = None
     profile_image_url: Optional[str] = None
-
-    class Config:
-        from_attributes = True
+    
+    model_config = ConfigDict(from_attributes=True)
 
 class UserUpdate(BaseModel):
     username: str
