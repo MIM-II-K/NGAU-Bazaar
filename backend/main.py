@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from models.user import User
 from models.product import Product, ProductImage, ProductVariant, Review
 from models.category import Category
+from models.wishlist import Wishlist
 from utils.websocket_manager import manager
 
 # --- 2. Database Initialization ---
@@ -85,6 +86,7 @@ from routers.flash_deals import router as flash_deals_router
 from routers.otp import router as otp_router
 from routers.set_password import router as set_password_router
 from routers.invoice import router as invoice_router
+from routers.wishlist import router as wishlist_router
 
 # --- 7. Include Routers ---
 app.include_router(user_router)
@@ -98,6 +100,7 @@ app.include_router(flash_deals_router)
 app.include_router(otp_router)
 app.include_router(set_password_router)
 app.include_router(invoice_router)
+app.include_router(wishlist_router)
 
 # --- 8. Admin Panel Setup ---
 admin = Admin(app, engine)
