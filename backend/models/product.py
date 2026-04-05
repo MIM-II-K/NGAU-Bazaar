@@ -30,12 +30,21 @@ class Product(Base):
     images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan")
     variants = relationship("ProductVariant", back_populates="product", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="product", cascade="all, delete-orphan")
+    wishlisted_by = relationship("Wishlist", back_populates="product", cascade="all, delete-orphan")
 
     order_items = relationship(
         "OrderItem",
         back_populates="product",
         cascade="all, delete-orphan"  # delete order items if product deleted
     )
+
+    @property
+    def is_in_wishlist(self) -> bool:
+        return getattr(self, "_is_in_wishlist", False)
+    
+    @is_in_wishlist.setter
+    def is_in_wishlist(self, value: bool):
+        self._is_in_wishlist = value
 class ProductImage(Base):
     __tablename__ = "product_images"
     id = Column(Integer, primary_key=True)

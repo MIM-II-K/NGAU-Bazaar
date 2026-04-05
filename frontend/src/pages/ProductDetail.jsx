@@ -73,7 +73,7 @@ const ProductDetail = () => {
             setActiveImage(0);
             fetchProduct();
         }
-        window.scrollTo({top: 0, behavior: 'smooth'}); // Ensure page scrolls to top on product change
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // Ensure page scrolls to top on product change
     }, [slug]);
 
 
@@ -125,6 +125,28 @@ const ProductDetail = () => {
             setShowToast(true);
         } finally {
             setIsAdding(false);
+        }
+    };
+
+    const handleWishlistToggle = async () => {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            setToastMessage("Please login to manage your wishlist.");
+            setShowToast(true);
+            return;
+        }
+        try {
+            const response = await productApi.toggleWishlist(product.id);
+            setProduct(prev => ({
+                ...prev,
+                is_in_wishlist: response.is_in_wishlist
+            }));
+            setToastMessage(response.is_in_wishlist ? "Added to wishlist!" : "Removed from wishlist.");
+            setShowToast(true);
+        } catch (error) {
+            console.error("Wishlist error:", error);
+            setToastMessage("Failed to update wishlist. Please try again.");
+            setShowToast(true);
         }
     };
 
@@ -354,10 +376,12 @@ const ProductDetail = () => {
                             {/* Wishlist - Minimalist Action */}
                             <Col xs={3} md={2}>
                                 <Button
-                                    variant="light"
-                                    className="w-100 py-3 rounded-3 border wishlist-btn-detail"
+                                    variant={product.is_in_wishlist ? "danger" : "light"}
+                                    className={`w-100 py-3 rounded-3 border wishlist-btn-detail ${product.is_in_wishlist ? 'text-white' : ''}`}
+                                    onClick={handleWishlistToggle}
+                                    disabled={isAdding}
                                 >
-                                    <i className="bi bi-heart"></i>
+                                    <i className={`bi ${product.is_in_wishlist ? 'bi-heart-fill' : 'bi-heart'}`}></i>
                                 </Button>
                             </Col>
                         </Row>

@@ -13,6 +13,10 @@ export const productApi = {
 
   trackView: (productId) => apiClient.post(`/products/${productId}/view`),
 
+  toggleWishlist: (productId) => apiClient.post(`/wishlist/toggle/${productId}`),
+
+  getWishlist: () => apiClient.get('/wishlist/'),
+
   // ---------------- CREATE / UPDATE PRODUCTS ----------------
   create: (formData) => apiClient.post('/products/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
@@ -26,5 +30,5 @@ export const productApi = {
   delete: (id) => apiClient.delete(`/products/${id}`),
 
   // ---------------- GET CATEGORIES ----------------
-  getCategories: () => apiClient.get('/categories/')
+  getCategories: () => apiClient.get('/categories/'),
 };

@@ -14,7 +14,7 @@ class Wishlist(Base):
 
     # Relationships
     user = relationship("User", backref="wishlist_items")
-    product = relationship("Product")
+    product = relationship("Product", back_populates="wishlisted_by")
 
     # Prevent duplicate hearts for the same product
     __table_args__ = (

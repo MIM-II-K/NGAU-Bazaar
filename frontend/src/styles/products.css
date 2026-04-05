@@ -377,6 +377,19 @@
 .wishlist-btn-detail:hover i {
     transform: translateY(-8px) scale(1.1); /* Lift heart to make room for text */
 }
+.wishlist-icon-btn:hover {
+    background: #fff !important;
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.product-card:hover .wishlist-icon-btn {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Optional: Hide heart until hover if you want it extra clean */
+/* .wishlist-icon-btn { opacity: 0; visibility: hidden; } */
 
 /* Tablet/Mobile refinement */
 @media (max-width: 768px) {

@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { addToCart } from '../utils/cartApi';
 import { useCart } from '../contexts/CartContext';
 // 1. IMPORT THE HELPER
-import { getProductImageUrl } from '../utils/urlHelper'; 
+import { getProductImageUrl } from '../utils/urlHelper';
+import { productApi } from '../utils/productApi';
 
 const API_BASE_URL = 'https://ngau-bazaar.onrender.com';
 const fallbackImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Crect width='300' height='200' fill='%23f1f5f9'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%2394a3b8'%3ENo Image%3C/text%3E%3C/svg%3E";
@@ -13,6 +14,26 @@ const ProductCard = ({ product }) => {
     const navigate = useNavigate();
     const { refreshCart } = useCart();
     const [loading, setLoading] = useState(false);
+    const [isWishlisted, setIsWishlisted] = useState(product.is_in_wishlist); // For wishlist toggle
+
+    const handleWishlistToggle = async (e) => {
+        e.stopPropagation();
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+
+            alert("Please login to manage wishlist");
+            return;
+        }
+
+        try {
+            setIsWishlisted(!isWishlisted); // Optimistic UI update
+            await productApi.toggleWishlist(product.id);
+        } catch (error) {
+            setIsWishlisted(isWishlisted); // Revert on error   
+            console.error("Wishlist toggle error:", error);
+        }
+    };
 
     const handleCardClick = () => {
         const identifier = product.slug || product.id
@@ -50,32 +71,51 @@ const ProductCard = ({ product }) => {
     return (
         <Card className="product-card h-100 shadow-sm border-0" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
             <div className="product-img-container" style={{ height: '200px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
+                {/* --- WISHLIST HEART ICON --- */}
+                <button
+                    onClick={handleWishlistToggle}
+                    className="wishlist-icon-btn"
+                    style={{
+                        position: 'absolute',
+                        top: '10px',
+                        right: '10px',
+                        zIndex: 10,
+                        background: 'rgba(255, 255, 255, 0.8)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.3s ease',
+                        color: isWishlisted ? '#dc3545' : '#6c757d'
+                    }}
+                >
+                    <i className={`bi ${isWishlisted ? 'bi-heart-fill' : 'bi-heart'}`}></i>
+                </button>
+
                 <img
-                    // 2. USE THE HELPER HERE
-                    src={
-                        product.images?.length > 0 
-                        ? getProductImageUrl(product.images[0].url, API_BASE_URL) 
-                        : fallbackImage
-                    }
+                    src={product.images?.length > 0 ? getProductImageUrl(product.images[0].url, 'https://ngau-bazaar.onrender.com') : fallbackImage}
                     alt={product.name}
                     loading="lazy"
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }} // Cinematic fit
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                     onError={(e) => { e.currentTarget.src = fallbackImage; }}
                 />
-                
+
                 {/* Overlay and Badges */}
                 <div className="product-overlay">
                     <Button variant="light" className="rounded-pill px-4 fw-bold shadow-sm">
                         View Details
                     </Button>
                 </div>
-                
+
                 {product.is_flash_deal && product.discount_price && (
                     <Badge bg="danger" className="position-absolute top-0 end-0 m-2">
                         {Math.round(((product.price - product.discount_price) / product.price) * 100)}% OFF
                     </Badge>
                 )}
-                
+
                 {product.view_count > 50 && (
                     <Badge bg="warning" className="position-absolute top-0 start-0 m-2 text-dark shadow-sm">
                         <i className="bi bi-fire me-1"></i> Popular
@@ -105,9 +145,9 @@ const ProductCard = ({ product }) => {
                             <span className="product-price fw-bold text-dark">Rs.{product.price}</span>
                         )}
                     </div>
-                    
-                    <Button 
-                        variant="soft-primary" 
+
+                    <Button
+                        variant="soft-primary"
                         className="btn-add-cart rounded-circle p-2"
                         disabled={loading || product.quantity <= 0}
                         onClick={handleQuickAdd}

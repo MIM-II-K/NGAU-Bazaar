@@ -53,6 +53,7 @@ class ProductResponse(BaseModel):
     average_rating: float = 0.0
     view_count: int = 0
     created_at: datetime
+    is_in_wishlist: bool= False  # To indicate if the product is in the user's wishlist
 
     model_config = ConfigDict(from_attributes = True)
 
