@@ -11,11 +11,14 @@ export const productApi = {
 
   getRelated: (productId) => apiClient.get(`/products/${productId}/related`),
 
+  // ---------------- WISHLIST ACTIONS ----------------
+  // Unified with your apiClient
+  getWishlist: () => apiClient.get('/wishlist/').then(res => res.data),
+
+  toggleWishlist: (productId) => apiClient.post(`/wishlist/toggle/${productId}`).then(res => res.data),
+
+  // ---------------- TRACKING & ANALYTICS ----------------
   trackView: (productId) => apiClient.post(`/products/${productId}/view`),
-
-  toggleWishlist: (productId) => apiClient.post(`/wishlist/toggle/${productId}`),
-
-  getWishlist: () => apiClient.get('/wishlist/'),
 
   // ---------------- CREATE / UPDATE PRODUCTS ----------------
   create: (formData) => apiClient.post('/products/', formData, {

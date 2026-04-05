@@ -206,6 +206,27 @@ def get_user_by_id(
     return user
 
 # ------------------------------------------------------------------
+# DELETE OWN ACCOUNT
+# ------------------------------------------------------------------
+@router.delete("/me", status_code=status.HTTP_200_OK)
+def delete_self(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    try:
+        # Optional: Delete their avatar from Supabase if it exists
+        if current_user.profile_image_url:
+            # Extract file path from URL logic here if needed
+            pass
+            
+        db.delete(current_user)
+        db.commit()
+        return {"message": "Account deleted successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Could not delete account")
+
+# ------------------------------------------------------------------
 # FORGOT PASSWORD
 # ------------------------------------------------------------------
 

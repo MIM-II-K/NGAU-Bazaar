@@ -47,11 +47,11 @@ const CartPage = () => {
     try {
       setLoading(true);
       const res = await getCart();
-      
+
       console.log("Full cart response:", res);
       console.log("First item image_url:", res?.items?.[0]);
-      console.log("Image_url value:", res?.items?.[0]?.image_url);  
-      
+      console.log("Image_url value:", res?.items?.[0]?.image_url);
+
       if (res && Array.isArray(res.items)) {
         setCart({
           ...res,
@@ -123,10 +123,17 @@ const CartPage = () => {
   return (
     <div className="bazaar-cart-bg">
       <Container className="py-5 content-wrapper">
+        {/* --- Header Section --- */}
         <div className="mb-5 d-flex align-items-end justify-content-between" data-aos="fade-down">
           <div>
             <h1 className="fw-black mb-1">NGAU Bazaar</h1>
-            <p className="fw-black mb-0 text-muted"><i className="bi bi-cart3"></i> Cart</p>
+            <div className="d-flex gap-3">
+              <p className="fw-black mb-0 text-muted"><i className="bi bi-cart3"></i> Cart</p>
+              {/* Added Wishlist Link */}
+              <Link to="/wishlist" className="text-decoration-none fw-bold text-muted small">
+                <i className="bi bi-heart"></i> Saved Items
+              </Link>
+            </div>
           </div>
           <Link to="/shop" className="text-decoration-none fw-bold text-primary d-none d-md-block">
             Continue Shopping <i className="bi bi-arrow-right"></i>

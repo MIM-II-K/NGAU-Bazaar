@@ -337,16 +337,12 @@
     box-shadow: 0 4px 15px rgba(214, 48, 49, 0.15);
 }
 
-/* The Icon Logic */
-.wishlist-btn-detail i {
-    transition: all 0.3s ease;
-    display: inline-block;
+.wishlist-btn-detail {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.wishlist-btn-detail:hover i {
-    color: #d63031 !important;
-    transform: scale(1.2);
-    filter: drop-shadow(0 0 5px rgba(214, 48, 49, 0.2));
+.wishlist-btn-detail:hover {
+    transform: scale(1.05);
 }
 
 /* The "Pulse" effect on click */
@@ -372,6 +368,11 @@
 .wishlist-btn-detail:hover::after {
     bottom: 5px;
     opacity: 1;
+}
+.aos-animate.out {
+    opacity: 0;
+    transform: scale(0.9);
+    transition: 0.4s ease-out;
 }
 
 .wishlist-btn-detail:hover i {

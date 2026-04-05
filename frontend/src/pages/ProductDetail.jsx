@@ -137,11 +137,12 @@ const ProductDetail = () => {
         }
         try {
             const response = await productApi.toggleWishlist(product.id);
+            const wasAdded = response.status === "added";
             setProduct(prev => ({
                 ...prev,
-                is_in_wishlist: response.is_in_wishlist
+                is_in_wishlist: wasAdded
             }));
-            setToastMessage(response.is_in_wishlist ? "Added to wishlist!" : "Removed from wishlist.");
+            setToastMessage(wasAdded ? "Added to wishlist!" : "Removed from wishlist.");
             setShowToast(true);
         } catch (error) {
             console.error("Wishlist error:", error);

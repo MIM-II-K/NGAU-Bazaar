@@ -16,7 +16,20 @@
     font-weight: bold;
     border-radius: 50%;
     box-shadow: 0 10px 20px rgba(13, 110, 253, 0.2);
-    border: 4px solid white;
+     border: 4px solid white;
+}
+
+.stat-item-hover {
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.stat-item-hover:hover {
+  transform: translateY(-3px);
+}
+
+.stat-item-hover:hover .text-muted {
+  color: var(--bs-primary) !important;
 }
 
 /* Cards */

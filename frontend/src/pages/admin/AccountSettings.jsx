@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Container, Row, Col, Card, Form, Button, Spinner, Alert, Badge, Modal } from 'react-bootstrap';
 import { useAuth } from '../../contexts/AuthContext';
 import { userApi } from '../../utils/userApi';
@@ -62,13 +63,31 @@ const AccountSettings = () => {
       if (profileImage) data.append('profile_image', profileImage);
 
       const response = await userApi.updateProfile(data);
-      const {user: updatedUser, access_token} = response;
+      const { user: updatedUser, access_token } = response;
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
       localStorage.setItem('token', access_token);
       setStatus({ type: 'success', msg: 'Profile synced!' });
     } catch (err) {
       setStatus({ type: 'danger', msg: err.message || 'Update failed.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setLoading(true);
+    try {
+      await userApi.deleteProfile();
+      // After successful deletion, clear local storage and redirect
+      logout();
+      // Note: logout() usually handles localStorage.clear() and navigation
+    } catch (err) {
+      setStatus({
+        type: 'danger',
+        msg: err.response?.data?.detail || 'Failed to delete account.'
+      });
+      setShowDeleteModal(false);
     } finally {
       setLoading(false);
     }
@@ -104,7 +123,12 @@ const AccountSettings = () => {
                 <div className="d-flex justify-content-around border-top border-bottom py-3 mb-4">
                   <div><h6 className="mb-0 fw-bold">12</h6><small className="text-muted">Orders</small></div>
                   <div><h6 className="mb-0 fw-bold">4</h6><small className="text-muted">Reviews</small></div>
-                  <div><h6 className="mb-0 fw-bold">2</h6><small className="text-muted">Wishlist</small></div>
+                  <Link to="/wishlist" className="text-decoration-none text-dark">
+                    <div className="stat-item-hover">
+                      <h6 className="mb-0 fw-bold text-danger">{user?.wishlistCount || 2}</h6>
+                      <small className="text-muted">Wishlist</small>
+                    </div>
+                  </Link>
                 </div>
 
                 <div className="d-grid gap-2">
@@ -166,8 +190,14 @@ const AccountSettings = () => {
                     <h6 className="fw-bold mb-1 text-danger">Danger Zone</h6>
                     <p className="small text-muted mb-0">Once you delete your account, there is no going back.</p>
                   </div>
-                  <Button variant="danger" className="rounded-pill px-4" onClick={() => setShowDeleteModal(true)}>Delete Account</Button>
-                </div>
+                  <Button
+                    variant="danger"
+                    className="rounded-pill px-4"
+                    onClick={handleDeleteAccount} // Change from logout to handleDeleteAccount
+                    disabled={loading}
+                  >
+                    {loading ? <Spinner size="sm" /> : 'Delete Forever'}
+                  </Button></div>
 
                 <div className="text-end mt-5">
                   <Button type="submit" variant="primary" disabled={loading} className="px-5 py-2 rounded-pill shadow-lg fw-bold">

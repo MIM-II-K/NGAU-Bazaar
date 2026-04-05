@@ -239,8 +239,12 @@ const UserDashboard = () => {
             {/* Quick Actions / Support */}
             <Col lg={4}>
               <motion.div variants={itemVars} className="bento-card settings-card mb-4">
-                <h5 className="fw-bold mb-3">Quick Actions</h5>
+                <h5 className="fw-bold mb-3 text-white">Quick Actions</h5>
                 <div className="d-grid gap-2">
+                  {/* Added Wishlist Action */}
+                  <Button as={Link} to="/wishlist" className="btn-action border-0 bg-soft-danger text-danger mb-2">
+                    <i className="bi bi-heart me-2"></i> My Wishlist
+                  </Button>
                   <Button as={Link} to="/settings" className="btn-action">
                     <i className="bi bi-person-gear me-2"></i> Account Settings
                   </Button>

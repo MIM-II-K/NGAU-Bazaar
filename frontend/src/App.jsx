@@ -37,6 +37,7 @@ import ContactUs from './pages/ContactUs';
 import HelpCenter from './pages/HelpCenter';
 import Privacy from './pages/Privacy';
 import AboutUs from './pages/AboutUs';
+import WishlistPage from './pages/WishlistPage';
 
 function App() {
   return (
@@ -83,6 +84,7 @@ function App() {
                         <Route path="/products/:slug" element={<ProductDetail />} />
                         <Route path="/categories" element={<Categories />} />
                         <Route path="/cart" element={<CartPage />} />
+                        <Route path="/wishlist" element={<WishlistPage />} />
                         <Route path="/profile" element={<UserProfile />} />
                         <Route path="/about-us" element={<AboutUs />} />
                         <Route path="/settings" element={<AccountSettings />} />
