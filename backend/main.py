@@ -38,6 +38,7 @@ if os.getenv("ENV") == "development":
 # --- 4. FastAPI App Setup ---
 app = FastAPI(
     title="NGAU Bazaar API",
+    redirect_slashes=False,
     description="E-commerce API with Phase 1: Multiple Images & Variants support",
     version="2.1.0"
 )
@@ -55,7 +56,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
