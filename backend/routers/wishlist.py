@@ -7,6 +7,14 @@ from database import SessionLocal
 
 router = APIRouter(prefix="/wishlist", tags=["wishlist"])
 
+def get_db():
+
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 @router.post("/toggle/{product_id}")
 def toggle_wishlist(product_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     # Check if exists

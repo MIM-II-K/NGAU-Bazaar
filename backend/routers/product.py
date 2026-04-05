@@ -16,7 +16,7 @@ from models.category import Category
 from models.product import Product, ProductImage, ProductVariant
 from schemas.product import ProductCreate, ProductResponse
 from database import SessionLocal
-from utils.dependencies import admin_only
+from utils.dependencies import admin_only, get_optional_current_user
 
 load_dotenv()
 
@@ -70,6 +70,7 @@ def get_db():
 @router.get("/", response_model=List[ProductResponse])
 def get_products(
     db: Session = Depends(get_db),
+    user = Depends(get_optional_current_user),
 
     # Filters
     search: str | None = Query(None, description="Search by product name"),
@@ -90,7 +91,9 @@ def get_products(
 ):
     query = db.query(Product).options(
         joinedload(Product.category),
-        joinedload(Product.images))
+        joinedload(Product.images),
+        joinedload(Product.variants)
+    )
 
     #Search
     if search:
@@ -135,7 +138,21 @@ def get_products(
 
     #Pagination
     offset = (page - 1) * limit
-    return query.offset(offset).limit(limit).all()
+    products = query.offset(offset).limit(limit).all()
+
+    if user:
+        wishlist_ids = {
+            item.product_id for item in
+            db.query(Wishlist.product_id).filter(Wishlist.user_id == user.id).all()
+        }
+
+        for p in products:
+            p.is_in_wishlist = p.id in wishlist_ids
+    else:
+        for p in products:
+            p.is_in_wishlist = False
+    return products
+
 
 
 @router.get("/{slug}", response_model=ProductResponse)
