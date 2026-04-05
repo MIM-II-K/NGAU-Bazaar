@@ -32,7 +32,7 @@ const LiveOrderMap = ({ orderId, initialLat, initialLng }) => {
 
     useEffect(() => {
         // Construct the WebSocket URL (replace with your production domain later)
-        const wsUrl = `ws://localhost:8000/ws/track/${orderId}`;
+        const wsUrl = `wss://ngau.bazaar.onrender.com/ws/orders/${orderId}`;
         const socket = new WebSocket(wsUrl);
 
         socket.onopen = () => setIsLive(true);

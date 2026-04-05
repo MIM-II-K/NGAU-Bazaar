@@ -11,7 +11,6 @@ from utils.flash_deal_cleanup import reset_expired_flash_deals
 from fastapi_utils.tasks import repeat_every
 from fastapi.responses import JSONResponse
 
-
 # --- 1. Import Models ---
 # Ensure these match the filenames in your /models folder
 from models.user import User
@@ -19,42 +18,18 @@ from models.product import Product, ProductImage, ProductVariant, Review
 from models.category import Category
 from utils.websocket_manager import manager
 
-# --- 2. Import Routers ---
-from routers.user import router as user_router
-from routers.admin import router as admin_router
-from routers.product import router as product_router
-from routers.category import router as category_router
-from routers.order import router as order_router
-from routers.cart import router as cart_router
-from routers.payment import router as payment_router
-from routers.flash_deals import router as flash_deals_router
-from routers.otp import router as otp_router
-from routers.set_password import router as set_password_router
-from routers.invoice import router as invoice_router
-
-# --- 3. Database Initialization ---
+# --- 2. Database Initialization ---
 # This creates the new tables (ProductImage, ProductVariant, Review) automatically in dev
 if os.getenv("ENV") == "development":
     Base.metadata.create_all(bind=engine)
 
-# --- 4. FastAPI App Setup ---
+# --- 3. FastAPI App Setup ---
 app = FastAPI(
     title="NGAU Bazaar API",
     redirect_slashes=True,
     description="E-commerce API with Phase 1: Multiple Images & Variants support",
     version="2.1.0"
 )
-
-@app.websocket("/ws/orders/{order_id}")
-async def order_updates_websocket(websocket: WebSocket, order_id: str):
-    await manager.connect(order_id, websocket)
-    try:
-        while True:
-            # Keep the connection alive, but we don't expect to receive messages from client
-            await websocket.receive_text()
-    except Exception as e:
-        manager.disconnect(order_id, websocket)
-        print(f"WebSocket disconnected for order {order_id}: {e}")
 
 origins = [
     "http://localhost:3000",
@@ -74,6 +49,19 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
+# --- 4. WebSocket Endpoint for Live Order Tracking ---
+@app.websocket("/ws/orders/{order_id}")
+async def order_updates_websocket(websocket: WebSocket, order_id: str):
+    await manager.connect(order_id, websocket)
+    try:
+        while True:
+            # Keep the connection alive, but we don't expect to receive messages from client
+            await websocket.receive_text()
+    except Exception as e:
+        manager.disconnect(order_id, websocket)
+        print(f"WebSocket disconnected for order {order_id}: {e}")
+
+
 # --- 5. Global Error Handling ---
 @app.exception_handler(Exception)
 async def debug_exception_handler(request: Request, exc: Exception):
@@ -84,7 +72,20 @@ async def debug_exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal Server Error", "traceback": str(exc)}
     )
 
-# --- 6. Include Routers ---
+# --- 6. Import Routers ---
+from routers.user import router as user_router
+from routers.admin import router as admin_router
+from routers.product import router as product_router
+from routers.category import router as category_router
+from routers.order import router as order_router
+from routers.cart import router as cart_router
+from routers.payment import router as payment_router
+from routers.flash_deals import router as flash_deals_router
+from routers.otp import router as otp_router
+from routers.set_password import router as set_password_router
+from routers.invoice import router as invoice_router
+
+# --- 7. Include Routers ---
 app.include_router(user_router)
 app.include_router(admin_router)
 app.include_router(product_router)
@@ -97,12 +98,7 @@ app.include_router(otp_router)
 app.include_router(set_password_router)
 app.include_router(invoice_router)
 
-# --- 7. Static Files Setup ---
-# Main directory for all uploads
-os.makedirs("static/product_images", exist_ok=True)
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# --- 8. SQLAdmin Setup (Fixed for Phase 1) ---
+# --- 8. Admin Panel Setup ---
 admin = Admin(app, engine)
 
 class UserAdmin(ModelView, model=User):
@@ -138,6 +134,11 @@ admin.add_view(CategoryAdmin)
 admin.add_view(ProductAdmin)
 admin.add_view(ProductImageAdmin)
 admin.add_view(ProductVariantAdmin)
+
+# --- 8. Static Files Setup ---
+# Main directory for all uploads
+os.makedirs("static/product_images", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # --- 9. Background Tasks & Health Checks ---
 @app.get("/")
