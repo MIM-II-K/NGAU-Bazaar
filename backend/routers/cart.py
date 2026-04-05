@@ -48,58 +48,65 @@ def serialize_cart(cart):
     total_price = Decimal("0.00")
     now = datetime.now(timezone.utc)
 
+    # Use .all() if cart.items is a query object, otherwise just iterate
     for item in cart.items:
         product = item.product
         if not product:
             continue
 
-        original_price = Decimal(str(product.price))
-        final_price = original_price
-        
-        expiry = product.deal_expiry
-        if expiry and expiry.tzinfo is None:
-            expiry = expiry.replace(tzinfo=timezone.utc)
+        try:
+            original_price = Decimal(str(product.price or 0))
+            final_price = original_price
+            
+            # Safe Expiry Check
+            expiry = product.deal_expiry
+            if expiry and expiry.tzinfo is None:
+                expiry = expiry.replace(tzinfo=timezone.utc)
 
-        if (product.is_flash_deal and
-            product.discount_price and
-            expiry and
-            expiry > now):
-            final_price = product.discount_price
-        
-        is_deal_active = (
-            product.is_flash_deal and
-            product.discount_price and
-            expiry and
-            expiry > now
-        )
-        if is_deal_active:
-            final_price = Decimal(str(product.discount_price))
-            discount_percentage = int(
-                ((original_price - final_price) / original_price) * 100
-                )
-        else:
-            discount_percentage = 0
+            is_deal_active = (
+                product.is_flash_deal and
+                product.discount_price and
+                expiry and
+                expiry > now
+            )
 
-        
-        subtotal = final_price * item.quantity
-        # Grabs the first image from the gallery, or None if no images exist
-        image_url = item.product.images[0].url if item.product.images else None
-        
-        items.append({
-            "id": item.id,
-            "product_id": item.product_id,
-            "product_name": product.name,
-            "slug": product.slug,
-            "quantity": item.quantity,
-            "price": float(final_price),
-            "original_price": float(original_price),
-            "discount_percentage": discount_percentage,
-            "image_url": image_url,
-            "subtotal": float(subtotal)
-        })
+            if is_deal_active:
+                final_price = Decimal(str(product.discount_price))
+                # Avoid Division by Zero
+                if original_price > 0:
+                    discount_percentage = int(((original_price - final_price) / original_price) * 100)
+                else:
+                    discount_percentage = 0
+            else:
+                discount_percentage = 0
 
-        total_items += item.quantity
-        total_price += subtotal
+            subtotal = final_price * item.quantity
+            
+            # --- SAFE IMAGE CHECK ---
+            # Check if images relationship exists and has data without crashing
+            image_url = None
+            if hasattr(product, 'images') and product.images:
+                image_url = product.images[0].url
+
+            items.append({
+                "id": item.id,
+                "product_id": item.product_id,
+                "product_name": product.name,
+                "slug": product.slug,
+                "quantity": item.quantity,
+                "price": float(final_price),
+                "original_price": float(original_price),
+                "discount_percentage": discount_percentage,
+                "image_url": image_url,
+                "subtotal": float(subtotal)
+            })
+
+            total_items += item.quantity
+            total_price += subtotal
+            
+        except Exception as e:
+            print(f"Error serializing item {item.id}: {e}")
+            continue # Skip broken items instead of crashing the whole cart
 
     return {
         "id": cart.id,
