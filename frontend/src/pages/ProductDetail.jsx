@@ -375,15 +375,21 @@ const ProductDetail = () => {
                             </Col>
 
                             {/* Wishlist - Minimalist Action */}
-                            <Col xs={3} md={2}>
-                                <Button
-                                    variant={product.is_in_wishlist ? "danger" : "light"}
-                                    className={`w-100 py-3 rounded-3 border wishlist-btn-detail ${product.is_in_wishlist ? 'text-white' : ''}`}
-                                    onClick={handleWishlistToggle}
-                                    disabled={isAdding}
-                                >
-                                    <i className={`bi ${product.is_in_wishlist ? 'bi-heart-fill' : 'bi-heart'}`}></i>
-                                </Button>
+                            <Col xs={3} md={2} className="d-flex align-items-center justify-content-center">
+                                <div className="wishlist-wrapper-modern">
+                                    <button
+                                        className={`wishlist-btn-premium ${product.is_in_wishlist ? 'active' : ''}`}
+                                        onClick={handleWishlistToggle}
+                                        disabled={isAdding}
+                                        aria-label="Toggle Wishlist"
+                                    >
+                                        <div className="icon-stack">
+                                            <i className="bi bi-heart-fill heart-filled"></i>
+                                            <i className="bi bi-heart heart-outline"></i>
+                                        </div>
+                                        <span className="wishlist-text">Save</span>
+                                    </button>
+                                </div>
                             </Col>
                         </Row>
                     </Col>
