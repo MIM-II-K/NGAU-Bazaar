@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { userApi } from '../utils/userApi';
 import { orderApi } from '../utils/orderApi';
 import '../styles/dashboard.css';
+import LiveOrderMap from '../components/LiveOrderMap';
 
 const UserDashboard = () => {
   const { user, logout } = useAuth(); // ✅ only user and logout
@@ -191,30 +192,43 @@ const UserDashboard = () => {
                 ) : (
                   <ListGroup variant="flush" className="activity-list">
                     {orders.map((order) => (
-                      <ListGroup.Item key={order.id} className="d-flex align-items-center justify-content-between px-0">
-                        <div className="d-flex align-items-center">
-                          <div className="order-dot"></div>
-                          <div>
-                            <p className="mb-0 fw-semibold text-white">Order #{order.id}</p>
-                            <div className="text-muted small">
-                              {/* Mapping through names of items in the order */}
-                              {order.items.map((item, idx) => (
-                                <span key={item.id}>
-                                  {item.product_name} (x{item.quantity})
-                                  {idx < order.items.length - 1 ? ', ' : ''}
-                                </span>
-                              ))}
+                      <ListGroup.Item key={order.id} className="flex-column px-0 border-0 mb-3">
+                        <div className="d-flex align-items-center justify-content-between w-100">
+                          <div className="d-flex align-items-center">
+                            <div className={`order-dot ${order.status === 'shipped' ? 'pulse-blue' : ''}`}></div>
+                            <div>
+                              <p className="mb-0 fw-semibold text-white">Order #{order.id}</p>
+                              <div className="text-muted small">
+                                {order.items.map((item, idx) => (
+                                  <span key={item.id}>{item.product_name} (x{item.quantity}){idx < order.items.length - 1 ? ', ' : ''}</span>
+                                ))}
+                              </div>
                             </div>
                           </div>
+                          <div className="text-end">
+                            <p className="mb-0 fw-bold">Rs.{order.items.reduce((sum, i) => sum + i.price * i.quantity, 0).toFixed(2)}</p>
+                            <Badge pill bg={order.status === 'delivered' ? 'success' : 'primary'} className="status-badge text-capitalize">
+                              {order.status}
+                            </Badge>
+                          </div>
                         </div>
-                        <div className="text-end">
-                          <p className="mb-0 fw-bold">
-                            Rs.{order.items.reduce((sum, i) => sum + i.price * i.quantity, 0).toFixed(2)}
-                          </p>
-                          <Badge pill bg={order.status === 'delivered' ? 'success' : 'primary'} className="status-badge text-capitalize">
-                            {order.status}
-                          </Badge>
-                        </div>
+
+                        {/* --- NEW: LIVE TRACKING SECTION --- */}
+                        {order.status === 'shipped' && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            className="mt-3 overflow-hidden"
+                          >
+                            <div className="tracking-map-container">
+                              <LiveOrderMap
+                                orderId={order.id}
+                                initialLat={order.current_lat}
+                                initialLng={order.current_lng}
+                              />
+                            </div>
+                          </motion.div>
+                        )}
                       </ListGroup.Item>
                     ))}
                   </ListGroup>
