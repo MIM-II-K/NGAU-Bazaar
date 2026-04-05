@@ -217,4 +217,55 @@ body {
 .card:hover {
     transform: translateY(-5px);
 }
+
+/* Stats Styling */
+.stat-value {
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+
+.stat-label a {
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+}
+
+.stat-label a:hover {
+  color: #0d6efd;
+}
+
+/* Dynamic Badge Styling */
+.stat-trend {
+  padding: 4px 10px;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+}
+
+.trend-danger {
+  background: #fff5f5;
+  color: #e53e3e;
+  border: 1px solid #feb2b2;
+}
+
+.trend-neutral {
+  background: #f8fafc;
+  color: #94a3b8;
+  border: 1px solid #e2e8f0;
+}
+
+/* Smooth reveal when data loads */
+.fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

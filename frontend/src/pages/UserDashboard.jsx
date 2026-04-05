@@ -152,9 +152,26 @@ const UserDashboard = () => {
                   <i className="bi bi-heart"></i>
                 </div>
                 <div className="mt-3">
-                  <h4 className="stat-value">{profile?.wishlistCount || 0} Items</h4>
-                  <p className="stat-label">Wishlist</p>
-                  <span className="stat-trend trend-danger">2 Price Drops</span>
+                  {/* Dynamic Item Count with Pluralization Logic */}
+                  <h4 className="stat-value">
+                    {profile?.wishlistCount || 0} {profile?.wishlistCount === 1 ? 'Item' : 'Items'}
+                  </h4>
+
+                  <p className="stat-label">
+                    <Link to="/wishlist" className="text-decoration-none hover-link">
+                      Wishlist
+                    </Link>
+                  </p>
+
+                  {/* Conditional Rendering: Only show if there are actual price drops */}
+                  {profile?.priceDropCount > 0 ? (
+                    <span className="stat-trend trend-danger fade-in">
+                      <i className="bi bi-graph-down-arrow me-1"></i>
+                      {profile.priceDropCount} Price {profile.priceDropCount === 1 ? 'Drop' : 'Drops'}
+                    </span>
+                  ) : (
+                    <span className="stat-trend trend-neutral">No price changes</span>
+                  )}
                 </div>
               </motion.div>
             </Col>
@@ -241,10 +258,6 @@ const UserDashboard = () => {
               <motion.div variants={itemVars} className="bento-card settings-card mb-4">
                 <h5 className="fw-bold mb-3 text-white">Quick Actions</h5>
                 <div className="d-grid gap-2">
-                  {/* Added Wishlist Action */}
-                  <Button as={Link} to="/wishlist" className="btn-action border-0 bg-soft-danger text-danger mb-2">
-                    <i className="bi bi-heart me-2"></i> My Wishlist
-                  </Button>
                   <Button as={Link} to="/settings" className="btn-action">
                     <i className="bi bi-person-gear me-2"></i> Account Settings
                   </Button>

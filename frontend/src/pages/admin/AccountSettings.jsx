@@ -124,9 +124,12 @@ const AccountSettings = () => {
                   <div><h6 className="mb-0 fw-bold">12</h6><small className="text-muted">Orders</small></div>
                   <div><h6 className="mb-0 fw-bold">4</h6><small className="text-muted">Reviews</small></div>
                   <Link to="/wishlist" className="text-decoration-none text-dark">
-                    <div className="stat-item-hover">
-                      <h6 className="mb-0 fw-bold text-danger">{user?.wishlistCount || 2}</h6>
-                      <small className="text-muted">Wishlist</small>
+                    <div className="stat-item-hover transition-all">
+                      {/* Dynamic Count: Defaults to 0 and adds a 'pulse' if count increases */}
+                      <h6 className="mb-0 fw-bold text-danger stat-number-pop">
+                        {user?.wishlistCount ?? 0}
+                      </h6>
+                      <small className="text-muted fw-medium">Wishlist</small>
                     </div>
                   </Link>
                 </div>
