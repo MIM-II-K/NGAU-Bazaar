@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+// Ensure this matches your Render URL exactly
 const API_BASE_URL = "https://ngau-bazaar.onrender.com";
 
 /**
@@ -7,58 +8,75 @@ const API_BASE_URL = "https://ngau-bazaar.onrender.com";
  */
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  timeout: 15000, // 15-second timeout to prevent infinite "hanging" connections
 });
 
 /**
  * REQUEST INTERCEPTOR
- * Automatically attaches the JWT token to every outgoing request if it exists.
+ * Automatically attaches the JWT token and handles dynamic headers
  */
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
+    
+    // 1. Handle Authorization
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
+    // 2. Let Axios handle Content-Type automatically
+    // Removing the manual 'application/json' set helps prevent CORS preflight issues
+    // Axios will automatically set the correct boundary for FormData
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type'];
     }
-    else {
-      config.headers['Content-Type'] = 'application/json';
-    }
-    
+
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
 /**
  * RESPONSE INTERCEPTOR
- * Globally handles common errors like 401 (Unauthorized) and 403 (Forbidden).
+ * Globally handles errors and data extraction
  */
 apiClient.interceptors.response.use(
-  (response) => response.data, // Directly return the data part of the response
+  (response) => {
+    // Return only the data part to keep components clean
+    return response.data;
+  },
   (error) => {
-    const status = error.response ? error.response.status : null;
+    // If the server process crashed (ERR_CONNECTION_CLOSED), error.response will be undefined
+    if (!error.response) {
+      console.error("Network Error: The server might be down or crashing.");
+      return Promise.reject(new Error("Server connection lost. Please try again later."));
+    }
+
+    const status = error.response.status;
 
     if (status === 401) {
-      // Token is invalid or expired
+      // Token is invalid or expired - Clear local storage
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       
-      // Redirect to login if not already there
+      // Redirect to login if the user isn't already there
       if (!window.location.pathname.includes('/login')) {
         window.location.href = '/login?expired=true';
       }
-    } else if (status === 403) {
+    } 
+    
+    if (status === 403) {
       console.error('Access Denied: You do not have permission for this action.');
     }
 
-    // Extract the error message from the backend 'detail' field or use default
-    const errorMessage = error.response?.data?.detail || error.message || 'Network Error';
+    if (status === 404) {
+      console.error('Resource not found: Check if the API route includes /api/ or trailing slashes.');
+    }
+
+    // Extract the exact error message from FastAPI's 'detail' field
+    const errorMessage = error.response?.data?.detail || "Something went wrong";
     return Promise.reject(new Error(errorMessage));
   }
 );
