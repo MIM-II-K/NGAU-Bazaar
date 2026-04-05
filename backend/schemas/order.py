@@ -73,7 +73,7 @@ class OrderItemHistoryResponse(BaseModel):
     product_id: int
     product_name: str
     quantity: int
-    price: float
+    price: Decimal
 
     model_config = ConfigDict(from_attributes=True)
 

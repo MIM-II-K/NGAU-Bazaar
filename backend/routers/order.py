@@ -234,7 +234,7 @@ def get_order_history(db: Session = Depends(get_db), user=Depends(get_current_us
 
     return [
         OrderHistoryResponse(
-            id=order.id,
+            id=str(order.id),
             status=order.status,
             items=[
                 OrderItemHistoryResponse(
@@ -242,7 +242,7 @@ def get_order_history(db: Session = Depends(get_db), user=Depends(get_current_us
                     product_id=item.product_id,
                     product_name=item.product.name if item.product else "Unknown",
                     quantity=item.quantity or 0,
-                    price=Decimal(str(item.price or 0))
+                    price=Decimal(str(item.price)) if item.price is not None else Decimal("0.00")
                 ) for item in order.items
             ]
         ) for order in orders
