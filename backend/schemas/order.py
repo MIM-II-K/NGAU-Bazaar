@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List
 from decimal import Decimal
@@ -15,8 +15,7 @@ class OrderItemResponse(BaseModel):
     product_id: int
     quantity: int
 
-    class Config:
-        from_attributes = True
+    model_config  = ConfigDict(from_attributes=True)
 
 class OrderResponse(BaseModel):
     id: str
@@ -24,8 +23,7 @@ class OrderResponse(BaseModel):
     created_at: datetime
     items: list[OrderItemResponse]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class OrderItemAdminResponse(BaseModel):
     id: int
@@ -36,8 +34,7 @@ class OrderItemAdminResponse(BaseModel):
     quantity: int
     unit: str | None = "pc"
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class OrderAdminResponse(BaseModel):
     id: str
@@ -63,8 +60,7 @@ class OrderAdminResponse(BaseModel):
 
     items: List[OrderItemAdminResponse]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class OrderItemHistoryResponse(BaseModel):
     id: int | str
@@ -73,14 +69,12 @@ class OrderItemHistoryResponse(BaseModel):
     quantity: int
     price: float
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class OrderHistoryResponse(BaseModel):
     id: int | str
     status: str
     items: list[OrderItemHistoryResponse]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
         

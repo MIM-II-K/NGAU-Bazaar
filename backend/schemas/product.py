@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from decimal import Decimal
 from datetime import datetime
 from typing import List, Optional
@@ -19,16 +19,16 @@ class ProductCreate(BaseModel):
 class ProductImageResponse(BaseModel):
     id: int
     url: str
-    class Config:
-        from_attributes = True
+    
+    model_config = ConfigDict(from_attributes = True)
 
 class ProductVariantResponse(BaseModel):
     id: int
     name: str
     price_override: Optional[Decimal]
     stock: int
-    class Config:
-        from_attributes = True
+    
+    model_config = ConfigDict(from_attributes = True)
 
 # Schema for returning product info to client
 class ProductResponse(BaseModel):
@@ -54,8 +54,7 @@ class ProductResponse(BaseModel):
     view_count: int = 0
     created_at: datetime
 
-    class Config:
-        from_attributes = True  # Important: allows SQLAlchemy models to be returned directly
+    model_config = ConfigDict(from_attributes = True)
 
 class ProductListResponse(BaseModel):
     items: List[ProductResponse]
@@ -69,5 +68,4 @@ class FlashDealUpdate(BaseModel):
     discount_price:Optional[Decimal] = None
     deal_expiry: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True  
+    model_config = ConfigDict(from_attributes = True)
