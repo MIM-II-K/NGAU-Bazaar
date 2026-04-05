@@ -466,11 +466,11 @@
 
 /* Click Feedback */
 .wishlist-btn-detail:active {
-    transform: scale(0.95);
+    transform: scale(0.3);
 }
 
 .wishlist-btn-detail:active i {
-    transform: scale(0.8);
+    transform: scale(0.5);
 }
 
 /* Tablet/Mobile refinement */
