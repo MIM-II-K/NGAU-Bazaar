@@ -102,7 +102,13 @@ app.include_router(set_password_router)
 app.include_router(invoice_router)
 app.include_router(wishlist_router)
 
-# --- 8. Admin Panel Setup ---
+# --- 8. Static Files Setup ---
+# Main directory for all uploads
+os.makedirs("static/product_images", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+# --- 9. Admin Panel Setup ---
 admin = Admin(app, engine)
 
 class UserAdmin(ModelView, model=User):
@@ -144,13 +150,7 @@ admin.add_view(ProductImageAdmin)
 admin.add_view(ProductVariantAdmin)
 admin.add_view(WishlistAdmin)
 
-
-# --- 8. Static Files Setup ---
-# Main directory for all uploads
-os.makedirs("static/product_images", exist_ok=True)
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# --- 9. Background Tasks & Health Checks ---
+# --- 10. Background Tasks & Health Checks ---
 @app.get("/")
 def root():
     return {
