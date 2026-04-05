@@ -132,12 +132,18 @@ class ProductVariantAdmin(ModelView, model=ProductVariant):
     column_list = [ProductVariant.id, ProductVariant.product_id, ProductVariant.name, ProductVariant.stock]
     icon = "fa-solid fa-tags"
 
+class WishlistAdmin(ModelView, model=Wishlist):
+    column_list = [Wishlist.id, Wishlist.user_id, Wishlist.product_id]
+    icon = "fa-solid fa-heart"
+
 # Registering views to the admin panel
 admin.add_view(UserAdmin)
 admin.add_view(CategoryAdmin)
 admin.add_view(ProductAdmin)
 admin.add_view(ProductImageAdmin)
 admin.add_view(ProductVariantAdmin)
+admin.add_view(WishlistAdmin)
+
 
 # --- 8. Static Files Setup ---
 # Main directory for all uploads
