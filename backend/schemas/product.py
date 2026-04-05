@@ -47,6 +47,7 @@ class ProductResponse(BaseModel):
     stock: int = 0
     slug: str
     images: List[ProductImageResponse] = []
+    image_url: Optional[str] = None  # For the first image URL to show in cards
     variants: List[ProductVariantResponse] = []
     tags: Optional[List[str]] = []
     specifications: Optional[str] = None

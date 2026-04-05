@@ -14,9 +14,10 @@ const WishlistPage = () => {
         try {
             setLoading(true);
             const data = await productApi.getWishlist(); // Calls GET /wishlist/
-            setWishlistItems(data);
+            setWishlistItems(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error("Error fetching wishlist:", error);
+            setWishlistItems([]);
         } finally {
             setLoading(false);
         }

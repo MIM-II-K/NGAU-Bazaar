@@ -13,9 +13,9 @@ export const productApi = {
 
   // ---------------- WISHLIST ACTIONS ----------------
   // Unified with your apiClient
-  getWishlist: () => apiClient.get('/wishlist/').then(res => res.data),
+  getWishlist: () => apiClient.get('/wishlist/'),
 
-  toggleWishlist: (productId) => apiClient.post(`/wishlist/toggle/${productId}`).then(res => res.data),
+  toggleWishlist: (productId) => apiClient.post(`/wishlist/toggle/${productId}`),
 
   // ---------------- TRACKING & ANALYTICS ----------------
   trackView: (productId) => apiClient.post(`/products/${productId}/view`),
