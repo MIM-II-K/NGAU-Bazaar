@@ -14,9 +14,11 @@ from supabase import create_client, Client
 from models.user import User
 from models.category import Category
 from models.product import Product, ProductImage, ProductVariant
+from models.wishlist import Wishlist
 from schemas.product import ProductCreate, ProductResponse
 from database import SessionLocal
 from utils.dependencies import admin_only, get_optional_current_user
+
 
 load_dotenv()
 
