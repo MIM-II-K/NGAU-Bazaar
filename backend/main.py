@@ -56,7 +56,8 @@ async def order_updates_websocket(websocket: WebSocket, order_id: str):
     try:
         while True:
             # Keep the connection alive, but we don't expect to receive messages from client
-            await websocket.receive_text()
+            data = await websocket.receive_text()
+            # Process the received data if needed (e.g., client can send "ping" to keep connection alive)
     except Exception as e:
         manager.disconnect(order_id, websocket)
         print(f"WebSocket disconnected for order {order_id}: {e}")
