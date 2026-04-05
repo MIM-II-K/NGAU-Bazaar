@@ -21,10 +21,16 @@ class OrderResponse(BaseModel):
     id: str
     status: str
     created_at: datetime
+    current_lat: float | None = None
+    current_lng: float | None = None
     items: list[OrderItemResponse]
+
 
     model_config = ConfigDict(from_attributes=True)
 
+class OrderLocationUpdate(BaseModel):
+    lat: float
+    lng: float
 class OrderItemAdminResponse(BaseModel):
     id: int
     product_id: int

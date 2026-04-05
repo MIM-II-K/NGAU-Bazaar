@@ -2,7 +2,7 @@ import os
 import traceback
 import uuid
 import shutil
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqladmin import Admin, ModelView
@@ -11,11 +11,13 @@ from utils.flash_deal_cleanup import reset_expired_flash_deals
 from fastapi_utils.tasks import repeat_every
 from fastapi.responses import JSONResponse
 
+
 # --- 1. Import Models ---
 # Ensure these match the filenames in your /models folder
 from models.user import User
 from models.product import Product, ProductImage, ProductVariant, Review
 from models.category import Category
+from utils.websocket_manager import manager
 
 # --- 2. Import Routers ---
 from routers.user import router as user_router
@@ -42,6 +44,17 @@ app = FastAPI(
     description="E-commerce API with Phase 1: Multiple Images & Variants support",
     version="2.1.0"
 )
+
+@app.websocket("/ws/orders/{order_id}")
+async def order_updates_websocket(websocket: WebSocket, order_id: str):
+    await manager.connect(order_id, websocket)
+    try:
+        while True:
+            # Keep the connection alive, but we don't expect to receive messages from client
+            await websocket.receive_text()
+    except Exception as e:
+        manager.disconnect(order_id, websocket)
+        print(f"WebSocket disconnected for order {order_id}: {e}")
 
 origins = [
     "http://localhost:3000",

@@ -8,10 +8,12 @@ from models.order import Order, OrderItem
 from models.product import Product
 from schemas.order import (
     OrderItemHistoryResponse, OrderResponse, OrderCreate, 
-    OrderHistoryResponse, OrderAdminResponse, OrderItemAdminResponse
+    OrderHistoryResponse, OrderAdminResponse, OrderItemAdminResponse,
+    OrderLocationUpdate
 )
 from utils.dependencies import get_current_user, admin_only
 from utils.email import send_email
+from utils.websocket_manager import manager
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -181,6 +183,14 @@ def update_order_status(
     db.commit()
     db.refresh(order)
 
+    if status == "shipped":
+        await manager.broadcast_to_order(order_id,{
+            "type": "STATUS_UPDATE",
+            "order_id": order.id,
+            "status": "SHIPPED",
+            "message": "Your Order is now shipped for delivery."
+            })
+
     # Use background task for shipping notification email
     if status in ["shipped", "delivered"]:
         background_tasks.add_task(
@@ -255,6 +265,8 @@ def get_order_detail(order_id: str, db: Session = Depends(get_db), user=Depends(
     return {
         "id": order.id,
         "status": order.status,
+        "current_lat": order.current_lat,
+        "current_lng": order.current_lng,
         "items": [
             {
                 "product_name": item.product.name if item.product else "Deleted Product",
@@ -265,3 +277,30 @@ def get_order_detail(order_id: str, db: Session = Depends(get_db), user=Depends(
         ],
         "total": float(total)
     }
+
+@router.patch("/{order_id}/location")
+async def update_order_location(
+    order_id: str,
+    location: OrderLocationUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(admin_only) # Or a specific 'driver' dependency if you add one
+):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    # Update DB for 'Snapshot' (persistence)
+    order.current_lat = location.lat
+    order.current_lng = location.lng
+    order.last_location_update = datetime.now() # Or your nepal_now() utility
+    
+    db.commit()
+
+    # BROADCAST: Send live coordinates to the React frontend immediately
+    await manager.broadcast_to_order(order_id, {
+        "type": "LOCATION_UPDATE",
+        "lat": float(location.lat),
+        "lng": float(location.lng)
+    })
+
+    return {"status": "Location broadcasted"}

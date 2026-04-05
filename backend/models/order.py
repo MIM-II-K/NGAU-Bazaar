@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Numeric, Boolean
+from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Numeric, Boolean, Float
 from sqlalchemy.orm import relationship
 from database import Base
 import uuid
@@ -36,6 +36,10 @@ class Order(Base):
 
     # created_at in naive Nepal time
     created_at = Column(DateTime, default=nepal_now)
+
+    current_lat = Column(Float, nullable=True)
+    current_lng = Column(Float, nullable=True)
+    last_location_update = Column(DateTime, nullable=True)
 
     invoice_sent = Column(Boolean, default=False)
     is_cart = Column(Boolean, default=False)  # identify cart orders
