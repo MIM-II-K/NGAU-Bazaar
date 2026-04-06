@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { userApi } from '../utils/userApi'
+import { productApi } from '../utils/productApi'
 
 const AuthContext = createContext(null)
 
@@ -27,25 +27,29 @@ export const AuthProvider = ({ children }) => {
     if (!currentToken) return;
 
     try {
-      const response = await userApi.getMe();
-      // Your apiClient returns response.data directly based on your productApi patterns
-      const userData = response.data || response;
+      // Hit the wishlist route directly
+      const response = await productApi.getWishlist();
+
+      // Handle potential Axios nesting
+      const wishlistItems = response.data || response;
+
+      // Ensure it's an array before checking length
+      const count = Array.isArray(wishlistItems) ? wishlistItems.length : 0;
 
       setUser(prevUser => {
-        const normalizedUser = {
-          ...prevUser, // Keep existing fields like username, profile_image_url
-          ...userData, // Overwrite with fresh data from server
-          wishlistCount: userData.wishlist_count || userData.wishlistCount || 0
+        const updatedUser = {
+          ...prevUser,
+          wishlistCount: count, // This is what the Dashboard looks for
         };
 
-        // Sync to storage immediately
-        localStorage.setItem('user', JSON.stringify(normalizedUser));
-        return normalizedUser;
+        // Update storage so it persists on refresh
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        return updatedUser;
       });
 
-      console.log('Sync Complete');
+      console.log('Wishlist Synced from productApi. Count:', count);
     } catch (error) {
-      console.error('Failed to refresh user stats:', error);
+      console.error('Failed to sync wishlist from productApi:', error);
     }
   };
 
