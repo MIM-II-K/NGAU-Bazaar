@@ -3,7 +3,6 @@ import { Container, Row, Col, Card, Button, Badge, ListGroup, Spinner, Alert } f
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
-import { userApi } from '../utils/userApi';
 import { orderApi } from '../utils/orderApi';
 import '../styles/dashboard.css';
 import LiveOrderMap from '../components/LiveOrderMap';

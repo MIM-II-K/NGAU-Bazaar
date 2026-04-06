@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
         wishlistCount: userData.wishlist_count || userData.wishlistCount || 0
       };
 
-      setUser(normalizedUser);
+      setUser(prevUser => ({ ...prevUser, ...normalizedUser }));
       localStorage.setItem('user', JSON.stringify(normalizedUser));
 
       console.log('User stats refreshed. New Count:', normalizedUser.wishlistCount);
