@@ -323,13 +323,11 @@
    PRODUCT CARD WISHLIST (GRID VERSION) - INSTANT REFACTOR
    ========================================================================== */
 .wishlist-wrapper-modern {
-    perspective: 1000px;
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    z-index: 10;
+    position: relative;
+    display:flex;
+    align-items: center;
+    justify-content: center;
 }
-
 .wishlist-btn-premium {
     position: relative;
     width: 45px;
@@ -350,27 +348,24 @@
 
 .icon-stack {
     position: relative;
-    font-size: 1.2rem;
-    height: 20px;
     width: 20px;
-    transition: transform 0.2s ease;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .heart-outline {
     position: absolute;
-    top: 0; left: 0;
-    color: #94a3b8;
-    transition: opacity 0.1s ease; /* Instant fade out */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .heart-filled {
-    position: absolute;
-    top: 0; left: 0;
-    color: #ff4757;
     opacity: 0;
-    transform: scale(0);
-    /* Snappy pop-in effect */
-    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.5);
+    transform: translate(-50%, -50%) scale(0);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.5);
 }
 
 .wishlist-text {
@@ -409,11 +404,12 @@
 
 .wishlist-btn-premium.active .heart-outline { 
     opacity: 0; 
+    transform: translate(-50%, -50%) scale(1.1);
 }
 
 .wishlist-btn-premium.active .heart-filled { 
     opacity: 1; 
-    transform: scale(1.1); 
+    transform: translate(-50%, -50%) scale(1.1); 
 }
 
 .wishlist-btn-premium.active .wishlist-text { 

@@ -135,17 +135,28 @@ const ProductDetail = () => {
             setShowToast(true);
             return;
         }
+
+        const wasInWishlist = product.is_in_wishlist;
+        setProduct(prev => ({
+            ...prev,
+            is_in_wishlist: !wasInWishlist
+        }));
+
         try {
             const response = await productApi.toggleWishlist(product.id);
-            const wasAdded = response.status === "added";
+            const serverStatus = response.status === "added";
             setProduct(prev => ({
                 ...prev,
-                is_in_wishlist: wasAdded
+                is_in_wishlist: serverStatus
             }));
-            setToastMessage(wasAdded ? "Added to wishlist!" : "Removed from wishlist.");
+            setToastMessage(serverStatus ? "Added to wishlist!" : "Removed from wishlist.");
             setShowToast(true);
         } catch (error) {
             console.error("Wishlist error:", error);
+            setProduct(prev => ({
+                ...prev,
+                is_in_wishlist: wasInWishlist
+            }));
             setToastMessage("Failed to update wishlist. Please try again.");
             setShowToast(true);
         }
@@ -380,14 +391,18 @@ const ProductDetail = () => {
                                     <button
                                         className={`wishlist-btn-premium ${product.is_in_wishlist ? 'active' : ''}`}
                                         onClick={handleWishlistToggle}
-                                        disabled={isAdding}
+                                        // Removing disabled={isAdding} here for "Quickest" feel 
+                                        // unless isAdding refers to the wishlist call itself.
                                         aria-label="Toggle Wishlist"
                                     >
                                         <div className="icon-stack">
-                                            <i className="bi bi-heart-fill heart-filled"></i>
+                                            {/* Outline is always there, filled pops over it */}
                                             <i className="bi bi-heart heart-outline"></i>
+                                            <i className="bi bi-heart-fill heart-filled"></i>
                                         </div>
-                                        <span className="wishlist-text">Save</span>
+                                        <span className="wishlist-text">
+                                            {product.is_in_wishlist ? 'Saved' : 'Save'}
+                                        </span>
                                     </button>
                                 </div>
                             </Col>
