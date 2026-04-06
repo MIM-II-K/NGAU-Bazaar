@@ -137,7 +137,7 @@ const UserDashboard = () => {
                 </div>
                 <div className="mt-3">
                   <h4 className="stat-value">
-                    {user?.wishlistCount ?? user?.wishlist_count ?? 0}
+                    {user?.wishlistCount || 0}
                   </h4>
                   <p className="stat-label">
                     <Link to="/wishlist" className="text-decoration-none hover-link">

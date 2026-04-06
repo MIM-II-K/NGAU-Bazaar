@@ -23,14 +23,25 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   const refreshUserStats = async () => {
-      const currentToken = localStorage.getItem('token');
-      if (!currentToken) return;
+    const currentToken = localStorage.getItem('token');
+    if (!currentToken) return;
 
-      try {
-      const userData = await userApi.getMe();
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-      console.log('User stats refreshed', userData.wishlistCount);
+    try {
+      const response = await userApi.getMe();
+
+      // 1. Handle Axios nesting (response vs response.data)
+      const userData = response.data || response;
+
+      // 2. Normalize the data (ensure both naming styles work)
+      const normalizedUser = {
+        ...userData,
+        wishlistCount: userData.wishlist_count || userData.wishlistCount || 0
+      };
+
+      setUser(normalizedUser);
+      localStorage.setItem('user', JSON.stringify(normalizedUser));
+
+      console.log('User stats refreshed. New Count:', normalizedUser.wishlistCount);
     } catch (error) {
       console.error('Failed to refresh user stats:', error);
     }
