@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { userApi } from '../utils/userApi'
 
 const AuthContext = createContext(null)
 
@@ -22,10 +23,14 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   const refreshUserStats = async () => {
-    try {
-      const userData = await useBootstrapMinBreakpoint.getMe();
+      const currentToken = localStorage.getItem('token');
+      if (!currentToken) return;
+
+      try {
+      const userData = await userApi.getMe();
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
+      console.log('User stats refreshed', userData.wishlistCount);
     } catch (error) {
       console.error('Failed to refresh user stats:', error);
     }
@@ -131,8 +136,8 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    isAuthenticated,
-    isAdmin,
+    isAuthenticated: () => !!token && !!user,
+    isAdmin: () => user?.role === 'admin',
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

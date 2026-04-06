@@ -20,9 +20,7 @@ const ProductCard = ({ product }) => {
     const handleWishlistToggle = async (e) => {
         e.stopPropagation();
 
-        const token = localStorage.getItem('token');
-        if (!token) {
-
+        if (!localStorage.getItem('token')) {
             alert("Please login to manage wishlist");
             return;
         }
