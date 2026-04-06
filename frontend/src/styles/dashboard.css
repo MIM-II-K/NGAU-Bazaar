@@ -251,6 +251,7 @@ body {
   background: #fff5f5;
   color: #e53e3e;
   border: 1px solid #feb2b2;
+  animation: pulse-red 2s infinite;
 }
 
 .trend-neutral {
@@ -262,6 +263,22 @@ body {
 /* Smooth reveal when data loads */
 .fade-in {
   animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68,68, 0.4);}
+  70% { box-shadow: 0 0 0 10px rgba(239, 68,68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68,68, 0); }
+}
+
+.hover-link {
+  color: var(--accent-color);
+  opacity: 0.8;
+  transition: all 0.2s ease;
+}
+.hover-link:hover {
+  opacity: 1;
+  text-decoration: underline;
 }
 
 @keyframes fadeIn {

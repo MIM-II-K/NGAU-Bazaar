@@ -14,6 +14,7 @@ const ProductCard = ({ product }) => {
     const navigate = useNavigate();
     const { refreshCart } = useCart();
     const [loading, setLoading] = useState(false);
+    const {refreshUserStats} = useAuth(); // To refresh user stats after wishlist toggle    
     const [isWishlisted, setIsWishlisted] = useState(product.is_in_wishlist); // For wishlist toggle
 
     const handleWishlistToggle = async (e) => {
@@ -29,6 +30,7 @@ const ProductCard = ({ product }) => {
         try {
             setIsWishlisted(!isWishlisted); // Optimistic UI update
             await productApi.toggleWishlist(product.id);
+            await refreshUserStats(); // Refresh user stats to update wishlist count
         } catch (error) {
             setIsWishlisted(isWishlisted); // Revert on error   
             console.error("Wishlist toggle error:", error);

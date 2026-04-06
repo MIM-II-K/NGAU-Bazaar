@@ -149,28 +149,23 @@ const UserDashboard = () => {
             <Col xs={6} lg={3}>
               <motion.div variants={itemVars} className="stat-glass-card">
                 <div className="stat-icon bg-soft-danger">
-                  <i className="bi bi-heart"></i>
+                  <i className="bi bi-heart-fill text-danger"></i>
                 </div>
                 <div className="mt-3">
-                  {/* Dynamic Item Count with Pluralization Logic */}
                   <h4 className="stat-value">
-                    {profile?.wishlistCount || 0} {profile?.wishlistCount === 1 ? 'Item' : 'Items'}
+                    {user?.wishlistCount || 0}
                   </h4>
-
                   <p className="stat-label">
                     <Link to="/wishlist" className="text-decoration-none hover-link">
-                      Wishlist
+                      Wishlist Items
                     </Link>
                   </p>
 
-                  {/* Conditional Rendering: Only show if there are actual price drops */}
-                  {profile?.priceDropCount > 0 ? (
+                  {user?.priceDropCount > 0 && (
                     <span className="stat-trend trend-danger fade-in">
                       <i className="bi bi-graph-down-arrow me-1"></i>
-                      {profile.priceDropCount} Price {profile.priceDropCount === 1 ? 'Drop' : 'Drops'}
+                      {user.priceDropCount} Price Drops
                     </span>
-                  ) : (
-                    <span className="stat-trend trend-neutral">No price changes</span>
                   )}
                 </div>
               </motion.div>

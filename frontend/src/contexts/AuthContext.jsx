@@ -21,6 +21,16 @@ export const AuthProvider = ({ children }) => {
     setLoading(false)
   }, [])
 
+  const refreshUserStats = async () => {
+    try {
+      const userData = await useBootstrapMinBreakpoint.getMe();
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
+    } catch (error) {
+      console.error('Failed to refresh user stats:', error);
+    }
+  };
+
   // Login function
   const login = async (credentials, isAdmin = false) => {
     const endpoint = isAdmin ? '/api/admin/login' : '/users/login'
@@ -115,6 +125,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     setUser,
+    refreshUserStats,
     token,
     loading,
     login,
