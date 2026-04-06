@@ -27,21 +27,6 @@ const UserDashboard = () => {
     show: { y: 0, opacity: 1 }
   };
 
-  // Fetch user profile
-  const fetchProfile = async () => {
-    setLoadingProfile(true);
-    setErrorProfile('');
-    try {
-      const data = await userApi.getMe();
-      setProfile(data); // store locally
-    } catch (err) {
-      console.error('Failed to load profile:', err);
-      setErrorProfile('Unable to load user profile.');
-    } finally {
-      setLoadingProfile(false);
-    }
-  };
-
   // Fetch user orders
   const fetchOrders = async () => {
     setLoadingOrders(true);
@@ -58,7 +43,6 @@ const UserDashboard = () => {
   };
 
   useEffect(() => {
-    fetchProfile();
     fetchOrders();
   }, []);
 
@@ -83,7 +67,7 @@ const UserDashboard = () => {
                 <Col lg={8} className="text-center text-lg-start">
                   <Badge bg="none" className="badge-glow mb-3">Premium Member</Badge>
                   <h1 className="hero-title">
-                    Welcome back, <span className="gradient-text">{profile?.username || 'Explorer'}</span>
+                    Welcome back, <span className="gradient-text">{user?.username || 'Explorer'}</span>
                   </h1>
                   <p className="hero-subtitle">
                     Your account is in good standing. You have <span className="text-count">{orders.length}</span> recent orders.
@@ -128,7 +112,7 @@ const UserDashboard = () => {
                   <i className="bi bi-wallet2"></i>
                 </div>
                 <div className="mt-3">
-                  <h4 className="stat-value">Rs.{profile?.spending || 0}</h4>
+                  <h4 className="stat-value">Rs.{user?.spending || 0}</h4>
                   <p className="stat-label">Spending</p>
                   <span className="stat-trend trend-success">+12%</span>
                 </div>
@@ -153,7 +137,7 @@ const UserDashboard = () => {
                 </div>
                 <div className="mt-3">
                   <h4 className="stat-value">
-                    {user?.wishlistCount || 0}
+                    {user?.wishlistCount ?? user?.wishlist_count ?? 0}
                   </h4>
                   <p className="stat-label">
                     <Link to="/wishlist" className="text-decoration-none hover-link">
