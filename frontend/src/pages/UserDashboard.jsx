@@ -9,12 +9,9 @@ import '../styles/dashboard.css';
 import LiveOrderMap from '../components/LiveOrderMap';
 
 const UserDashboard = () => {
-  const { user, logout } = useAuth(); // ✅ only user and logout
-  const [profile, setProfile] = useState(null);
+  const { user, loading: authLoading } = useAuth();
   const [orders, setOrders] = useState([]);
-  const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingOrders, setLoadingOrders] = useState(true);
-  const [errorProfile, setErrorProfile] = useState('');
   const [errorOrders, setErrorOrders] = useState('');
 
   // Framer Motion animation variants
@@ -46,6 +43,13 @@ const UserDashboard = () => {
     fetchOrders();
   }, []);
 
+  if (authLoading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100 bg-dark">
+        <Spinner animation="border" variant="primary" />
+      </div>
+    );
+  }
   return (
     <div className="dashboard-wrapper">
       {/* --- HERO SECTION --- */}
@@ -56,46 +60,38 @@ const UserDashboard = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="hero-glass-panel"
           >
-            {loadingProfile ? (
-              <div className="d-flex justify-content-center py-5">
-                <Spinner animation="border" variant="primary" />
-              </div>
-            ) : errorProfile ? (
-              <Alert variant="danger">{errorProfile}</Alert>
-            ) : (
-              <Row className="align-items-center">
-                <Col lg={8} className="text-center text-lg-start">
-                  <Badge bg="none" className="badge-glow mb-3">Premium Member</Badge>
-                  <h1 className="hero-title">
-                    Welcome back, <span className="gradient-text">{profile?.username || 'Explorer'}</span>
-                  </h1>
-                  <p className="hero-subtitle">
-                    Your account is in good standing. You have <span className="text-count">{orders.length}</span> recent orders.
-                  </p>
-                </Col>
-                <Col lg={4} className="d-none d-lg-flex justify-content-end">
-                  <div className="avatar-portal">
-                    <div className="avatar-ring"></div>
-                    <div className="avatar-main">
-                      {profile?.profile_image_url ? (
-                        <img
-                          src={profile.profile_image_url}
-                          alt="Profile"
-                          className="dashboard-avatar-img"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            // Fallback to initial if image fails to load
-                            e.target.parentElement.innerText = profile?.username?.charAt(0).toUpperCase() || 'U';
-                          }}
-                        />
-                      ) : (
-                        profile?.username?.charAt(0).toUpperCase() || 'U'
-                      )}
-                    </div>
+            <Row className="align-items-center">
+              <Col lg={8} className="text-center text-lg-start">
+                <Badge bg="none" className="badge-glow mb-3">Premium Member</Badge>
+                <h1 className="hero-title">
+                  Welcome back, <span className="gradient-text">{user?.username || 'Explorer'}</span>
+                </h1>
+                <p className="hero-subtitle">
+                  Your account is in good standing. You have <span className="text-count">{orders.length}</span> recent orders.
+                </p>
+              </Col>
+              <Col lg={4} className="d-none d-lg-flex justify-content-end">
+                <div className="avatar-portal">
+                  <div className="avatar-ring"></div>
+                  <div className="avatar-main">
+                    {user?.profile_image_url ? (
+                      <img
+                        src={user.profile_image_url}
+                        alt="Profile"
+                        className="dashboard-avatar-img"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          // Fallback to initial if image fails to load
+                          e.target.parentElement.innerText = user?.username?.charAt(0).toUpperCase() || 'U';
+                        }}
+                      />
+                    ) : (
+                      user?.username?.charAt(0).toUpperCase() || 'U'
+                    )}
                   </div>
-                </Col>
-              </Row>
-            )}
+                </div>
+              </Col>
+            </Row>
           </motion.div>
         </Container>
       </section>
@@ -137,7 +133,7 @@ const UserDashboard = () => {
                 </div>
                 <div className="mt-3">
                   <h4 className="stat-value">
-                    {user?.wishlistCount || 0}
+                    {user?.wishlistCount ?? user?.wishlist_count ?? 0}
                   </h4>
                   <p className="stat-label">
                     <Link to="/wishlist" className="text-decoration-none hover-link">
@@ -160,7 +156,7 @@ const UserDashboard = () => {
                   <i className="bi bi-trophy"></i>
                 </div>
                 <div className="mt-3">
-                  <h4 className="stat-value">{profile?.rewards || 0} pts</h4>
+                  <h4 className="stat-value">{user?.rewards || 0} pts</h4>
                   <p className="stat-label">Rewards</p>
                   <span className="stat-trend trend-warning">Silver Tier</span>
                 </div>
@@ -257,7 +253,7 @@ const UserDashboard = () => {
           </Row>
         </motion.div>
       </Container>
-    </div>
+    </div >
   );
 };
 
