@@ -3,9 +3,11 @@ import { Card, Badge, Button, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { addToCart } from '../utils/cartApi';
 import { useCart } from '../contexts/CartContext';
-// 1. IMPORT THE HELPER
 import { getProductImageUrl } from '../utils/urlHelper';
 import { productApi } from '../utils/productApi';
+
+// --- FIXED: ADDED MISSING IMPORT ---
+import { useAuth } from '../contexts/AuthContext'; 
 
 const API_BASE_URL = 'https://ngau-bazaar.onrender.com';
 const fallbackImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Crect width='300' height='200' fill='%23f1f5f9'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%2394a3b8'%3ENo Image%3C/text%3E%3C/svg%3E";
@@ -13,30 +15,40 @@ const fallbackImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/s
 const ProductCard = ({ product }) => {
     const navigate = useNavigate();
     const { refreshCart } = useCart();
+    
+    // --- FIXED: DESTRICTURING FROM IMPORTED useAuth ---
+    const { refreshUserStats } = useAuth(); 
+    
     const [loading, setLoading] = useState(false);
-    const {refreshUserStats} = useAuth(); // To refresh user stats after wishlist toggle    
-    const [isWishlisted, setIsWishlisted] = useState(product.is_in_wishlist); // For wishlist toggle
+    const [isWishlisted, setIsWishlisted] = useState(product.is_in_wishlist);
 
     const handleWishlistToggle = async (e) => {
         e.stopPropagation();
 
-        if (!localStorage.getItem('token')) {
+        const token = localStorage.getItem('token');
+        if (!token) {
             alert("Please login to manage wishlist");
             return;
         }
 
         try {
-            setIsWishlisted(!isWishlisted); // Optimistic UI update
+            // 1. Optimistic Update (Heart changes color immediately)
+            setIsWishlisted(!isWishlisted); 
+            
+            // 2. Network Call to update Database
             await productApi.toggleWishlist(product.id);
-            await refreshUserStats(); // Refresh user stats to update wishlist count
+            
+            // 3. Update Dashboard Stats (Wishlist count updates live)
+            await refreshUserStats(); 
         } catch (error) {
-            setIsWishlisted(isWishlisted); // Revert on error   
+            // Revert heart color if the API fails
+            setIsWishlisted(isWishlisted); 
             console.error("Wishlist toggle error:", error);
         }
     };
 
     const handleCardClick = () => {
-        const identifier = product.slug || product.id
+        const identifier = product.slug || product.id;
         navigate(`/products/${identifier}`);
     };
 
@@ -70,7 +82,8 @@ const ProductCard = ({ product }) => {
 
     return (
         <Card className="product-card h-100 shadow-sm border-0" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
-            <div className="product-img-container" style={{ height: '200px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
+            <div className="product-img-container" style={{ position: 'relative', height: '200px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
+                
                 {/* --- WISHLIST HEART ICON --- */}
                 <button
                     onClick={handleWishlistToggle}
@@ -96,14 +109,13 @@ const ProductCard = ({ product }) => {
                 </button>
 
                 <img
-                    src={product.images?.length > 0 ? getProductImageUrl(product.images[0].url, 'https://ngau-bazaar.onrender.com') : fallbackImage}
+                    src={product.images?.length > 0 ? getProductImageUrl(product.images[0].url, API_BASE_URL) : fallbackImage}
                     alt={product.name}
                     loading="lazy"
                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                     onError={(e) => { e.currentTarget.src = fallbackImage; }}
                 />
 
-                {/* Overlay and Badges */}
                 <div className="product-overlay">
                     <Button variant="light" className="rounded-pill px-4 fw-bold shadow-sm">
                         View Details
