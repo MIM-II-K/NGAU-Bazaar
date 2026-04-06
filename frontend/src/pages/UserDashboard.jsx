@@ -67,7 +67,7 @@ const UserDashboard = () => {
                 <Col lg={8} className="text-center text-lg-start">
                   <Badge bg="none" className="badge-glow mb-3">Premium Member</Badge>
                   <h1 className="hero-title">
-                    Welcome back, <span className="gradient-text">{user?.username || 'Explorer'}</span>
+                    Welcome back, <span className="gradient-text">{profile?.username || 'Explorer'}</span>
                   </h1>
                   <p className="hero-subtitle">
                     Your account is in good standing. You have <span className="text-count">{orders.length}</span> recent orders.
