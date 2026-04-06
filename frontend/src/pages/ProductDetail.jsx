@@ -385,18 +385,15 @@ const ProductDetail = () => {
                                 </Button>
                             </Col>
 
-                            {/* Wishlist - Minimalist Action */}
                             <Col xs={3} md={2} className="d-flex align-items-center justify-content-center">
                                 <div className="wishlist-wrapper-modern">
                                     <button
+                                        type="button"
                                         className={`wishlist-btn-premium ${product.is_in_wishlist ? 'active' : ''}`}
                                         onClick={handleWishlistToggle}
-                                        // Removing disabled={isAdding} here for "Quickest" feel 
-                                        // unless isAdding refers to the wishlist call itself.
                                         aria-label="Toggle Wishlist"
                                     >
                                         <div className="icon-stack">
-                                            {/* Outline is always there, filled pops over it */}
                                             <i className="bi bi-heart heart-outline"></i>
                                             <i className="bi bi-heart-fill heart-filled"></i>
                                         </div>
