@@ -8,7 +8,7 @@ import '../styles/dashboard.css';
 import LiveOrderMap from '../components/LiveOrderMap';
 
 const UserDashboard = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshUserStats } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [errorOrders, setErrorOrders] = useState('');
@@ -39,8 +39,15 @@ const UserDashboard = () => {
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    const syncDashboard = async () => {
+      await Promise.all([
+        fetchOrders(),
+        refreshUserStats() // Ensure user stats are up-to-date when dashboard loads
+      ]);
+    };
+    
+    syncDashboard();
+  }, [user?.wishlistCount]);
 
   if (authLoading) {
     return (

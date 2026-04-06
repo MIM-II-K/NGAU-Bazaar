@@ -28,20 +28,22 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const response = await userApi.getMe();
-
-      // 1. Handle Axios nesting (response vs response.data)
+      // Your apiClient returns response.data directly based on your productApi patterns
       const userData = response.data || response;
 
-      // 2. Normalize the data (ensure both naming styles work)
-      const normalizedUser = {
-        ...userData,
-        wishlistCount: userData.wishlist_count || userData.wishlistCount || 0
-      };
+      setUser(prevUser => {
+        const normalizedUser = {
+          ...prevUser, // Keep existing fields like username, profile_image_url
+          ...userData, // Overwrite with fresh data from server
+          wishlistCount: userData.wishlist_count || userData.wishlistCount || 0
+        };
 
-      setUser(prevUser => ({ ...prevUser, ...normalizedUser }));
-      localStorage.setItem('user', JSON.stringify(normalizedUser));
+        // Sync to storage immediately
+        localStorage.setItem('user', JSON.stringify(normalizedUser));
+        return normalizedUser;
+      });
 
-      console.log('User stats refreshed. New Count:', normalizedUser.wishlistCount);
+      console.log('Sync Complete');
     } catch (error) {
       console.error('Failed to refresh user stats:', error);
     }
