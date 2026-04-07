@@ -9,44 +9,44 @@ from typing import List, Dict
 
 router = APIRouter(prefix="/smart-basket", tags=["Smart Basket"])
 
-# Production Strategy: Define how much of the budget goes to what
+# 1. Update these keys to match your DB exactly or partially
 CATEGORY_PRIORITY = {
-    "Fruits": 0.40,
+    "Pantry": 0.40,      # This covers your Grains/Rice/Dal
     "Vegetables": 0.25,
-    "Snacks": 0.25,
-    "Pantry": 0.10
+    "Fruits": 0.15,
+    "Drinks": 0.10,
+    "Snacks": 0.10
 }
 
 @router.get("/generate")
 def generate_weekly_basket(
     family_size: int = Query(..., ge=1, le=10),
-    budget: float = Query(..., ge=500), # Minimum budget in NPR
+    budget: float = Query(..., ge=500), 
     db: Session = Depends(get_db)
 ):
     basket_items = []
     total_calculated_price = Decimal("0.00")
-    
-    # 1. Fetch all categories to map names to IDs
     categories = db.query(Category).all()
     
     for cat_name, weight in CATEGORY_PRIORITY.items():
         cat_budget = Decimal(str(budget)) * Decimal(str(weight))
         
-        # Find category by name (Matches your Category model)
-        target_cat = next(
-            (c for c in categories if c.name.lower() in cat_name.lower() or cat_name.lower() in c.name.lower()), 
-            None
-        )
+        # IMPROVED FUZZY MATCH: Look for the category in your DB
+        target_cat = next((c for c in categories if cat_name.lower() in c.name.lower()), None)
+        
+        if not target_cat:
+            print(f"DEBUG: Category '{cat_name}' not found in Database. Skipping...")
+            continue
 
-        # 2. Fetch products in this category with stock
+        # Fetch products. Note: using p.stock > 0 as per your model
         products = db.query(Product).options(joinedload(Product.images)).filter(
             Product.category_id == target_cat.id,
-            Product.stock > 0
+            Product.stock > 0  
         ).order_by(func.random()).limit(5).all()
 
         cat_spent = Decimal("0.00")
         for p in products:
-            # Simple scaling logic: Family of 4 needs ~2x a Family of 2 for most items
+            # Logic: More family members = more quantity
             qty = 1 if family_size <= 2 else 2
             item_cost = p.price * qty
 
