@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import apiClient from '../apiClient';
+import apiClient from '../utils/api';
 import { useCart } from '../context/CartContext';
 import { bulkAddToCart } from '../utils/cartApi';
 import '../styles/SmartBasket.css';
