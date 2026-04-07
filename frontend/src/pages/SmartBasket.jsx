@@ -15,10 +15,14 @@ const SmartBasket = () => {
         setLoading(true);
         try {
             const res = await apiClient.get('/smart-basket/generate', {
-                params: { family_size: params.familySize, budget: params.budget }
+                params: { 
+                    family_size: parseInt(params.familySize), 
+                    budget: parseInt(params.budget) 
+                }
             });
-            setResult(res);
+            setResult(res.data);
         } catch (err) {
+            console.error("Generation error:", err);    
             alert("Could not generate basket. Try a higher budget.");
         } finally {
             setLoading(false);
@@ -26,6 +30,8 @@ const SmartBasket = () => {
     };
 
     const handleAddAll = async () => {
+        if (!result || !result.items) return;
+
         setSyncing(true);
         try {
             const itemsToPayload = result.items.map(item => ({
@@ -37,6 +43,7 @@ const SmartBasket = () => {
 
             alert("Success! All items added to your bag");
         } catch (err) {
+            console.error("Bulk add error:", err.response?.data || err.message);
             alert("Could not add all items to cart.");
         } finally {
             setSyncing(false);

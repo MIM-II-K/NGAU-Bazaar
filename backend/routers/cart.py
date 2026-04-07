@@ -374,6 +374,7 @@ def bulk_add_to_cart(items: list[CartItemCreate], db: Session = Depends(get_db),
                 db.add(new_item)
 
         db.commit()
+        db.refresh(cart)
 
         final_cart = (
             db.query(Cart)
@@ -389,5 +390,6 @@ def bulk_add_to_cart(items: list[CartItemCreate], db: Session = Depends(get_db),
     
     except Exception as e:
         db.rollback()
+        print(f"Error in bulk add to cart: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
     
