@@ -113,7 +113,7 @@
 .unit-name {
   font-size: 1.25rem;
   font-weight: bold;
-  text-transform: uppercase;
+  text-transform: none;
   margin: 0;
   letter-spacing: 0.02em;
   color: black;
