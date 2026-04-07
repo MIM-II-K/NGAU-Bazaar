@@ -42,12 +42,11 @@
 }
 
 .img-container {
-  aspect-ratio: 1/1; /* High-fashion portrait ratio */
+  aspect-ratio: 3/4; /* High-fashion portrait ratio */
   overflow: hidden;
   background: var(--gray-bg);
   position: relative;
   cursor: crosshair;
-  display: block;
 }
 
 .img-container img {
@@ -55,7 +54,6 @@
   height: 100%;
   object-fit: cover;
   transition: transform 1.5s cubic-bezier(0.16, 1, 0.3, 1);
-  display: block;
 }
 
 .modern-unit:hover img {
@@ -65,24 +63,23 @@
 /* UI Overlays */
 .percentage-tag {
   position: absolute;
-  top: 15px;
-  left: 15px;
+  top: 0;
+  left: 0;
   background: var(--black);
   color: var(--white);
-  padding: 8px 12px;
+  padding: 12px 18px;
   font-weight: 900;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   z-index: 5;
-  border-radius: 12px 0 12px 0;
 }
 
 .floating-timer {
   position: absolute;
-  bottom: 0;
-  left: 15px;
+  bottom: 12px;
+  right: 12px;
   font-family: var(--font-mono);
-  font-weight: 900;
-  font-size: 0.9rem;
+  font-weight: 500;
+  font-size: 0.75rem;
   letter-spacing: 0.1em;
   color: var(--white);
   
@@ -91,7 +88,7 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   
-  padding: 6px 15px;
+  padding: 6px 12px;
   border-radius: 2px; /* Slight rounding for a refined feel */
   z-index: 5;
   
@@ -100,9 +97,6 @@
   transition: all 0.4s ease;
 }
 
-.floating-timer.expired{
-  background: #666;
-}
 .modern-unit:hover .floating-timer {
   background: var(--black);
   color: var(--white);
@@ -111,17 +105,17 @@
 
 /* Details Box */
 .details-box {
-  padding-top: 2rem;
+  padding-top: 1.5rem;
   border-bottom: 1px solid #eee;
   padding-bottom: 1.5rem;
 }
 
 .unit-name {
-  font-size: 1.5rem;
-  font-weight: 900;
+  font-size: 1.25rem;
+  font-weight: bold;
   text-transform: uppercase;
   margin: 0;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.02em;
   color: black;
   font-display: block;
 }
