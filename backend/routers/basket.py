@@ -11,10 +11,10 @@ router = APIRouter(prefix="/smart-basket", tags=["Smart Basket"])
 
 # Production Strategy: Define how much of the budget goes to what
 CATEGORY_PRIORITY = {
-    "Grains & Staples": 0.40,
+    "Fruits": 0.40,
     "Vegetables": 0.25,
-    "Protein & Dairy": 0.25,
-    "Fruits & Snacks": 0.10
+    "Snacks": 0.25,
+    "Pantry": 0.10
 }
 
 @router.get("/generate")
@@ -33,8 +33,10 @@ def generate_weekly_basket(
         cat_budget = Decimal(str(budget)) * Decimal(str(weight))
         
         # Find category by name (Matches your Category model)
-        target_cat = next((c for c in categories if cat_name in c.name), None)
-        if not target_cat: continue
+        target_cat = next(
+            (c for c in categories if c.name.lower() in cat_name.lower() or cat_name.lower() in c.name.lower()), 
+            None
+        )
 
         # 2. Fetch products in this category with stock
         products = db.query(Product).options(joinedload(Product.images)).filter(

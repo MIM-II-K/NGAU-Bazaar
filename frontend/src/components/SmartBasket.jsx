@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Users, Wallet, ShoppingBag, ChevronRight, CheckCircle2 } from 'lucide-react';
 import apiClient from '../utils/api';
@@ -15,38 +15,51 @@ const SmartBasket = () => {
 
     const generateBasket = async () => {
         setLoading(true);
+        setResult(null); // Force reset to trigger re-animations and clear old state
         try {
-            // Ensure we send numbers to the FARM stack backend
             const res = await apiClient.get('/smart-basket/generate', {
                 params: { 
                     family_size: parseInt(params.familySize), 
                     budget: parseInt(params.budget) 
                 }
             });
-            setResult(res.data);
+
+            // If backend returns success but 0 items (budget too low)
+            if (res.data && res.data.items.length === 0) {
+                alert("We couldn't find enough items within this budget. Please try a higher amount.");
+            } else {
+                setResult(res.data);
+            }
         } catch (err) {
-            console.error("Generation error:", err);
-            alert("Our algorithms couldn't find a perfect match. Try adjusting your budget.");
+            console.error("Generation error:", err.response?.data || err.message);
+            alert("Could not generate basket. Please ensure your categories are set up correctly in the database.");
         } finally {
             setLoading(false);
         }
     };
 
     const handleAddAll = async () => {
-        if (!result || !result.items) return;
+        // Guard clause to ensure result and items exist
+        if (!result || !result.items || result.items.length === 0) return;
+
         setSyncing(true);
         try {
             const payload = result.items.map(item => ({
                 product_id: item.product_id,
                 quantity: item.qty
             }));
+
+            // Sync with your bulk API
             await bulkAddToCart(payload);
-            await refreshCart();
-            setResult(null); // Clear results to show success or reset
+            
+            // Critical: Refresh context so the Cart Page updates immediately
+            if (refreshCart) await refreshCart();
+
+            setResult(null); 
             alert("🛒 Success! Your weekly basket is ready in the cart.");
         } catch (err) {
-            console.error("Sync error:", err);
-            alert("Could not sync to cart. Please check your connection.");
+            console.error("Sync error:", err.response?.data || err.message);
+            alert("Failed to sync basket to cart. Are you logged in?");
         } finally {
             setSyncing(false);
         }
@@ -54,7 +67,6 @@ const SmartBasket = () => {
 
     return (
         <div className="sb-container">
-            {/* Background Glows for Cinematic Feel */}
             <div className="glow-orb orb-1"></div>
             <div className="glow-orb orb-2"></div>
 
@@ -100,13 +112,13 @@ const SmartBasket = () => {
                     className={`btn-ai-generate ${loading ? 'loading' : ''}`}
                     disabled={loading}
                 >
-                    {loading ? "Analyzing Trends..." : "Generate Smart Plan"}
+                    {loading ? "Analyzing NGAU Inventory..." : "Generate Smart Plan"}
                     <ChevronRight size={20} />
                 </button>
             </section>
 
             <AnimatePresence>
-                {result && (
+                {result && result.items && (
                     <motion.div 
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -137,7 +149,7 @@ const SmartBasket = () => {
                                     className="product-glass-card"
                                 >
                                     <div className="img-container">
-                                        <img src={item.image} alt={item.name} />
+                                        <img src={item.image || '/placeholder-food.png'} alt={item.name} />
                                         <div className="qty-tag">{item.qty} {item.unit}</div>
                                     </div>
                                     <div className="card-details">
