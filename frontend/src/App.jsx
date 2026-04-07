@@ -7,6 +7,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import RequireAuth from './components/RequireAuth';
 import RequireAdmin from './components/RequireAdmin';
+import SmartBasket from './components/SmartBasket';
 import AdminLayout from './layouts/AdminLayout';
 
 // Pages
@@ -38,7 +39,6 @@ import HelpCenter from './pages/HelpCenter';
 import Privacy from './pages/Privacy';
 import AboutUs from './pages/AboutUs';
 import WishlistPage from './pages/WishlistPage';
-import SmartBasket from './pages/SmartBasket';
 
 function App() {
   return (

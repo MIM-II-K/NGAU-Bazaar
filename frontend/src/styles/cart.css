@@ -309,3 +309,30 @@
   background: #ef4444 !important; /* Warning red only on intent */
   transform: translateY(-1px);
 }
+
+/* Animation for the whole empty state */
+.animate-in {
+  animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Make the integrated component blend in */
+.smart-basket-integrated {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.3s ease;
+}
+
+/* Optional: Scale the SmartBasket down slightly if it feels too big on the cart page */
+.smart-basket-integrated .sb-hero-section h1 {
+  font-size: 2rem; /* Smaller heading for integrated view */
+}
+
+.smart-basket-integrated .sb-container {
+  padding-top: 40px; /* Reduce top padding since it's inside another page */
+}

@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from '../contexts/CartContext';
 import ToastMessage from "../components/ToastMessage";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
+import SmartBasket from "../components/SmartBasket";
 import { getProductImageUrl } from "../utils/urlHelper";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -141,11 +142,28 @@ const CartPage = () => {
         </div>
 
         {cart.items.length === 0 ? (
-          <div className="empty-cart-state text-center py-5 shadow-sm rounded-5 bg-white border">
-            <i className="bi bi-cart-x display-1 text-light mb-4 d-block"></i>
-            <h3 className="fw-bold">Your cart is empty</h3>
-            <p className="text-muted mb-4">Add some of our mountain-fresh goods to get started.</p>
-            <Link to="/shop" className="btn btn-primary btn-lg rounded-pill px-5">Browse Shop</Link>
+          <div className="cart-empty-container animate-in">
+            {/* Existing Empty State Box */}
+            <div className="empty-cart-state text-center py-5 shadow-sm rounded-5 bg-white border mb-5">
+              <i className="bi bi-cart-x display-1 text-light mb-4 d-block"></i>
+              <h3 className="fw-bold">Your cart is empty</h3>
+              <p className="text-muted mb-4">Add some of our mountain-fresh goods to get started.</p>
+              <Link to="/shop" className="btn btn-primary btn-lg rounded-pill px-5 shadow-sm">
+                Browse Shop
+              </Link>
+            </div>
+
+            {/* The Smart Section Divider */}
+            <div className="text-center mb-4">
+              <span className="badge rounded-pill bg-light text-dark px-3 py-2 border">
+                Or let AI plan for you
+              </span>
+            </div>
+
+            {/* Integrated Smart Basket Component */}
+            <div className="smart-basket-integrated shadow-lg rounded-5 overflow-hidden">
+              <SmartBasket />
+            </div>
           </div>
         ) : (
           <Row className="g-5">
