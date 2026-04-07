@@ -1,7 +1,8 @@
+/*
 :root {
     --glass-bg: rgba(255, 255, 255, 0.7);
     --glass-border: rgba(255, 255, 255, 0.4);
-    --accent-color: #2D5A27; /* NGAU Bazaar Deep Green */
+    --accent-color: #2D5A27;
     --sparkle-gradient: linear-gradient(135deg, #2D5A27, #5c9e54);
 }
 
@@ -13,7 +14,6 @@
     overflow: hidden;
 }
 
-/* Background Effects */
 .glow-orb {
     position: absolute;
     border-radius: 50%;
@@ -21,8 +21,22 @@
     z-index: 0;
     opacity: 0.4;
 }
-.orb-1 { width: 400px; height: 400px; background: #c8e6c9; top: -100px; right: -100px; }
-.orb-2 { width: 300px; height: 300px; background: #e8f5e9; bottom: -50px; left: -50px; }
+
+.orb-1 { 
+    width: 400px; 
+    height: 400px; 
+    background: #c8e6c9; 
+    top: -100px; 
+    right: -100px; 
+}
+
+.orb-2 { 
+    width: 300px; 
+    height: 300px; 
+    background: #e8f5e9; 
+    bottom: -50px; 
+    left: -50px; 
+}
 
 .sb-hero-section {
     text-align: center;
@@ -59,7 +73,6 @@
     -webkit-text-fill-color: transparent;
 }
 
-/* Configuration Card */
 .sb-config-card {
     max-width: 900px;
     margin: 0 auto 60px;
@@ -137,7 +150,6 @@
     box-shadow: 0 10px 20px rgba(45, 90, 39, 0.2);
 }
 
-/* Results Section */
 .sb-results-wrapper {
     max-width: 1100px;
     margin: 0 auto;
@@ -168,7 +180,6 @@
     font-weight: 600;
 }
 
-/* Glass Product Cards */
 .sb-product-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -218,11 +229,28 @@
     color: var(--accent-color);
 }
 
-.status-icon { color: #81c784; }
+.status-icon { 
+    color: #81c784; 
+}
 
 @media (max-width: 768px) {
-    .sb-input-grid { grid-template-columns: 1fr; }
-    .sb-hero-section h1 { font-size: 2.5rem; }
-    .results-header { flex-direction: column; align-items: flex-start; gap: 20px; }
-    .btn-bulk-add { width: 100%; justify-content: center; }
+    .sb-input-grid { 
+        grid-template-columns: 1fr; 
+    }
+
+    .sb-hero-section h1 { 
+        font-size: 2.5rem; 
+    }
+
+    .results-header { 
+        flex-direction: column; 
+        align-items: flex-start; 
+        gap: 20px; 
+    }
+
+    .btn-bulk-add { 
+        width: 100%; 
+        justify-content: center; 
+    }
 }
+*/
