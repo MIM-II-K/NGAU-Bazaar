@@ -92,7 +92,7 @@ const ProductCard = ({ product, idx, onAdd, isAdding }) => {
   const [timeLeft, setTimeLeft] = useState(null);
 
   // Use backend slug if available, otherwise generate it using the helper
-  const productSlug = createSlug(product.name);
+  const productSlug = product.slug || product.id;
 
   const firstImage = product.images && product.images.length > 0
     ? product.images[0].url
