@@ -1,3 +1,4 @@
+from itertools import product
 import traceback
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
@@ -345,3 +346,48 @@ def checkout_cart(data: CartCheckoutResponse, db: Session = Depends(get_db), use
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/bulk-add", response_model=CartResponse)    
+def bulk_add_to_cart(items: list[CartItemCreate], db: Session = Depends(get_db), user=Depends(get_current_user)):
+    
+    cart = get_or_create_cart(db, user.id)
+
+    try:
+        for item in items:
+            product = db.query(Product).filter(Product.id == item.product_id).first()
+            if not product:
+                continue
+
+            cart_item = db.query(CartItem).filter(
+                CartItem.cart_id == cart.id, 
+                CartItem.product_id == item.product_id
+            ).first()
+
+            if cart_item:
+                cart_item.quantity += item.quantity
+            else:
+                new_item = CartItem(
+                    cart_id=cart.id,
+                    product_id=item.product_id,
+                    quantity=item.quantity
+                )
+                db.add(new_item)
+
+        db.commit()
+
+        final_cart = (
+            db.query(Cart)
+            .options(
+                joinedload(Cart.items)
+                .joinedload(CartItem.product)
+                .joinedload(Product.images)
+            )
+            .filter(Cart.id == cart.id)
+            .first()
+        )
+        return serialize_cart(final_cart)
+    
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    

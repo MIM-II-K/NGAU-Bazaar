@@ -15,6 +15,9 @@ export const updateCart = (product_id, quantity) =>
 export const removeFromCart = (product_id) =>
   apiClient.delete(`/cart/remove/${product_id}`);
 
+// Bulk add items to cart
+export const bulkAddToCart = (items) => apiClient.post("/cart/bulk-add", { items });
+
 // Checkout cart
 export const checkoutCart = async (checkoutData) => {
   const response = await apiClient.post("/cart/checkout", checkoutData);

@@ -38,6 +38,7 @@ import HelpCenter from './pages/HelpCenter';
 import Privacy from './pages/Privacy';
 import AboutUs from './pages/AboutUs';
 import WishlistPage from './pages/WishlistPage';
+import SmartBasket from './pages/SmartBasket';
 
 function App() {
   return (
@@ -85,6 +86,7 @@ function App() {
                         <Route path="/categories" element={<Categories />} />
                         <Route path="/cart" element={<CartPage />} />
                         <Route path="/wishlist" element={<WishlistPage />} />
+                        <Route path="/smart-basket" element={<SmartBasket />} />
                         <Route path="/profile" element={<UserProfile />} />
                         <Route path="/about-us" element={<AboutUs />} />
                         <Route path="/settings" element={<AccountSettings />} />

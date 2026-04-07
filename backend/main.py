@@ -87,6 +87,7 @@ from routers.otp import router as otp_router
 from routers.set_password import router as set_password_router
 from routers.invoice import router as invoice_router
 from routers.wishlist import router as wishlist_router
+from routers.basket import router as basket_router
 
 # --- 7. Include Routers ---
 app.include_router(user_router)
@@ -101,6 +102,7 @@ app.include_router(otp_router)
 app.include_router(set_password_router)
 app.include_router(invoice_router)
 app.include_router(wishlist_router)
+app.include_router(basket_router)
 
 # --- 8. Static Files Setup ---
 # Main directory for all uploads
