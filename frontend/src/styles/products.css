@@ -584,6 +584,13 @@
 .fade-in {
   animation: fadeIn 0.3s ease-in;
 }
+/* Target the lead description specifically */
+.lead.text-muted {
+  text-transform: none !important; /* Force override of any uppercase inheritance */
+  font-variant: normal;
+  letter-spacing: normal; /* High-fashion fonts often stretch letters; this resets it */
+  line-height: 1.6;
+}
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateX(-10px); }
