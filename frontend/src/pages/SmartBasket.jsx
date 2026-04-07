@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import apiClient from '../apiClient';
 import { useCart } from '../context/CartContext';
 import { bulkAddToCart } from '../utils/cartApi';
-import './SmartBasket.css';
+import '../styles/SmartBasket.css';
 
 const SmartBasket = () => {
     const { refreshCart } = useCart();
