@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import apiClient from '../utils/api';
-import { useCart } from '../context/CartContext';
+import { useCart } from "../contexts/CartContext";
 import { bulkAddToCart } from '../utils/cartApi';
 import '../styles/SmartBasket.css';
 
