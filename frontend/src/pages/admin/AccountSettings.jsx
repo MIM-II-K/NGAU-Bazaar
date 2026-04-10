@@ -53,23 +53,53 @@ const AccountSettings = () => {
     }
 
     setLoading(true);
+    setStatus({ type: '', msg: '' });
+
     try {
       const data = new FormData();
-      data.append('username', formData.username);
-      data.append('email', formData.email);
+      
+      // FastAPI Form(...) expects these strings. 
+      // We ensure we don't send "undefined" or "null" as strings.
+      data.append('username', formData.username || '');
+      data.append('email', formData.email || '');
+      
+      // For Optional fields, only append if they have a value, 
+      // or send an empty string if your DB allows it.
       data.append('phone', formData.phone || '');
       data.append('bio', formData.bio || '');
-      if (formData.password) data.append('password', formData.password);
-      if (profileImage) data.append('profile_image', profileImage);
+
+      if (formData.password) {
+        data.append('password', formData.password);
+      }
+
+      // Important: Key must match 'profile_image' in your Python FastAPI params
+      if (profileImage) {
+        data.append('profile_image', profileImage);
+      }
 
       const response = await userApi.updateProfile(data);
+      
+      // Handling the structure: { user, access_token, token_type }
       const { user: updatedUser, access_token } = response;
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      localStorage.setItem('token', access_token);
-      setStatus({ type: 'success', msg: 'Profile synced!' });
+      
+      if (updatedUser) {
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+      
+      if (access_token) {
+        localStorage.setItem('token', access_token);
+      }
+
+      setStatus({ type: 'success', msg: 'Profile updated successfully!' });
     } catch (err) {
-      setStatus({ type: 'danger', msg: err.message || 'Update failed.' });
+      // Improved error reporting to see exactly what FastAPI is rejecting
+      const errorDetail = err.response?.data?.detail;
+      const msg = typeof errorDetail === 'object' 
+        ? JSON.stringify(errorDetail) 
+        : (errorDetail || 'Update failed.');
+      
+      setStatus({ type: 'danger', msg: `Error: ${msg}` });
     } finally {
       setLoading(false);
     }
@@ -95,7 +125,6 @@ const AccountSettings = () => {
     <div className="profile-dashboard-bg py-5">
       <Container>
         <Row className="g-4">
-          {/* LEFT: Profile Overview Card */}
           <Col lg={4} data-aos="fade-right">
             <Card className="profile-glass-card border-0 shadow-lg overflow-hidden">
               <div className="profile-banner"></div>
@@ -107,7 +136,7 @@ const AccountSettings = () => {
                     ) : (
                       <span className="avatar-initial">{formData.username?.charAt(0)}</span>
                     )}
-                    <button className="edit-avatar-btn" onClick={() => fileInputRef.current.click()}>
+                    <button className="edit-avatar-btn" type="button" onClick={() => fileInputRef.current.click()}>
                       <i className="bi bi-camera-fill"></i>
                     </button>
                   </div>
@@ -116,7 +145,7 @@ const AccountSettings = () => {
 
                 <h4 className="fw-bold mt-3 mb-1">{formData.username || 'Bazaar User'}</h4>
                 <p className="text-muted small mb-3">{formData.email}</p>
-                <span className="badge bg-soft-primary text-primary rounded-pill px-3 mb-4">Verified Member</span>
+                <Badge bg="soft-primary" className="text-primary rounded-pill px-3 mb-4">Verified Member</Badge>
 
                 <div className="d-flex justify-content-around border-top border-bottom py-3 mb-4">
                   <div><h6 className="mb-0 fw-bold">12</h6><small className="text-muted">Orders</small></div>
@@ -141,7 +170,6 @@ const AccountSettings = () => {
             </Card>
           </Col>
 
-          {/* RIGHT: Settings Form */}
           <Col lg={8} data-aos="fade-left">
             <Card className="border-0 shadow-lg rounded-4 p-4 p-md-5">
               <div className="d-flex justify-content-between align-items-center mb-4">
@@ -157,7 +185,7 @@ const AccountSettings = () => {
                   <Col md={6}>
                     <Form.Group>
                       <Form.Label className="small fw-bold text-muted">Username</Form.Label>
-                      <Form.Control className="custom-input" name="username" value={formData.username} onChange={handleChange} />
+                      <Form.Control className="custom-input" name="username" value={formData.username} onChange={handleChange} required />
                     </Form.Group>
                   </Col>
                   <Col md={6}>
@@ -191,10 +219,10 @@ const AccountSettings = () => {
                     <p className="small text-muted mb-0">Once you delete your account, there is no going back.</p>
                   </div>
                   <Button
-                    type="button" // Fix: Prevents form submission
+                    type="button" // CRITICAL FIX: Stops form submisson
                     variant="danger"
                     className="rounded-pill px-4"
-                    onClick={() => setShowDeleteModal(true)} // Fix: Opens modal instead of direct action
+                    onClick={() => setShowDeleteModal(true)} 
                     disabled={loading}
                   >
                     {loading ? <Spinner size="sm" /> : 'Delete Forever'}
@@ -212,7 +240,6 @@ const AccountSettings = () => {
         </Row>
       </Container>
 
-      {/* Modern Confirmation Modal */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered contentClassName="border-0 rounded-4 shadow-lg">
         <Modal.Body className="p-5 text-center">
           <div className="icon-badge-danger mb-4 mx-auto"><i className="bi bi-trash3-fill"></i></div>
@@ -220,13 +247,8 @@ const AccountSettings = () => {
           <p className="text-muted mb-4">All your data, credits, and history will be permanently erased. This cannot be undone.</p>
           <div className="d-flex gap-3 justify-content-center">
             <Button variant="light" className="rounded-pill px-4" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-            <Button 
-              variant="danger" 
-              className="rounded-pill px-4" 
-              onClick={handleDeleteAccount} // Fix: Calls the actual delete logic
-              disabled={loading}
-            >
-              {loading ? <Spinner size="sm" /> : 'Delete Forever'}
+            <Button variant="danger" className="rounded-pill px-4" onClick={handleDeleteAccount} disabled={loading}>
+                {loading ? <Spinner size="sm" /> : 'Delete Forever'}
             </Button>
           </div>
         </Modal.Body>
