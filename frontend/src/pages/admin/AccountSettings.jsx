@@ -79,9 +79,7 @@ const AccountSettings = () => {
     setLoading(true);
     try {
       await userApi.deleteProfile();
-      // After successful deletion, clear local storage and redirect
       logout();
-      // Note: logout() usually handles localStorage.clear() and navigation
     } catch (err) {
       setStatus({
         type: 'danger',
@@ -118,14 +116,13 @@ const AccountSettings = () => {
 
                 <h4 className="fw-bold mt-3 mb-1">{formData.username || 'Bazaar User'}</h4>
                 <p className="text-muted small mb-3">{formData.email}</p>
-                <Badge bg="soft-primary" className="text-primary rounded-pill px-3 mb-4">Verified Member</Badge>
+                <span className="badge bg-soft-primary text-primary rounded-pill px-3 mb-4">Verified Member</span>
 
                 <div className="d-flex justify-content-around border-top border-bottom py-3 mb-4">
                   <div><h6 className="mb-0 fw-bold">12</h6><small className="text-muted">Orders</small></div>
                   <div><h6 className="mb-0 fw-bold">4</h6><small className="text-muted">Reviews</small></div>
                   <Link to="/wishlist" className="text-decoration-none text-dark">
                     <div className="stat-item-hover transition-all">
-                      {/* Dynamic Count: Defaults to 0 and adds a 'pulse' if count increases */}
                       <h6 className="mb-0 fw-bold text-danger stat-number-pop">
                         {user?.wishlistCount ?? 0}
                       </h6>
@@ -194,13 +191,15 @@ const AccountSettings = () => {
                     <p className="small text-muted mb-0">Once you delete your account, there is no going back.</p>
                   </div>
                   <Button
+                    type="button" // Fix: Prevents form submission
                     variant="danger"
                     className="rounded-pill px-4"
-                    onClick={handleDeleteAccount} // Change from logout to handleDeleteAccount
+                    onClick={() => setShowDeleteModal(true)} // Fix: Opens modal instead of direct action
                     disabled={loading}
                   >
                     {loading ? <Spinner size="sm" /> : 'Delete Forever'}
-                  </Button></div>
+                  </Button>
+                </div>
 
                 <div className="text-end mt-5">
                   <Button type="submit" variant="primary" disabled={loading} className="px-5 py-2 rounded-pill shadow-lg fw-bold">
@@ -221,7 +220,14 @@ const AccountSettings = () => {
           <p className="text-muted mb-4">All your data, credits, and history will be permanently erased. This cannot be undone.</p>
           <div className="d-flex gap-3 justify-content-center">
             <Button variant="light" className="rounded-pill px-4" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-            <Button variant="danger" className="rounded-pill px-4" onClick={logout}>Delete Forever</Button>
+            <Button 
+              variant="danger" 
+              className="rounded-pill px-4" 
+              onClick={handleDeleteAccount} // Fix: Calls the actual delete logic
+              disabled={loading}
+            >
+              {loading ? <Spinner size="sm" /> : 'Delete Forever'}
+            </Button>
           </div>
         </Modal.Body>
       </Modal>
