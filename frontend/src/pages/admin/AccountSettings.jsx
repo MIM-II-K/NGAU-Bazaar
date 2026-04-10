@@ -16,6 +16,7 @@ const AccountSettings = () => {
   const [profileImage, setProfileImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false); // NEW: Toggle state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [status, setStatus] = useState({ type: '', msg: '' });
 
@@ -53,53 +54,26 @@ const AccountSettings = () => {
     }
 
     setLoading(true);
-    setStatus({ type: '', msg: '' });
-
     try {
       const data = new FormData();
-      
-      // FastAPI Form(...) expects these strings. 
-      // We ensure we don't send "undefined" or "null" as strings.
-      data.append('username', formData.username || '');
-      data.append('email', formData.email || '');
-      
-      // For Optional fields, only append if they have a value, 
-      // or send an empty string if your DB allows it.
+      data.append('username', formData.username);
+      data.append('email', formData.email);
       data.append('phone', formData.phone || '');
       data.append('bio', formData.bio || '');
-
-      if (formData.password) {
-        data.append('password', formData.password);
-      }
-
-      // Important: Key must match 'profile_image' in your Python FastAPI params
-      if (profileImage) {
-        data.append('profile_image', profileImage);
-      }
+      if (formData.password) data.append('password', formData.password);
+      if (profileImage) data.append('profile_image', profileImage);
 
       const response = await userApi.updateProfile(data);
-      
-      // Handling the structure: { user, access_token, token_type }
       const { user: updatedUser, access_token } = response;
       
-      if (updatedUser) {
-        setUser(updatedUser);
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-      }
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      localStorage.setItem('token', access_token);
       
-      if (access_token) {
-        localStorage.setItem('token', access_token);
-      }
-
       setStatus({ type: 'success', msg: 'Profile updated successfully!' });
+      setIsEditing(false); // Lock fields again after saving
     } catch (err) {
-      // Improved error reporting to see exactly what FastAPI is rejecting
-      const errorDetail = err.response?.data?.detail;
-      const msg = typeof errorDetail === 'object' 
-        ? JSON.stringify(errorDetail) 
-        : (errorDetail || 'Update failed.');
-      
-      setStatus({ type: 'danger', msg: `Error: ${msg}` });
+      setStatus({ type: 'danger', msg: err.response?.data?.detail || 'Update failed.' });
     } finally {
       setLoading(false);
     }
@@ -111,10 +85,7 @@ const AccountSettings = () => {
       await userApi.deleteProfile();
       logout();
     } catch (err) {
-      setStatus({
-        type: 'danger',
-        msg: err.response?.data?.detail || 'Failed to delete account.'
-      });
+      setStatus({ type: 'danger', msg: 'Failed to delete account.' });
       setShowDeleteModal(false);
     } finally {
       setLoading(false);
@@ -125,6 +96,7 @@ const AccountSettings = () => {
     <div className="profile-dashboard-bg py-5">
       <Container>
         <Row className="g-4">
+          {/* LEFT: Profile Overview */}
           <Col lg={4} data-aos="fade-right">
             <Card className="profile-glass-card border-0 shadow-lg overflow-hidden">
               <div className="profile-banner"></div>
@@ -136,9 +108,11 @@ const AccountSettings = () => {
                     ) : (
                       <span className="avatar-initial">{formData.username?.charAt(0)}</span>
                     )}
-                    <button className="edit-avatar-btn" type="button" onClick={() => fileInputRef.current.click()}>
-                      <i className="bi bi-camera-fill"></i>
-                    </button>
+                    {isEditing && (
+                      <button type="button" className="edit-avatar-btn" onClick={() => fileInputRef.current.click()}>
+                        <i className="bi bi-camera-fill"></i>
+                      </button>
+                    )}
                   </div>
                   <input type="file" ref={fileInputRef} hidden onChange={handleFileChange} accept="image/*" />
                 </div>
@@ -146,19 +120,6 @@ const AccountSettings = () => {
                 <h4 className="fw-bold mt-3 mb-1">{formData.username || 'Bazaar User'}</h4>
                 <p className="text-muted small mb-3">{formData.email}</p>
                 <Badge bg="soft-primary" className="text-primary rounded-pill px-3 mb-4">Verified Member</Badge>
-
-                <div className="d-flex justify-content-around border-top border-bottom py-3 mb-4">
-                  <div><h6 className="mb-0 fw-bold">12</h6><small className="text-muted">Orders</small></div>
-                  <div><h6 className="mb-0 fw-bold">4</h6><small className="text-muted">Reviews</small></div>
-                  <Link to="/wishlist" className="text-decoration-none text-dark">
-                    <div className="stat-item-hover transition-all">
-                      <h6 className="mb-0 fw-bold text-danger stat-number-pop">
-                        {user?.wishlistCount ?? 0}
-                      </h6>
-                      <small className="text-muted fw-medium">Wishlist</small>
-                    </div>
-                  </Link>
-                </div>
 
                 <div className="d-grid gap-2">
                   <Button variant="outline-primary" className="rounded-pill btn-sm">View Public Profile</Button>
@@ -170,11 +131,22 @@ const AccountSettings = () => {
             </Card>
           </Col>
 
+          {/* RIGHT: Settings Form */}
           <Col lg={8} data-aos="fade-left">
             <Card className="border-0 shadow-lg rounded-4 p-4 p-md-5">
               <div className="d-flex justify-content-between align-items-center mb-4">
                 <h3 className="fw-bold mb-0">Personal Settings</h3>
-                <i className="bi bi-shield-check text-success fs-4"></i>
+                {!isEditing ? (
+                  <Button 
+                    variant="outline-secondary" 
+                    className="rounded-pill px-4"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <i className="bi bi-pencil-square me-2"></i>Edit Profile
+                  </Button>
+                ) : (
+                  <Badge bg="warning" className="text-dark p-2 px-3 rounded-pill">Editing Mode</Badge>
+                )}
               </div>
 
               {status.msg && <Alert variant={status.type} className="border-0 rounded-4">{status.msg}</Alert>}
@@ -185,70 +157,104 @@ const AccountSettings = () => {
                   <Col md={6}>
                     <Form.Group>
                       <Form.Label className="small fw-bold text-muted">Username</Form.Label>
-                      <Form.Control className="custom-input" name="username" value={formData.username} onChange={handleChange} required />
+                      <Form.Control 
+                        disabled={!isEditing}
+                        className="custom-input" 
+                        name="username" 
+                        value={formData.username} 
+                        onChange={handleChange} 
+                      />
                     </Form.Group>
                   </Col>
                   <Col md={6}>
                     <Form.Group>
                       <Form.Label className="small fw-bold text-muted">Phone Number</Form.Label>
-                      <Form.Control className="custom-input" name="phone" value={formData.phone} onChange={handleChange} />
+                      <Form.Control 
+                        disabled={!isEditing}
+                        className="custom-input" 
+                        name="phone" 
+                        value={formData.phone} 
+                        onChange={handleChange} 
+                      />
                     </Form.Group>
                   </Col>
                   <Col xs={12}>
                     <Form.Group>
                       <Form.Label className="small fw-bold text-muted">Biography</Form.Label>
-                      <Form.Control as="textarea" rows={3} className="custom-input" name="bio" value={formData.bio} onChange={handleChange} placeholder="Tell us about yourself..." />
+                      <Form.Control 
+                        as="textarea" 
+                        rows={3} 
+                        disabled={!isEditing}
+                        className="custom-input" 
+                        name="bio" 
+                        value={formData.bio} 
+                        onChange={handleChange} 
+                      />
                     </Form.Group>
                   </Col>
                 </Row>
 
-                <hr className="my-5 opacity-10" />
-                <h6 className="text-primary text-uppercase small fw-bold mb-4">Security & Password</h6>
-                <Row className="g-3 mb-5">
-                  <Col md={6}>
-                    <Form.Control type="password" placeholder="New Password" className="custom-input" name="password" onChange={handleChange} />
-                  </Col>
-                  <Col md={6}>
-                    <Form.Control type="password" placeholder="Confirm Password" className="custom-input" name="confirmPassword" onChange={handleChange} />
-                  </Col>
-                </Row>
+                {isEditing && (
+                  <>
+                    <hr className="my-5 opacity-10" />
+                    <h6 className="text-primary text-uppercase small fw-bold mb-4">Security</h6>
+                    <Row className="g-3 mb-5">
+                      <Col md={6}>
+                        <Form.Control type="password" placeholder="New Password" name="password" onChange={handleChange} />
+                      </Col>
+                      <Col md={6}>
+                        <Form.Control type="password" placeholder="Confirm Password" name="confirmPassword" onChange={handleChange} />
+                      </Col>
+                    </Row>
+                  </>
+                )}
 
                 <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 bg-light p-4 rounded-4">
                   <div>
                     <h6 className="fw-bold mb-1 text-danger">Danger Zone</h6>
-                    <p className="small text-muted mb-0">Once you delete your account, there is no going back.</p>
+                    <p className="small text-muted mb-0">Permanently delete your account.</p>
                   </div>
                   <Button
-                    type="button" // CRITICAL FIX: Stops form submisson
+                    type="button" // CRITICAL: Prevents Save from firing
                     variant="danger"
-                    className="rounded-pill px-4"
-                    onClick={() => setShowDeleteModal(true)} 
+                    className="rounded-circle p-3 d-flex align-items-center justify-content-center shadow"
+                    style={{ width: '50px', height: '50px' }}
+                    onClick={() => setShowDeleteModal(true)}
                     disabled={loading}
                   >
-                    {loading ? <Spinner size="sm" /> : 'Delete Forever'}
+                    <i className="bi bi-trash3-fill"></i>
                   </Button>
                 </div>
 
-                <div className="text-end mt-5">
-                  <Button type="submit" variant="primary" disabled={loading} className="px-5 py-2 rounded-pill shadow-lg fw-bold">
-                    {loading ? <Spinner size="sm" /> : 'Save Profile'}
-                  </Button>
-                </div>
+                {isEditing && (
+                  <div className="text-end mt-5">
+                    <Button 
+                      variant="light" 
+                      className="me-2 rounded-pill px-4" 
+                      onClick={() => setIsEditing(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" variant="primary" disabled={loading} className="px-5 py-2 rounded-pill shadow-lg fw-bold">
+                      {loading ? <Spinner size="sm" /> : <><i className="bi bi-check2-circle me-2"></i>Save Changes</>}
+                    </Button>
+                  </div>
+                )}
               </Form>
             </Card>
           </Col>
         </Row>
       </Container>
 
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered contentClassName="border-0 rounded-4 shadow-lg">
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
         <Modal.Body className="p-5 text-center">
-          <div className="icon-badge-danger mb-4 mx-auto"><i className="bi bi-trash3-fill"></i></div>
+          <div className="text-danger mb-4"><i className="bi bi-exclamation-triangle-fill fs-1"></i></div>
           <h3 className="fw-bold">Delete Account?</h3>
-          <p className="text-muted mb-4">All your data, credits, and history will be permanently erased. This cannot be undone.</p>
-          <div className="d-flex gap-3 justify-content-center">
+          <p className="text-muted">This action is permanent and cannot be undone.</p>
+          <div className="d-flex gap-3 justify-content-center mt-4">
             <Button variant="light" className="rounded-pill px-4" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
             <Button variant="danger" className="rounded-pill px-4" onClick={handleDeleteAccount} disabled={loading}>
-                {loading ? <Spinner size="sm" /> : 'Delete Forever'}
+              {loading ? <Spinner size="sm" /> : 'Confirm Delete'}
             </Button>
           </div>
         </Modal.Body>
