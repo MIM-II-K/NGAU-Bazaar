@@ -140,8 +140,9 @@ async def update_current_user(
     try:
         current_user.username = username
         current_user.email = email
-        current_user.phone = phone
-        current_user.bio = bio
+
+        current_user.phone = phone.strip() if phone and phone.strip() else None
+        current_user.bio = bio.strip() if bio and bio.strip() else None
         
         if password:
             current_user.hashed_password = hash_password(password)

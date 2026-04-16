@@ -7,9 +7,9 @@ const API_BASE_URL = "https://ngau-bazaar.onrender.com";
  */
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // headers: {
+    // 'Content-Type': 'application/json',
+  // },
 });
 
 /**
@@ -23,12 +23,12 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // if (config.data instanceof FormData) {
-    //   delete config.headers['Content-Type'];
-    // }
-    // else {
-    //   config.headers['Content-Type'] = 'application/json';
-    // }
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+    else {
+      config.headers['Content-Type'] = 'application/json';
+    }
     
     return config;
   },
