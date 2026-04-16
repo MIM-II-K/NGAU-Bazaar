@@ -17,7 +17,12 @@ export const userApi = {
   // Login user
   login: (credentials) => apiClient.post('/users/login', credentials),
 
-  updateProfile: (data) => apiClient.put('/users/me', data),
+  updateProfile: (data) => apiClient.put('/users/me', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  ),
 
   forgotPassword: (email) => apiClient.post('/users/forgot-password', { email }),
 

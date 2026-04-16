@@ -58,20 +58,28 @@ const AccountSettings = () => {
       const data = new FormData();
       data.append('username', formData.username);
       data.append('email', formData.email);
-      data.append('phone', formData.phone || '');
-      data.append('bio', formData.bio || '');
+
+      // Use conditional appends to avoid sending empty strings if not needed
+      if (formData.phone) data.append('phone', formData.phone);
+      if (formData.bio) data.append('bio', formData.bio);
       if (formData.password) data.append('password', formData.password);
-      if (profileImage) data.append('profile_image', profileImage);
+
+      // Profile Image check
+      if (profileImage) {
+        data.append('profile_image', profileImage);
+      }
 
       const response = await userApi.updateProfile(data);
-      const { user: updatedUser, access_token } = response;
-      
+
+      // FastAPI returns { "user": ..., "access_token": ... }
+      const { user: updatedUser, access_token } = response.data;
+
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
       localStorage.setItem('token', access_token);
-      
+
       setStatus({ type: 'success', msg: 'Profile updated successfully!' });
-      setIsEditing(false); // Lock fields again after saving
+      setIsEditing(false);
     } catch (err) {
       setStatus({ type: 'danger', msg: err.response?.data?.detail || 'Update failed.' });
     } finally {
@@ -137,8 +145,8 @@ const AccountSettings = () => {
               <div className="d-flex justify-content-between align-items-center mb-4">
                 <h3 className="fw-bold mb-0">Personal Settings</h3>
                 {!isEditing ? (
-                  <Button 
-                    variant="outline-secondary" 
+                  <Button
+                    variant="outline-secondary"
                     className="rounded-pill px-4"
                     onClick={() => setIsEditing(true)}
                   >
@@ -157,38 +165,38 @@ const AccountSettings = () => {
                   <Col md={6}>
                     <Form.Group>
                       <Form.Label className="small fw-bold text-muted">Username</Form.Label>
-                      <Form.Control 
+                      <Form.Control
                         disabled={!isEditing}
-                        className="custom-input" 
-                        name="username" 
-                        value={formData.username} 
-                        onChange={handleChange} 
+                        className="custom-input"
+                        name="username"
+                        value={formData.username}
+                        onChange={handleChange}
                       />
                     </Form.Group>
                   </Col>
                   <Col md={6}>
                     <Form.Group>
                       <Form.Label className="small fw-bold text-muted">Phone Number</Form.Label>
-                      <Form.Control 
+                      <Form.Control
                         disabled={!isEditing}
-                        className="custom-input" 
-                        name="phone" 
-                        value={formData.phone} 
-                        onChange={handleChange} 
+                        className="custom-input"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
                       />
                     </Form.Group>
                   </Col>
                   <Col xs={12}>
                     <Form.Group>
                       <Form.Label className="small fw-bold text-muted">Biography</Form.Label>
-                      <Form.Control 
-                        as="textarea" 
-                        rows={3} 
+                      <Form.Control
+                        as="textarea"
+                        rows={3}
                         disabled={!isEditing}
-                        className="custom-input" 
-                        name="bio" 
-                        value={formData.bio} 
-                        onChange={handleChange} 
+                        className="custom-input"
+                        name="bio"
+                        value={formData.bio}
+                        onChange={handleChange}
                       />
                     </Form.Group>
                   </Col>
@@ -228,9 +236,9 @@ const AccountSettings = () => {
 
                 {isEditing && (
                   <div className="text-end mt-5">
-                    <Button 
-                      variant="light" 
-                      className="me-2 rounded-pill px-4" 
+                    <Button
+                      variant="light"
+                      className="me-2 rounded-pill px-4"
                       onClick={() => setIsEditing(false)}
                     >
                       Cancel

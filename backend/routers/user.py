@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from sqlalchemy import or_
@@ -225,47 +225,55 @@ def delete_self(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Could not delete account")
-
+    
 # ------------------------------------------------------------------
 # FORGOT PASSWORD
-# ------------------------------------------------------------------
 
-@router.post("/forgot-password", status_code=status.HTTP_200_OK)
-def forgot_password(
+
+@router.post("/forgot-password", status_code=status.HTTP_202_ACCEPTED)
+async def forgot_password(
     data: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks, # Run email sending in background
     db: Session = Depends(get_db),
 ):
-
     user = db.query(User).filter(User.email == data.email).first()
 
-    # Always return success (prevent email enumeration)
+    # Always return success to prevent email enumeration (Security Best Practice)
     if user:
         token = create_password_reset_token(user_id=user.id)
-        frontend_url = os.getenv(
-            "FRONTEND_URL", "http://localhost:3000"
-        )
-
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173") # Default Vite port
         reset_link = f"{frontend_url}/reset-password?token={token}"
 
-        send_email(
+        # Create a professional HTML body
+        html_content = f"""
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto;">
+            <h2 style="color: #333;">Password Reset Request</h2>
+            <p>Hello <strong>{user.username}</strong>,</p>
+            <p>We received a request to reset your password for your <strong>NGAU Bazaar</strong> account.</p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{reset_link}" 
+                   style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 50px; font-weight: bold;">
+                   Reset Password
+                </a>
+            </div>
+            <p style="color: #666; font-size: 0.9em;">This link will expire in 15 minutes.</p>
+            <p style="color: #999; font-size: 0.8em; border-top: 1px solid #eee; pt: 20px;">
+                If you didn't request this, you can safely ignore this email.
+            </p>
+        </div>
+        """
+
+        # Use background tasks so the API response isn't delayed by the SMTP server
+        background_tasks.add_task(
+            send_email,
             to_email=user.email,
-            subject="Reset your password",
-            body=f"""
-Hello {user.username},
-
-Click the link below to reset your password.
-This link expires in 15 minutes.
-
-{reset_link}
-
-If you did not request this, you can safely ignore this email.
-""",
+            subject="Reset Your NGAU Bazaar Password",
+            body=html_content
         )
 
     return {
-        "message": "A password reset link has been sent to your email."
+        "message": "If an account exists with that email, a reset link has been sent."
     }
-
 # ------------------------------------------------------------------
 # RESET PASSWORD
 # ------------------------------------------------------------------
