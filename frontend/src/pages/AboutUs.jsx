@@ -1,126 +1,147 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import '../styles/about-us.css';
 
-// Animation Variants for re-use
-const fadeInUp = {
-  hidden: { opacity: 0, y: 60 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.6, 0.05, -0.01, 0.9] } }
-};
-
 const AboutUs = () => {
-  const { scrollYProgress } = useScroll();
-  const scale = useTransform(scrollYProgress, [0, 0.3], [1, 1.2]);
-  const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"]
+  });
+
+  // Animation Variants
+  const textVariant = {
+    hidden: { opacity: 0, y: 40 },
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      transition: { duration: 0.8, ease: [0.33, 1, 0.68, 1] } 
+    }
+  };
 
   return (
-    <div className="modern-about-root bg-dark-deep">
-      {/* 01. ENHANCED GLASS NAV */}
-      <nav className="glass-nav fixed-top px-4 px-md-5 py-3 d-flex justify-content-between align-items-center">
-        <div className="brand-logo fw-bold h4 mb-0">
-          <span className="text-success">NGAU</span> <span className="text-light">BAZAAR</span>
-        </div>
-        <div className="nav-links d-none d-md-flex gap-4 small fw-bold tracking-widest text-light-50">
-          <a href="#mission" className="nav-item-link">THE MISSION</a>
-          <a href="#producers" className="nav-item-link">PRODUCERS</a>
-          <a href="#logistics" className="nav-item-link">LOGISTICS</a>
-        </div>
-      </nav>
+    <div className="bg-obsidian" ref={containerRef}>
 
-      {/* 02. CINEMATIC HERO - ADDED DEPTH */}
-      <section className="hero-viewport">
-        <motion.div style={{ scale }} className="hero-bg-wrapper">
-          <div className="vignette-overlay"></div>
-          <img 
-            src="https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=1920" 
-            alt="Organic Farm" 
-            className="hero-img"
-          />
-        </motion.div>
-        
-        <Container className="h-100 position-relative d-flex align-items-center">
+      {/* 02. HERO SECTION - High Impact */}
+      <section className="hero-fullscreen">
+        <div className="hero-content">
           <motion.div 
-            initial="hidden"
-            animate="visible"
-            variants={fadeInUp}
-            style={{ opacity }}
-            className="hero-content"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1.2, ease: "easeOut" }}
           >
-            <h6 className="text-uppercase tracking-widest mb-3 text-success fw-bold">Hyper-Local Logistics</h6>
-            <h1 className="editorial-display text-white">
-              Honest Food <br/> 
-              <span className="text-gradient">Direct From</span> <br/> 
-              <span className="outline-text">The Soil.</span>
+           <h1 className="hero-title">
+              PURELY <br />
+              <span className="text-outline">CULTIVATED</span> <br />
+              <span className="text-emerald">DIGITALLY</span> SENT.
             </h1>
-            <div className="scroll-indicator mt-5">
-              <motion.div 
-                animate={{ y: [0, 10, 0] }} 
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="mouse-icon"
-              />
-              <span className="small tracking-widest ms-3 text-light-50">SCROLL TO DISCOVER</span>
-            </div>
           </motion.div>
-        </Container>
+        </div>
+        <div className="scroll-indicator">
+            <div className="mouse"></div>
+        </div>
       </section>
 
-      {/* 03. PHILOSOPHY - ASYMMETRIC & ANIMATED */}
-      <section id="mission" className="philosophy-grid py-10">
+      {/* 03. PHILOSOPHY SECTION */}
+      <section id="soil" className="section-padding">
         <Container>
-          <Row className="align-items-center mb-10">
-            <Col lg={5} className="mb-5 mb-lg-0">
-              <motion.div 
-                initial={{ clipPath: 'inset(100% 0% 0% 0%)' }}
-                whileInView={{ clipPath: 'inset(0% 0% 0% 0%)' }}
-                transition={{ duration: 1.2, ease: "circOut" }}
-                className="image-reveal-wrapper"
-              >
-                <img src="https://images.unsplash.com/photo-1488459711635-de8296fe303b?auto=format&fit=crop&w=800" className="img-fluid rounded-4 shadow-2xl" alt="Organic" />
-              </motion.div>
+          <Row className="align-items-center">
+            <Col lg={6} className="pe-lg-5">
+              <ParallaxImage src="https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?auto=format&fit=crop&w=1400" />
             </Col>
-            <Col lg={{ span: 6, offset: 1 }}>
-              <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}>
-                <span className="text-success fw-bold tracking-widest">01 / OUR PURPOSE</span>
-                <h2 className="display-4 fw-bold mt-3 mb-4 text-white">Eliminating the <br/> Middleman Fatigue.</h2>
-                <p className="lead text-light-50 border-start border-2 ps-4 border-success">
-                  Traditional supply chains waste 30% of fresh produce. We use 
-                  predictive data to harvest only what is ordered, ensuring 
-                  <span className="text-white"> zero-waste </span> and maximum nutrient density.
+            <Col lg={6} className="ps-lg-5 mt-5 mt-lg-0">
+              <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={textVariant}>
+                <h2 className="section-title mb-4">Magar Heritage, <br/> <span className="text-emerald">Modern Logic.</span></h2>
+                <p className="body-text mb-4">
+                  NGAU Bazaar isn't just a marketplace; it's a bridge. We've eliminated the friction between the high-altitude terraces of Palpa and the urban kitchens of Nepal.
                 </p>
+                <div className="stats-quote">
+                  "Harvested at 4 AM, Delivered by 4 PM."
+                </div>
               </motion.div>
             </Col>
           </Row>
         </Container>
       </section>
 
-      {/* 04. DATA TRANSPARENCY - GLASS CARDS */}
-      <section className="data-transparency py-10">
+      {/* 04. PRODUCT CARDS - Premium Cards */}
+      <section className="section-padding bg-soft-dark">
         <Container>
-          <div className="text-center mb-5">
-            <h2 className="fw-bold h1 text-white">Transparency in <span className="text-success">Numbers</span></h2>
+          <div className="mb-5">
+            <h3 className="section-title text-center">THE COLLECTION</h3>
           </div>
           <Row className="g-4">
             {[
-              { title: "Network", val: "500+", sub: "Regional Farmers" },
-              { title: "Impact", val: "1.2M", sub: "KG Plastic Saved" },
-              { title: "Time", val: "<12h", sub: "Farm to Door" },
-              { title: "Quality", val: "A++", sub: "Organic Certified" }
-            ].map((stat, i) => (
-              <Col md={3} key={i}>
+              { title: "Kiwi Chips", img: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800", cat: "DEHYDRATED" },
+              { title: "Hillside Spirits", img: "https://images.unsplash.com/photo-1580915411954-282cb1b0d780?auto=format&fit=crop&w=800", cat: "TRADITIONAL" },
+              { title: "Terrace Greens", img: "https://images.unsplash.com/photo-1592417817098-8fd3d9eb14a5?auto=format&fit=crop&w=800", cat: "ORGANIC" }
+            ].map((item, idx) => (
+              <Col md={4} key={idx}>
                 <motion.div 
-                  whileHover={{ y: -10 }}
-                  className="glass-card p-5 text-center h-100"
+                  className="product-card"
+                  whileHover={{ y: -15 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1 }}
                 >
-                  <h3 className="display-5 fw-bold text-success mb-1">{stat.val}</h3>
-                  <p className="text-uppercase tracking-widest small mb-2 fw-bold text-white">{stat.title}</p>
-                  <small className="text-light-50">{stat.sub}</small>
+                  <div className="card-img-wrapper">
+                    <img src={item.img} alt={item.title} />
+                    <div className="card-overlay">
+                      <span>VIEW ORIGIN</span>
+                    </div>
+                  </div>
+                  <div className="card-details">
+                    <span className="category">{item.cat}</span>
+                    <h4>{item.title}</h4>
+                  </div>
                 </motion.div>
               </Col>
             ))}
           </Row>
         </Container>
       </section>
+
+      {/* 05. BENTO METRICS - Dynamic Sizes */}
+      <section id="impact" className="section-padding">
+        <Container>
+          <div className="bento-layout">
+            <div className="bento-cell bento-hero">
+              <span className="cell-tag">NETWORK</span>
+              <h3 className="display-huge">500+</h3>
+              <p>Indigenous farmers connected via our real-time logistics grid.</p>
+            </div>
+            <div className="bento-cell bento-accent">
+              <span className="cell-tag">SPEED</span>
+              <h3 className="display-med">12H</h3>
+              <p>From Soil to Kitchen.</p>
+            </div>
+            <div className="bento-cell">
+              <span className="cell-tag">COMMUNITY</span>
+              <h3 className="display-med">85%</h3>
+              <p>Revenue retained by growers.</p>
+            </div>
+            <div className="bento-cell bento-wide">
+              <h3 className="h2 mb-3" style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>Sustainable Sovereignty</h3>
+              <p>Eliminating middlemen to ensure the future of Himalayan agriculture.</p>
+            </div>
+          </div>
+        </Container>
+      </section>
+    </div>
+  );
+};
+
+// Helper Component for Parallax
+const ParallaxImage = ({ src }) => {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({ target: ref });
+  const y = useTransform(scrollYProgress, [0, 1], [-100, 100]);
+
+  return (
+    <div className="parallax-container" ref={ref}>
+      <motion.img style={{ y }} src={src} alt="Farm" />
     </div>
   );
 };
