@@ -73,7 +73,8 @@ const AccountSettings = () => {
 
       const updatedUser = response.user;
       const access_token = response.access_token;
-      if (!updatedUser && access_token) {
+      
+      if (updatedUser && access_token) {
         setUser(updatedUser);
         localStorage.setItem('user', JSON.stringify(updatedUser));
         localStorage.setItem('token', access_token);
