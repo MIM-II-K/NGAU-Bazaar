@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Button, Badge, Spinner, Breadcrumb } from 'react-bootstrap';
+import { Helmet } from 'react-helmet-async';
 import { productApi } from '../utils/productApi';
 import { addToCart } from '../utils/cartApi';
 import { getProductImageUrl } from '../utils/urlHelper';
@@ -170,8 +171,31 @@ const ProductDetail = () => {
 
     if (!product) return null;
 
+    const structuredData = {
+        "@context": "https://schema.org/",
+        "@type": "Product",
+        "name": product.name,
+        "image": product.images?.map(img => getProductImageUrl(img.url, API_BASE_URL)),
+        "description": product.description,
+        "brand": { "@type": "Brand", "name": "NGAU Bazaar" },
+        "offers": {
+            "@type": "Offer",
+            "url": window.location.href,
+            "priceCurrency": "NPR", // Adjust to your currency
+            "price": product.price,
+            "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+        }
+    };
+
     return (
         <div className="product-detail-wrapper py-5">
+            <Helmet>
+                <title>{`${product.name} - Fresh Organic | NGAU Bazaar`}</title>
+                <meta name="description" content={product.description?.substring(0, 160)} />
+                <script type="application/ld+json">
+                    {JSON.stringify(structuredData)}
+                </script>
+            </Helmet>
             <Container>
                 <div className="product-breadcrumb-wrapper">
                     <Breadcrumb className="product-breadcrumb">
