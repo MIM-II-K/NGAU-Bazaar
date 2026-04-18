@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import asc, desc, or_, String
 from typing import List, Optional
 from decimal import Decimal
+from fastapi.responses import Response
 from supabase import create_client, Client
 
 from models.user import User
@@ -66,6 +67,31 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+@router.get("/seo/sitemap.xml")
+def get_sitemap(db: Session = Depends(get_db)):
+    # Fetch all products from PostgreSQL
+    products = db.query(Product).all()
+    
+    # Replace with your actual frontend domain
+    base_url = "https://ngau-bazaar.vercel.app" 
+    
+    xml_items = []
+    # Add static pages
+    xml_items.append(f"<url><loc>{base_url}/</loc><priority>1.0</priority></url>")
+    xml_items.append(f"<url><loc>{base_url}/shop</loc><priority>0.8</priority></url>")
+    
+    # Add dynamic product pages
+    for p in products:
+        xml_items.append(f"<url><loc>{base_url}/product/{p.slug}</loc><priority>0.7</priority></url>")
+        
+    xml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        {"".join(xml_items)}
+    </urlset>"""
+    
+    return Response(content=xml_content, media_type="application/xml")
 
 
 # ---------------- GET PRODUCTS (PUBLIC) ----------------
