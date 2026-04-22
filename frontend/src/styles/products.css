@@ -139,24 +139,41 @@
 }
 
 .view-toggle {
-  background: white;
+  display: inline-flex;
+  align-items: center;
+  background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 60px;
-  display: flex;
+  border-radius: 8px; /* Sharp, modern, slightly rounded corners */
+  height: 40px; /* Fixed height forces vertical centering */
   overflow: hidden;
 }
 
 .view-btn {
-  padding: 12px 16px;
-  background: none;
+  width: 44px; /* Fixed width forces horizontal centering */
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
   border: none;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+}
+
+.view-divider {
+  width: 1px;
+  height: 20px;
+  background-color: #e2e8f0; /* Crisp separation line */
+}
+
+.view-btn:hover {
+  color: #10b981;
+  background: #f8fafc; /* Very light gray hover */
 }
 
 .view-btn.active {
-  background: #10b981;
-  color: white;
+  color: #10b981; /* Emerald green */
+  background: #ecfdf5; /* Very subtle green tint instead of a solid block */
 }
 
 /* Active Filters */
@@ -662,4 +679,169 @@
   .filter-sidebar {
     width: 100% !important;
   }
+}
+.action-bar-container {
+  background: white;
+  padding: 12px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
+  border: 1px solid #f1f5f9;
+}
+
+.main-search-area {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  padding: 0 16px;
+  border-radius: 12px;
+  height: 48px;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.search-box:focus-within {
+  background: white;
+  border-color: #10b981;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+}
+
+.search-box input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  padding-left: 12px;
+  outline: none;
+  font-weight: 500;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Custom Styled Select */
+.custom-select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border-radius: 12px;
+  height: 48px;
+  padding: 0 12px;
+}
+
+.custom-select-wrapper select {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding-left: 28px;
+  padding-right: 24px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  color: #475569;
+}
+
+.select-icon { position: absolute; left: 12px; color: #94a3b8; }
+.arrow-icon { position: absolute; right: 12px; color: #94a3b8; pointer-events: none; }
+
+.filter-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 20px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  position: relative;
+}
+
+.filter-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.view-switcher {
+  display: flex;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.view-switcher button {
+  border: none;
+  background: transparent;
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: #94a3b8;
+  transition: all 0.2s;
+}
+
+.view-switcher button.active {
+  background: white;
+  color: #10b981;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.product-card-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.mini-tag {
+  font-size: 0.7rem;
+  background: #f8fafc;
+  color: #64748b;
+  padding: 2px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.mini-tag:hover {
+  background: #10b981;
+  color: white;
+  border-color: #10b981;
+  transform: translateY(-1px);
+}
+
+/* The "+X" indicator */
+.mini-tag.more-count {
+  background: #f1f5f9;
+  color: #94a3b8;
+  border-style: dashed;
+  cursor: default;
+}
+
+/* List View specific expansion */
+.list-view .product-card-tags {
+  margin-top: 8px;
+  justify-content: flex-start;
+}
+
+.list-view .mini-tag {
+  font-size: 0.8rem;
+  padding: 4px 12px;
 }

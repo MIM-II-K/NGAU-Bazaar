@@ -14,12 +14,12 @@ import {
 } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { useSpring, animated, config } from '@react-spring/web';
-import { 
-  Search, 
-  Filter, 
-  SlidersHorizontal, 
-  X, 
+import { useSpring, animated, config, update } from '@react-spring/web';
+import {
+  Search,
+  Filter,
+  SlidersHorizontal,
+  X,
   ChevronDown,
   ChevronUp,
   Star,
@@ -78,7 +78,12 @@ const Products = () => {
     offset: ["start start", "end start"]
   });
   const headerOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0.8]);
-
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+  useEffect(() => {
+    updateURLParams();
+  }, [selectedCategory, searchTerm, sortBy]);
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -87,11 +92,6 @@ const Products = () => {
     }, 500);
     return () => clearTimeout(timer);
   }, [searchTerm, selectedCategory, sortBy, priceRange]);
-
-  useEffect(() => {
-    fetchCategories();
-    updateURLParams();
-  }, [selectedCategory, searchTerm, sortBy]);
 
   const updateURLParams = () => {
     const params = new URLSearchParams();
@@ -161,7 +161,7 @@ const Products = () => {
       await addToCart(product.id, 1);
       await refreshCart();
       success(`Added ${product.name} to cart!`, 2000);
-      
+
       // Animate the cart icon
       const cartIcon = document.querySelector('.cart-btn-wrapper');
       cartIcon?.classList.add('cart-bump');
@@ -220,8 +220,10 @@ const Products = () => {
 
   const ProductCardComponent = ({ product, index }) => {
     const [isHovered, setIsHovered] = useState(false);
-    const discount = product.is_flash_deal && product.discount_price ? 
+    const discount = product.is_flash_deal && product.discount_price ?
       Math.round(((product.price - product.discount_price) / product.price) * 100) : 0;
+
+    const displayCategory = categories.find(c => c.id.toString() === product.category_id?.toString())?.name || product.category_name || 'General';
 
     return (
       <motion.div
@@ -229,6 +231,9 @@ const Products = () => {
         whileHover={{ y: -8 }}
         onHoverStart={() => setIsHovered(true)}
         onHoverEnd={() => setIsHovered(false)}
+        // The whole card now navigates to the detail page
+        onClick={() => navigate(`/products/${product.slug}`)}
+        style={{ cursor: 'pointer' }}
       >
         <Card className={`product-card-modern ${viewMode === 'list' ? 'list-view' : ''}`}>
           <div className={`${viewMode === 'list' ? 'd-flex' : ''}`}>
@@ -238,11 +243,11 @@ const Products = () => {
                 src={product.images?.[0]?.url?.startsWith('http') ? product.images[0].url : `${API_BASE_URL}${product.images?.[0]?.url || ''}`}
                 onError={e => { e.currentTarget.src = fallbackImage; }}
               />
-              
+
               {/* Badges */}
               <div className="product-badges">
                 {product.is_flash_deal && (
-                  <motion.div 
+                  <motion.div
                     className="flash-badge"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
@@ -256,8 +261,8 @@ const Products = () => {
                 )}
               </div>
 
-              {/* Hover Actions */}
-              <motion.div 
+              {/* Hover Actions - Eye removed, only Cart left */}
+              <motion.div
                 className="product-hover-actions"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: isHovered ? 1 : 0 }}
@@ -267,18 +272,7 @@ const Products = () => {
                   className="hover-action-btn"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/products/${product.slug}`);
-                  }}
-                >
-                  <Eye size={18} />
-                </motion.button>
-                <motion.button
-                  className="hover-action-btn"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={(e) => handleQuickAdd(e, product)}
+                  onClick={(e) => handleQuickAdd(e, product)} // handleQuickAdd already has stopPropagation
                   disabled={addingId === product.id}
                 >
                   <ShoppingCart size={18} />
@@ -288,16 +282,39 @@ const Products = () => {
 
             <Card.Body className="d-flex flex-column">
               <div className="product-meta">
-                <span className="category-badge">{product.category_name}</span>
-                <div className="product-rating">
-                  <Star size={14} fill="#f59e0b" color="#f59e0b" />
-                  <span>{(product.avg_rating || 4.5).toFixed(1)}</span>
-                  <span className="review-count">({product.review_count || 0})</span>
-                </div>
+                <span className="category-badge">{displayCategory}</span>
+
+                {product.tags && (
+                  <div className="product-card-tags">
+                    {(Array.isArray(product.tags)
+                      ? product.tags
+                      : product.tags.split(',')
+                    ).map((tag, idx, allTags) => {
+                      const isExtra = viewMode === 'grid' && idx > 1;
+                      if (isExtra && idx === 2) {
+                        return <span key="more" className="mini-tag more-count">+{allTags.length - 2}</span>;
+                      }
+                      if (isExtra) return null;
+
+                      return (
+                        <span
+                          key={idx}
+                          className="mini-tag"
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevents navigating to product detail when clicking a tag
+                            setSearchTerm(tag.trim());
+                          }}
+                        >
+                          #{tag.trim()}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <Card.Title className="product-title">{product.name}</Card.Title>
-              
+
               {viewMode === 'list' && (
                 <p className="product-description">
                   {product.description?.substring(0, 100)}...
@@ -305,22 +322,24 @@ const Products = () => {
               )}
 
               <div className="product-price-section">
-                {product.is_flash_deal ? (
-                  <div className="price-wrapper">
-                    <span className="current-price">Rs.{product.discount_price}</span>
-                    <span className="original-price">Rs.{product.price}</span>
-                  </div>
-                ) : (
-                  <span className="current-price">Rs.{product.price}</span>
-                )}
-                <small className="unit-text">/ {product.unit || 'pc'}</small>
+                <div className="price-info">
+                  {product.is_flash_deal ? (
+                    <div className="price-wrapper">
+                      <span className="current-price">Rs.{product.discount_price}</span>
+                      <span className="original-price">Rs.{product.price}</span>
+                    </div>
+                  ) : (
+                    <span className="current-price">Rs.{product.price}</span>
+                  )}
+                  <small className="unit-text">/ {product.unit || 'pc'}</small>
+                </div>
               </div>
 
               <div className="product-actions">
                 <motion.button
                   className="btn-add-cart"
                   whileTap={{ scale: 0.95 }}
-                  onClick={(e) => handleQuickAdd(e, product)}
+                  onClick={(e) => handleQuickAdd(e, product)} // stopPropagation is in this function
                   disabled={addingId === product.id || product.stock <= 0}
                 >
                   {addingId === product.id ? (
@@ -333,7 +352,7 @@ const Products = () => {
                   className={`btn-buy-now ${product.is_flash_deal ? 'flash-deal' : ''}`}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={(e) => handleBuyNow(e, product)}
+                  onClick={(e) => handleBuyNow(e, product)} // stopPropagation is in this function
                   disabled={product.stock <= 0}
                 >
                   {product.stock <= 0 ? 'Out of Stock' : 'Buy Now'}
@@ -373,46 +392,49 @@ const Products = () => {
 
       <Container className="products-container">
         {/* Search and Filter Bar */}
-        <div className="search-filter-bar">
-          <div className="search-wrapper">
-            <Search size={20} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search for organic products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
-            {searchTerm && (
-              <button onClick={() => setSearchTerm('')} className="clear-search">
-                <X size={16} />
-              </button>
-            )}
-          </div>
+        <div className="action-bar-container">
+          <div className="main-search-area">
+            <div className="search-box">
+              <Search size={20} className="search-icon" />
+              <input
+                type="text"
+                placeholder="Search 'Organic Honey' or 'Fresh Apples'..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button onClick={() => setSearchTerm('')} className="clear-search">
+                  <X size={16} />
+                </button>
+              )}
+            </div>
 
-          <div className="filter-actions">
-            <motion.button
-              className="filter-toggle"
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowFilters(true)}
-            >
-              <SlidersHorizontal size={18} />
-              Filters
-            </motion.button>
-            
-            <div className="view-toggle">
-              <button
-                className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-                onClick={() => setViewMode('grid')}
+            <div className="action-buttons">
+              {/* Visual Sort Select - Replaces the ugly default dropdown */}
+              <motion.button
+                className="filter-trigger"
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowFilters(true)}
               >
-                <Grid size={18} />
-              </button>
-              <button
-                className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
-                onClick={() => setViewMode('list')}
-              >
-                <List size={18} />
-              </button>
+                <SlidersHorizontal size={18} />
+                <span>Filters</span>
+                {hasActiveFilters && <span className="filter-dot"></span>}
+              </motion.button>
+
+              <div className="view-switcher">
+                <button
+                  className={viewMode === 'grid' ? 'active' : ''}
+                  onClick={() => setViewMode('grid')}
+                >
+                  <Grid size={18} />
+                </button>
+                <button
+                  className={viewMode === 'list' ? 'active' : ''}
+                  onClick={() => setViewMode('list')}
+                >
+                  <List size={18} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
