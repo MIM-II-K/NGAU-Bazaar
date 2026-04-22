@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import { CartProvider } from './contexts/CartContext'; // NEW: global cart context
+import { CartProvider } from './contexts/CartContext'; 
 
 // Components
 import Navbar from './components/Navbar';

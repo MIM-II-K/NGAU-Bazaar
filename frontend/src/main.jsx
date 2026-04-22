@@ -8,11 +8,14 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 
 // Import custom CSS
 import './styles/main.css'
+import ToastProvider from './contexts/ToastContext.jsx'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <HelmetProvider>
+      <ToastProvider>
       <App />
+      </ToastProvider>
     </HelmetProvider>
   </React.StrictMode>,
 )

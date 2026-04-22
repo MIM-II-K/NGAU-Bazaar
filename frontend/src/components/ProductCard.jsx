@@ -24,6 +24,7 @@ const ProductCard = ({ product }) => {
 
     const handleWishlistToggle = async (e) => {
         e.stopPropagation();
+        if (!refreshUserStats) return;
 
         const token = localStorage.getItem('token');
         if (!token) {

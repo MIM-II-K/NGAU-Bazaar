@@ -31,9 +31,9 @@ const Footer = () => {
           <Col lg={2} md={4} sm={6}>
             <h5 className="footer-title">Platform</h5>
             <ul className="footer-links">
+              <li><Link to="/">Home</Link></li>
               <li><Link to="/shop">Shop</Link></li>
               <li><Link to="/flash-deals">Flash Deals</Link></li>
-              <li><Link to="/dashboard">Profile</Link></li>
               <li><Link to="/about-us">About us</Link></li>
             </ul>
           </Col>
