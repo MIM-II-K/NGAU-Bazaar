@@ -307,11 +307,11 @@ const Products = () => {
               <div className="product-price-section">
                 {product.is_flash_deal ? (
                   <div className="price-wrapper">
-                    <span className="current-price">₹{product.discount_price}</span>
-                    <span className="original-price">₹{product.price}</span>
+                    <span className="current-price">Rs.{product.discount_price}</span>
+                    <span className="original-price">Rs.{product.price}</span>
                   </div>
                 ) : (
-                  <span className="current-price">₹{product.price}</span>
+                  <span className="current-price">Rs.{product.price}</span>
                 )}
                 <small className="unit-text">/ {product.unit || 'pc'}</small>
               </div>
