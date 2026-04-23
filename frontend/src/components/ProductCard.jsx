@@ -7,6 +7,7 @@ import { useCart } from '../contexts/CartContext';
 import { getProductImageUrl } from '../utils/urlHelper';
 import { productApi } from '../utils/productApi';
 import { useAuth } from '../contexts/AuthContext';
+import '../styles/product-card.css';
 
 const API_BASE_URL = 'https://ngau-bazaar.onrender.com';
 const fallbackImage = "https://via.placeholder.com/300x200?text=No+Image";
@@ -15,7 +16,7 @@ const ProductCard = ({ product }) => {
     const navigate = useNavigate();
     const { refreshCart } = useCart();
     const { refreshUserStats } = useAuth();
-    
+
     const [loading, setLoading] = useState(false);
     const [isWishlisted, setIsWishlisted] = useState(product.is_in_wishlist);
 
@@ -28,13 +29,13 @@ const ProductCard = ({ product }) => {
         }
 
         const prevState = isWishlisted;
-        setIsWishlisted(!prevState); 
+        setIsWishlisted(!prevState);
 
         try {
             await productApi.toggleWishlist(product.id);
-            if (refreshUserStats) await refreshUserStats(); 
+            if (refreshUserStats) await refreshUserStats();
         } catch (error) {
-            setIsWishlisted(prevState); 
+            setIsWishlisted(prevState);
             console.error("Wishlist toggle error:", error);
         }
     };
@@ -70,10 +71,11 @@ const ProductCard = ({ product }) => {
             <Card className="modern-product-card h-100 border-0 shadow-sm" onClick={handleCardClick}>
                 <div className="card-image-wrapper">
                     {/* Badge Stack */}
+                    {/* Badge Stack with Discount Percentage */}
                     <div className="badge-stack">
-                        {product.is_flash_deal && (
-                            <Badge bg="danger" className="flash-badge">
-                                <i className="bi bi-lightning-fill"></i> FLASH
+                        {product.is_flash_deal && product.price > 0 && (
+                            <Badge bg="danger" className="discount-badge">
+                                {Math.round(((product.price - product.discount_price) / product.price) * 100)}% OFF
                             </Badge>
                         )}
                         {product.view_count > 50 && (
@@ -100,23 +102,41 @@ const ProductCard = ({ product }) => {
 
                     {/* Hover Quick View Overlay */}
                     <div className="card-hover-overlay">
-                        <span className="overlay-text">VIEW DETAILS</span>
+                        <button className="overlay-btn">
+                            View Details
+                        </button>
                     </div>
                 </div>
 
                 <Card.Body className="p-3 d-flex flex-column">
                     <div className="category-label text-uppercase">{product.category?.name || 'Organic'}</div>
                     <Card.Title className="modern-card-title">{product.name}</Card.Title>
-                    
+
                     {/* Tags Section */}
-                    {product.tags && (
-                        <div className="modern-tag-list">
-                            {(Array.isArray(product.tags) ? product.tags : product.tags.split(','))
-                                .slice(0, 2).map((tag, i) => (
-                                <span key={i} className="card-tag">#{tag.trim()}</span>
-                            ))}
-                        </div>
-                    )}
+                    {product.tags && (() => {
+                        const tags = Array.isArray(product.tags)
+                            ? product.tags
+                            : product.tags.split(',');
+
+                        const visibleTags = tags.slice(0, 2);
+                        const extraCount = tags.length - visibleTags.length;
+
+                        return (
+                            <div className="modern-tag-list">
+                                {visibleTags.map((tag, i) => (
+                                    <span key={i} className="card-tag">
+                                        #{tag.trim()}
+                                    </span>
+                                ))}
+
+                                {extraCount > 0 && (
+                                    <span className="card-tag tag-more">
+                                        +{extraCount} more
+                                    </span>
+                                )}
+                            </div>
+                        );
+                    })()}
 
                     <div className="card-footer-action mt-auto pt-3">
                         <div className="price-container">

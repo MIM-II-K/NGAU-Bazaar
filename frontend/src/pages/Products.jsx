@@ -14,30 +14,27 @@ import {
 } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { useSpring, animated, config, update } from '@react-spring/web';
+import { animated } from '@react-spring/web';
 import {
   Search,
   Filter,
   SlidersHorizontal,
   X,
-  ChevronDown,
-  ChevronUp,
   Star,
   TrendingUp,
-  Clock,
-  DollarSign,
   Grid,
   List,
-  Heart,
   ShoppingCart,
-  Eye,
-  Zap
+  Zap,
+  Package,
+  Tag,
+  ChevronDown,
+  CheckCircle
 } from 'lucide-react';
 import { productApi } from '../utils/productApi';
 import { categoryApi } from '../utils/categoryApi';
 import { addToCart } from '../utils/cartApi';
 import { useCart } from '../contexts/CartContext';
-import { useToast } from '../contexts/ToastContext';
 import ToastMessage from '../components/ToastMessage';
 import SkeletonLoader from '../components/SkeletonLoader';
 import '../styles/products.css';
@@ -45,16 +42,40 @@ import '../styles/products.css';
 const API_BASE_URL = "https://ngau-bazaar.onrender.com";
 const fallbackImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='300' height='300' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%23999'%3ENo Image%3C/text%3E%3C/svg%3E";
 
+// Guest cart management
+const getGuestCart = () => {
+  const saved = localStorage.getItem('guestCart');
+  return saved ? JSON.parse(saved) : [];
+};
+
+const saveGuestCart = (cart) => {
+  localStorage.setItem('guestCart', JSON.stringify(cart));
+};
+
+const addToGuestCart = (product) => {
+  const guestCart = getGuestCart();
+  const existingItem = guestCart.find(item => item.id === product.id);
+
+  if (existingItem) {
+    existingItem.quantity += 1;
+  } else {
+    guestCart.push({ ...product, quantity: 1 });
+  }
+
+  saveGuestCart(guestCart);
+  return guestCart;
+};
+
 const Products = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { refreshCart } = useCart();
-  const { success, error } = useToast();
+  const { refreshCart, isAuthenticated } = useCart();
   const productsRef = useRef(null);
 
   const searchParams = new URLSearchParams(location.search);
   const urlCategoryId = searchParams.get('category');
   const urlSearch = searchParams.get('search');
+  const urlSort = searchParams.get('sort');
 
   // State
   const [products, setProducts] = useState([]);
@@ -62,14 +83,17 @@ const Products = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(urlSearch || '');
   const [selectedCategory, setSelectedCategory] = useState(urlCategoryId || 'all');
-  const [sortBy, setSortBy] = useState('newest');
-  const [priceRange, setPriceRange] = useState([0, 10000]);
+  const [sortBy, setSortBy] = useState(urlSort || 'newest');
+  const [priceRange, setPriceRange] = useState([0, 100000]);
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState('grid'); // grid or list
+  const [viewMode, setViewMode] = useState('grid');
   const [addingId, setAddingId] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('info');
   const limit = 12;
 
   // Animation refs
@@ -78,13 +102,18 @@ const Products = () => {
     offset: ["start start", "end start"]
   });
   const headerOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0.8]);
+  const headerY = useTransform(scrollYProgress, [0, 0.3], [0, 50]);
+
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  // Update URL when filters change
   useEffect(() => {
     updateURLParams();
-  }, [selectedCategory, searchTerm, sortBy]);
-  // Debounced search
+  }, [selectedCategory, searchTerm, sortBy, priceRange]);
+
+  // Debounced search and filter
   useEffect(() => {
     const timer = setTimeout(() => {
       setPage(1);
@@ -128,13 +157,23 @@ const Products = () => {
       if (searchTerm) params.search = searchTerm;
 
       const res = await productApi.getAll(params);
-      const rawProducts = Array.isArray(res) ? res : res.products || [];
-      const total = res.total || rawProducts.length;
+
+      let rawProducts = [];
+      let total = 0;
+
+      if (Array.isArray(res)) {
+        rawProducts = res;
+        total = res.length;
+      } else {
+        rawProducts = res.products || [];
+        total = res.total || rawProducts.length;
+      }
 
       const mappedProducts = rawProducts.map(p => ({
         ...p,
-        stock: p.quantity || p.stock,
-        category_name: categories.find(c => c.id.toString() === p.category_id?.toString())?.name || p.category_name || 'General'
+        stock: p.quantity || p.stock || 0,
+        category_name: categories.find(c => c.id.toString() === p.category_id?.toString())?.name || p.category_name || 'General',
+        tags: p.tags ? (Array.isArray(p.tags) ? p.tags : p.tags.split(',')) : []
       }));
 
       setProducts(mappedProducts);
@@ -144,49 +183,47 @@ const Products = () => {
       console.error('Failed to fetch products:', err.message);
       setProducts([]);
       setTotalPages(1);
+      setTotalProducts(0);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleQuickAdd = async (e, product) => {
+  const handleAddToCart = async (e, product) => {
     e.stopPropagation();
     if (product.stock <= 0) {
-      error(`Sorry! ${product.name} is out of stock.`);
+      setToastMessage(`Sorry! ${product.name} is out of stock.`);
+      setToastType('warning');
+      setShowToast(true);
       return;
     }
 
     try {
       setAddingId(product.id);
-      await addToCart(product.id, 1);
-      await refreshCart();
-      success(`Added ${product.name} to cart!`, 2000);
+
+      if (isAuthenticated) {
+        await addToCart(product.id, 1);
+        await refreshCart();
+        setToastMessage(`Added ${product.name} to cart!`);
+        setToastType('success');
+      } else {
+        // Guest cart fallback
+        addToGuestCart(product);
+        setToastMessage(`Added ${product.name} to guest cart! Login to save your cart.`);
+        setToastType('info');
+      }
+      setShowToast(true);
 
       // Animate the cart icon
-      const cartIcon = document.querySelector('.cart-btn-wrapper');
+      const cartIcon = document.querySelector('.cart-icon-wrapper, .cart-badge');
       cartIcon?.classList.add('cart-bump');
       setTimeout(() => cartIcon?.classList.remove('cart-bump'), 300);
     } catch (err) {
-      error(err.message || 'Failed to add to cart. Please login.');
-    } finally {
-      setAddingId(null);
-    }
-  };
-
-  const handleBuyNow = async (e, product) => {
-    e.stopPropagation();
-    if (product.stock <= 0) {
-      error(`Sorry! ${product.name} is out of stock.`);
-      return;
-    }
-
-    try {
-      setAddingId(product.id);
-      await addToCart(product.id, 1);
-      await refreshCart();
-      navigate('/checkout');
-    } catch (err) {
-      error(err.message || 'Failed to process. Please login.');
+      // Fallback to guest cart if API fails
+      addToGuestCart(product);
+      setToastMessage(`Added ${product.name} to guest cart!`);
+      setToastType('info');
+      setShowToast(true);
     } finally {
       setAddingId(null);
     }
@@ -196,11 +233,11 @@ const Products = () => {
     setSearchTerm('');
     setSelectedCategory('all');
     setSortBy('newest');
-    setPriceRange([0, 10000]);
+    setPriceRange([0, 100000]);
     setPage(1);
   };
 
-  const hasActiveFilters = searchTerm || selectedCategory !== 'all' || sortBy !== 'newest' || priceRange[0] > 0 || priceRange[1] < 10000;
+  const hasActiveFilters = searchTerm || selectedCategory !== 'all' || sortBy !== 'newest' || priceRange[0] > 0 || priceRange[1] < 100000;
 
   // Animation variants
   const containerVariants = {
@@ -224,6 +261,12 @@ const Products = () => {
       Math.round(((product.price - product.discount_price) / product.price) * 100) : 0;
 
     const displayCategory = categories.find(c => c.id.toString() === product.category_id?.toString())?.name || product.category_name || 'General';
+    const inStock = product.stock > 0;
+    const stockCount = product.stock;
+
+    // Get first 3 tags for display
+    const displayTags = product.tags?.slice(0, 3) || [];
+    const remainingTags = product.tags?.length - 3 || 0;
 
     return (
       <motion.div
@@ -231,8 +274,7 @@ const Products = () => {
         whileHover={{ y: -8 }}
         onHoverStart={() => setIsHovered(true)}
         onHoverEnd={() => setIsHovered(false)}
-        // The whole card now navigates to the detail page
-        onClick={() => navigate(`/products/${product.slug}`)}
+        onClick={() => navigate(`/products/${product.slug || product.id}`)}
         style={{ cursor: 'pointer' }}
       >
         <Card className={`product-card-modern ${viewMode === 'list' ? 'list-view' : ''}`}>
@@ -244,9 +286,9 @@ const Products = () => {
                 onError={e => { e.currentTarget.src = fallbackImage; }}
               />
 
-              {/* Badges */}
-              <div className="product-badges">
-                {product.is_flash_deal && (
+              {/* Flash Deal Badge */}
+              {product.is_flash_deal && (
+                <div className="product-badges">
                   <motion.div
                     className="flash-badge"
                     initial={{ scale: 0 }}
@@ -255,13 +297,25 @@ const Products = () => {
                   >
                     <Zap size={12} /> {discount}% OFF
                   </motion.div>
-                )}
-                {product.stock < 10 && product.stock > 0 && (
-                  <div className="low-stock-badge">Only {product.stock} left</div>
+                </div>
+              )}
+
+              {/* Live Stock Count Badge */}
+              <div className={`stock-count-badge ${inStock ? 'in-stock' : 'out-of-stock'}`}>
+                {inStock ? (
+                  <>
+                    <Package size={12} />
+                    <span>{stockCount} in stock</span>
+                  </>
+                ) : (
+                  <>
+                    <X size={12} />
+                    <span>Out of Stock</span>
+                  </>
                 )}
               </div>
 
-              {/* Hover Actions - Eye removed, only Cart left */}
+              {/* Hover Actions */}
               <motion.div
                 className="product-hover-actions"
                 initial={{ opacity: 0 }}
@@ -272,8 +326,8 @@ const Products = () => {
                   className="hover-action-btn"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={(e) => handleQuickAdd(e, product)} // handleQuickAdd already has stopPropagation
-                  disabled={addingId === product.id}
+                  onClick={(e) => handleAddToCart(e, product)}
+                  disabled={addingId === product.id || !inStock}
                 >
                   <ShoppingCart size={18} />
                 </motion.button>
@@ -283,37 +337,31 @@ const Products = () => {
             <Card.Body className="d-flex flex-column">
               <div className="product-meta">
                 <span className="category-badge">{displayCategory}</span>
-
-                {product.tags && (
-                  <div className="product-card-tags">
-                    {(Array.isArray(product.tags)
-                      ? product.tags
-                      : product.tags.split(',')
-                    ).map((tag, idx, allTags) => {
-                      const isExtra = viewMode === 'grid' && idx > 1;
-                      if (isExtra && idx === 2) {
-                        return <span key="more" className="mini-tag more-count">+{allTags.length - 2}</span>;
-                      }
-                      if (isExtra) return null;
-
-                      return (
-                        <span
-                          key={idx}
-                          className="mini-tag"
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevents navigating to product detail when clicking a tag
-                            setSearchTerm(tag.trim());
-                          }}
-                        >
-                          #{tag.trim()}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
 
               <Card.Title className="product-title">{product.name}</Card.Title>
+
+              {/* Tags Section */}
+              {displayTags.length > 0 && (
+                <div className="product-tags">
+                  <Tag size={12} className="tags-icon" />
+                  {displayTags.map((tag, idx) => (
+                    <span
+                      key={idx}
+                      className="product-tag"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSearchTerm(tag.trim());
+                      }}
+                    >
+                      #{tag.trim()}
+                    </span>
+                  ))}
+                  {remainingTags > 0 && (
+                    <span className="product-tag more-tag">+{remainingTags}</span>
+                  )}
+                </div>
+              )}
 
               {viewMode === 'list' && (
                 <p className="product-description">
@@ -324,40 +372,42 @@ const Products = () => {
               <div className="product-price-section">
                 <div className="price-info">
                   {product.is_flash_deal ? (
+                    /* --- FLASH DEAL ACTIVE --- */
                     <div className="price-wrapper">
-                      <span className="current-price">Rs.{product.discount_price}</span>
-                      <span className="original-price">Rs.{product.price}</span>
+                      {/* Added 'is-flash' class here for the red color */}
+                      <span className="current-price is-flash">
+                        Rs.{product.discount_price}
+                      </span>
+                      <span className="original-price">
+                        Rs.{product.price}
+                      </span>
                     </div>
                   ) : (
-                    <span className="current-price">Rs.{product.price}</span>
+                    /* --- NORMAL PRICE --- */
+                    <span className="current-price">
+                      Rs.{product.price}
+                    </span>
                   )}
                   <small className="unit-text">/ {product.unit || 'pc'}</small>
                 </div>
               </div>
 
-              <div className="product-actions">
-                <motion.button
-                  className="btn-add-cart"
-                  whileTap={{ scale: 0.95 }}
-                  onClick={(e) => handleQuickAdd(e, product)} // stopPropagation is in this function
-                  disabled={addingId === product.id || product.stock <= 0}
-                >
-                  {addingId === product.id ? (
-                    <Spinner as="span" animation="border" size="sm" />
-                  ) : (
+              {/* Full Width Add to Cart Button */}
+              <motion.button
+                className={`add-to-cart-full ${!inStock ? 'disabled' : ''} ${product.is_flash_deal ? 'flash-deal-btn' : ''}`}
+                whileTap={inStock ? { scale: 0.98 } : {}}
+                onClick={(e) => handleAddToCart(e, product)}
+                disabled={addingId === product.id || !inStock}
+              >
+                {addingId === product.id ? (
+                  <Spinner as="span" animation="border" size="sm" />
+                ) : (
+                  <>
                     <ShoppingCart size={18} />
-                  )}
-                </motion.button>
-                <motion.button
-                  className={`btn-buy-now ${product.is_flash_deal ? 'flash-deal' : ''}`}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={(e) => handleBuyNow(e, product)} // stopPropagation is in this function
-                  disabled={product.stock <= 0}
-                >
-                  {product.stock <= 0 ? 'Out of Stock' : 'Buy Now'}
-                </motion.button>
-              </div>
+                    <span>{inStock ? 'Add to Cart' : 'Out of Stock'}</span>
+                  </>
+                )}
+              </motion.button>
             </Card.Body>
           </div>
         </Card>
@@ -365,10 +415,70 @@ const Products = () => {
     );
   };
 
+  // Pagination component
+  const PaginationComponent = () => {
+    const maxVisible = 5;
+    let startPage = Math.max(1, page - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+    if (endPage - startPage + 1 < maxVisible) {
+      startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+
+    const pages = [];
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+
+    return (
+      <div className="pagination-wrapper">
+        <button
+          className="page-btn"
+          disabled={page === 1}
+          onClick={() => setPage(p => p - 1)}
+        >
+          Previous
+        </button>
+
+        {startPage > 1 && (
+          <>
+            <button className="page-number" onClick={() => setPage(1)}>1</button>
+            {startPage > 2 && <span className="page-dots">...</span>}
+          </>
+        )}
+
+        {pages.map(p => (
+          <button
+            key={p}
+            className={`page-number ${page === p ? 'active' : ''}`}
+            onClick={() => setPage(p)}
+          >
+            {p}
+          </button>
+        ))}
+
+        {endPage < totalPages && (
+          <>
+            {endPage < totalPages - 1 && <span className="page-dots">...</span>}
+            <button className="page-number" onClick={() => setPage(totalPages)}>{totalPages}</button>
+          </>
+        )}
+
+        <button
+          className="page-btn"
+          disabled={page === totalPages}
+          onClick={() => setPage(p => p + 1)}
+        >
+          Next
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className="products-page" ref={productsRef}>
       {/* Hero Section with Parallax */}
-      <animated.div className="products-hero" style={{ opacity: headerOpacity }}>
+      <animated.div className="products-hero" style={{ opacity: headerOpacity, y: headerY }}>
         <Container>
           <div className="hero-content">
             <motion.div
@@ -410,7 +520,6 @@ const Products = () => {
             </div>
 
             <div className="action-buttons">
-              {/* Visual Sort Select - Replaces the ugly default dropdown */}
               <motion.button
                 className="filter-trigger"
                 whileTap={{ scale: 0.95 }}
@@ -467,6 +576,12 @@ const Products = () => {
                   <button onClick={() => setSortBy('newest')}><X size={12} /></button>
                 </div>
               )}
+              {(priceRange[0] > 0 || priceRange[1] < 100000) && (
+                <div className="filter-tag">
+                  Price: Rs.{priceRange[0]} - Rs.{priceRange[1]}
+                  <button onClick={() => setPriceRange([0, 100000])}><X size={12} /></button>
+                </div>
+              )}
               <button className="clear-all-filters" onClick={clearAllFilters}>
                 Clear All
               </button>
@@ -474,45 +589,32 @@ const Products = () => {
           )}
         </AnimatePresence>
 
-        {/* Category Pills */}
-        <div className="category-pills-wrapper">
-          <div className="category-pills">
-            <button
-              className={`category-pill ${selectedCategory === 'all' ? 'active' : ''}`}
-              onClick={() => setSelectedCategory('all')}
-            >
-              All Products
-              {selectedCategory === 'all' && (
-                <motion.span layoutId="active-pill" className="active-indicator" />
-              )}
-            </button>
-            {categories.map(cat => (
+        {/* Horizontal Category Pills */}
+        <div className="category-bar">
+          <div className="category-pills-wrapper">
+            <div className="category-pills">
               <button
-                key={cat.id}
-                className={`category-pill ${selectedCategory === cat.id.toString() ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(cat.id.toString())}
+                className={`category-pill ${selectedCategory === 'all' ? 'active' : ''}`}
+                onClick={() => setSelectedCategory('all')}
               >
-                {cat.name}
-                {selectedCategory === cat.id.toString() && (
-                  <motion.span layoutId="active-pill" className="active-indicator" />
-                )}
+                All Products
               </button>
-            ))}
+
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  className={`category-pill ${selectedCategory === cat.id.toString() ? 'active' : ''
+                    }`}
+                  onClick={() => setSelectedCategory(cat.id.toString())}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-
-        {/* Sort and Results Info */}
-        <div className="sort-info-bar">
-          <div className="results-count">
-            {!loading && (
-              <span>Showing {products.length} of {totalProducts} products</span>
-            )}
-          </div>
-          <div className="sort-selector">
-            <label>
-              <TrendingUp size={16} />
-              Sort by:
-            </label>
+        <div className="sort-container">
+          <div className="sort-selector-mobile">
             <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
               <option value="newest">Newest First</option>
               <option value="price_asc">Price: Low to High</option>
@@ -520,6 +622,15 @@ const Products = () => {
               <option value="name_asc">Name: A-Z</option>
               <option value="popularity">Most Popular</option>
             </select>
+          </div>
+        </div>
+
+        {/* Results Count */}
+        <div className="results-count-bar">
+          <div className="results-count">
+            {!loading && (
+              <span>Showing {products.length} of {totalProducts} products</span>
+            )}
           </div>
         </div>
 
@@ -555,47 +666,7 @@ const Products = () => {
             </motion.div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="pagination-wrapper">
-                <button
-                  className="page-btn"
-                  disabled={page === 1}
-                  onClick={() => setPage(page - 1)}
-                >
-                  Previous
-                </button>
-                <div className="page-numbers">
-                  {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (page <= 3) {
-                      pageNum = i + 1;
-                    } else if (page >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = page - 2 + i;
-                    }
-                    return (
-                      <button
-                        key={pageNum}
-                        className={`page-number ${page === pageNum ? 'active' : ''}`}
-                        onClick={() => setPage(pageNum)}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-                </div>
-                <button
-                  className="page-btn"
-                  disabled={page === totalPages}
-                  onClick={() => setPage(page + 1)}
-                >
-                  Next
-                </button>
-              </div>
-            )}
+            {totalPages > 1 && <PaginationComponent />}
           </>
         )}
       </Container>
@@ -612,10 +683,14 @@ const Products = () => {
           <div className="filter-section">
             <h4>Price Range</h4>
             <div className="price-range">
+              <div className="price-range-labels">
+                <span>Rs. {priceRange[0]}</span>
+                <span>Rs. {priceRange[1]}</span>
+              </div>
               <input
                 type="range"
                 min="0"
-                max="10000"
+                max="100000"
                 value={priceRange[1]}
                 onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                 className="price-slider"
@@ -624,14 +699,14 @@ const Products = () => {
                 <input
                   type="number"
                   value={priceRange[0]}
-                  onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
+                  onChange={(e) => setPriceRange([parseInt(e.target.value) || 0, priceRange[1]])}
                   placeholder="Min"
                 />
                 <span>-</span>
                 <input
                   type="number"
                   value={priceRange[1]}
-                  onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                  onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value) || 100000])}
                   placeholder="Max"
                 />
               </div>
@@ -639,10 +714,7 @@ const Products = () => {
           </div>
 
           <div className="filter-section">
-            <h4>Availability</h4>
-            <label className="checkbox-label">
-              <input type="checkbox" /> In Stock Only
-            </label>
+            <h4>Sort By</h4>
           </div>
 
           <button
@@ -653,6 +725,13 @@ const Products = () => {
           </button>
         </Offcanvas.Body>
       </Offcanvas>
+
+      <ToastMessage
+        show={showToast}
+        onClose={() => setShowToast(false)}
+        message={toastMessage}
+        type={toastType}
+      />
     </div>
   );
 };

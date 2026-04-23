@@ -36,6 +36,7 @@ button, a, [role="button"] {
 .ngau-home {
   font-family: 'Inter', sans-serif;
   overflow-x: hidden;
+  width: 100%;
 }
 
 /* ========== FIXED HERO SECTION - NO OVERLAP ========== */
@@ -130,6 +131,11 @@ button, a, [role="button"] {
 .hero-line {
   display: inline-block;
   white-space: nowrap;    /* Prevents words from breaking mid-line */
+}
+.text-gradient-primary {
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .text-gradient {

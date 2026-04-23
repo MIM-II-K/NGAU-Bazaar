@@ -154,7 +154,9 @@ const Home = () => {
               >
 
                 <h1 className="hero-title">
-                  <span className="hero-line">Fresh Groceries</span>
+                  <span className="hero-line">
+                    <span className="text-gradient-primary">Fresh Groceries</span>
+                  </span>
 
                   <span className="hero-line">
                     <span className="text-gradient">Delivered in</span>
@@ -193,20 +195,14 @@ const Home = () => {
                     </motion.span>
                   </motion.button>
 
-                  {!isAuthenticated && (
-                    <motion.button
-                      onClick={() => navigate('/register')}
-                      className="btn-outline"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      Join NGAU Free
-                    </motion.button>
-                  )}
+                  {/* ========== REMOVED: Join NGAU Free Button ========== */}
+                  {/* The button below has been removed to prioritize Guest Checkout */}
+                  
                 </div>
 
+                {/* ========== UPDATED: Hero Trust Badges ========== */}
                 <div className="hero-trust-badges">
-                  {['Lightning Delivery', '24/7 Support', 'Secure Payment'].map((item, idx) => (
+                  {['Lightning Delivery', '100% Local Sourced', 'Cash on Delivery'].map((item, idx) => (
                     <motion.div
                       key={idx}
                       className="trust-badge"
@@ -272,7 +268,7 @@ const Home = () => {
       </section>
 
       {/* ========== REST OF YOUR SECTIONS ========== */}
-      {/* Stats Section */}
+      {/* Stats Section - UPDATED METRICS */}
       <section className="stats-enhanced-section" ref={statsRef}>
         <Container>
           <motion.div
@@ -281,20 +277,21 @@ const Home = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <span className="section-eyebrow">IMPACT METRICS</span>
-            <h2>Making a Difference</h2>
-            <p>Real numbers behind our commitment to local farmers</p>
+            <span className="section-eyebrow">OUR COMMITMENT</span>
+            <h2>What We Guarantee</h2>
+            <p>Honest promises we can keep from Day 1</p>
           </motion.div>
 
+          {/* ========== UPDATED: Impact Metrics with Truthful Phase 1 Data ========== */}
           <Row className="g-4">
             <Col md={3} sm={6}>
-              <AnimatedCounter end={500} suffix="+" label="Local Farmers Partnered" />
+              <AnimatedCounter end={100} suffix="%" label="Local Sourced" />
             </Col>
             <Col md={3} sm={6}>
-              <AnimatedCounter end={12} suffix="H" label="Max Delivery Time" />
+              <AnimatedCounter end={24} suffix="H" label="Max Delivery Time" />
             </Col>
             <Col md={3} sm={6}>
-              <AnimatedCounter end={85} suffix="%" label="Revenue to Farmers" />
+              <AnimatedCounter end={0} suffix="" label="Middlemen" />
             </Col>
             <Col md={3} sm={6}>
               <AnimatedCounter end={100} suffix="%" label="Organic Guarantee" />
