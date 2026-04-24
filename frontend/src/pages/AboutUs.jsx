@@ -309,7 +309,7 @@ const AboutUs = () => {
               >
                 <div className="image-frame">
                   <img
-                    src="../public/dholimara.jpg?auto=format&fit=crop&w=1200"
+                    src="https://punvzbjvgphhjcgsgzhd.supabase.co/storage/v1/object/public/profiles/dholimara.jpg?auto=format&fit=crop&w=1200"
                     alt="Terraced farming in Palpa, Nepal"
                   />
                   <div className="image-accent" />
