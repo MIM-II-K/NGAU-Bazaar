@@ -19,6 +19,7 @@ const ProductCard = ({ product }) => {
 
     const [loading, setLoading] = useState(false);
     const [isWishlisted, setIsWishlisted] = useState(product.is_in_wishlist);
+    const [isHoveringWishlist, setIsHoveringWishlist] = useState(false);
 
     const handleWishlistToggle = async (e) => {
         e.stopPropagation();
@@ -89,6 +90,8 @@ const ProductCard = ({ product }) => {
                     <button
                         onClick={handleWishlistToggle}
                         className={`modern-wishlist-btn ${isWishlisted ? 'active' : ''}`}
+                        onMouseEnter={() => setIsHoveringWishlist(true)}
+                        onMouseLeave={() => setIsHoveringWishlist(false)}
                     >
                         <i className={`bi ${isWishlisted ? 'bi-heart-fill' : 'bi-heart'}`}></i>
                     </button>
@@ -101,7 +104,12 @@ const ProductCard = ({ product }) => {
                     />
 
                     {/* Hover Quick View Overlay */}
-                    <div className="card-hover-overlay">
+                    <div className="card-hover-overlay"
+                        style={{
+                            opacity: isHoveringWishlist ? 0 : undefined,
+                            visibility: isHoveringWishlist ? 'hidden' : 'visible',
+                            transition: 'all 0.2s ease'
+                        }}>
                         <button className="overlay-btn">
                             View Details
                         </button>

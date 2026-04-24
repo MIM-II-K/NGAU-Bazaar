@@ -142,131 +142,87 @@ const Home = () => {
           style={{ y: heroY }}
         />
         <div className="hero-gradient-overlay" />
+        <section className="fresh-grocery-hero">
+          <Container>
+            <Row className="align-items-center">
 
-        <Container className="hero-container">
-          <Row className="hero-row align-items-center">
-            <Col lg={6} md={12} className="hero-content-col">
-              <motion.div
-                className="hero-content-wrapper"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              >
+              {/* LEFT COLUMN: TEXT CONTENT */}
+              <Col lg={6} md={12} className="hero-text-col">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <h1 className="hero-heading">
+                    <span className="text-blue d-block">Fresh Groceries</span>
+                    <span className="text-white-fade d-block">Delivered in</span>
+                    <span className="text-green d-block">Hours</span>
+                  </h1>
 
-                <h1 className="hero-title">
-                  <span className="hero-line">
-                    <span className="text-gradient-primary">Fresh Groceries</span>
-                  </span>
-
-                  <span className="hero-line">
-                    <span className="text-gradient">Delivered in</span>
-                  </span>
-
-                  <span className="hero-line">
-                    <motion.span
-                      className="highlight-text"
-                      animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
-                      transition={{ repeat: Infinity, duration: 5, ease: "linear" }}
+                  <p className="hero-subtitle">
+                    Connect directly with local farmers. Get organic produce,
+                    traditional delicacies, and daily essentials delivered to
+                    your doorstep.
+                  </p>
+                  <div classname="shop-now-wrapper">
+                    <button
+                      onClick={() => navigate('/shop')}
+                      className="btn-shop-now"
                     >
-                      Hours
-                    </motion.span>
-                  </span>
-                </h1>
+                      <ShoppingBag size={18} />
+                      Start Shopping →
+                    </button>
+                  </div>
+                  <div className="hero-trust-row">
+                    <span>Lightning Delivery</span>
+                    <span>100% Local Sourced</span>
+                    <span>Cash on Delivery</span>
+                  </div>
+                </motion.div>
+              </Col>
 
-                <p className="hero-description">
-                  Connect directly with local farmers. Get organic produce, traditional
-                  delicacies, and daily essentials delivered to your doorstep.
-                </p>
-
-                <div className="hero-buttons">
-                  <motion.button
-                    onClick={() => navigate('/shop')}
-                    className="btn-primary"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <ShoppingBag size={20} />
-                    Start Shopping
-                    <motion.span
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{ repeat: Infinity, duration: 1.5 }}
-                    >
-                      →
-                    </motion.span>
-                  </motion.button>
-
-                  {/* ========== REMOVED: Join NGAU Free Button ========== */}
-                  {/* The button below has been removed to prioritize Guest Checkout */}
-                  
-                </div>
-
-                {/* ========== UPDATED: Hero Trust Badges ========== */}
-                <div className="hero-trust-badges">
-                  {['Lightning Delivery', '100% Local Sourced', 'Cash on Delivery'].map((item, idx) => (
-                    <motion.div
-                      key={idx}
-                      className="trust-badge"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.7 + idx * 0.1 }}
-                    >
-                      <Shield size={14} />
-                      <span>{item}</span>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            </Col>
-
-            <Col lg={6} md={12} className="hero-image-col">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-                className="hero-image-wrapper"
-              >
-                <div className="hero-image-container">
+              {/* RIGHT COLUMN: IMAGE & BADGES */}
+              <Col lg={6} md={12} className="hero-img-col">
+                <motion.div
+                  className="hero-image-wrapper"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                >
                   <img
-                    src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&h=600"
-                    alt="Fresh organic vegetables from Nepal"
-                    className="hero-main-image"
+                    src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80"
+                    alt="Fresh Grocery Shelves"
+                    className="main-hero-img"
                   />
-                  <div className="hero-image-glow" />
-                </div>
 
-                <motion.div
-                  className="floating-card delivery-card"
-                  initial={{ opacity: 0, x: 30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5, type: "spring" }}
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <Truck size={20} />
-                  <div>
-                    <strong>Fresh Delivery</strong>
-                    <small>within 2-4 hrs</small>
+                  {/* Top Left Badge */}
+                  <div className="floating-badge badge-top-left">
+                    <div className="badge-icon icon-green">
+                      <Leaf size={18} />
+                    </div>
+                    <div className="badge-text">
+                      <strong>100% Organic</strong>
+                      <span>Certified quality</span>
+                    </div>
+                  </div>
+
+                  {/* Bottom Right Badge */}
+                  <div className="floating-badge badge-bottom-right">
+                    <div className="badge-icon icon-orange">
+                      <Truck size={18} />
+                    </div>
+                    <div className="badge-text">
+                      <strong>Fresh Delivery</strong>
+                      <span>within 2-4 hrs</span>
+                    </div>
                   </div>
                 </motion.div>
+              </Col>
 
-                <motion.div
-                  className="floating-card organic-card"
-                  initial={{ opacity: 0, x: -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6, type: "spring" }}
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <Leaf size={20} />
-                  <div>
-                    <strong>100% Organic</strong>
-                    <small>Certified quality</small>
-                  </div>
-                </motion.div>
-              </motion.div>
-            </Col>
-          </Row>
-        </Container>
+            </Row>
+          </Container>
+        </section>
       </section>
-
       {/* ========== REST OF YOUR SECTIONS ========== */}
       {/* Stats Section - UPDATED METRICS */}
       <section className="stats-enhanced-section" ref={statsRef}>
