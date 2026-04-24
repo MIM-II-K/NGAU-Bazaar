@@ -285,10 +285,15 @@
   margin-right: 8px;
 }
 
-/* Add to cart button */
 .modern-add-btn {
+  /* Use fixed dimensions that won't budge */
   width: 40px;
   height: 40px;
+  
+  /* Critical for Mobile/Prod: Stops the parent from stretching it */
+  min-width: 40px; 
+  max-width: 40px;
+  flex: 0 0 40px; /* shorthand for grow: 0, shrink: 0, basis: 40px */
 
   display: flex;
   align-items: center;
@@ -296,57 +301,32 @@
 
   border-radius: 10px;
   transition: all 0.2s ease;
+  
+  /* Standardizes sizing math */
+  box-sizing: border-box;
+  
+  /* Touch screen optimization */
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* Specific Mobile Overrides */
+@media (max-width: 600px) {
+  .modern-add-btn {
+    /* Slightly larger tap target for mobile if 40px feels small */
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    flex: 0 0 44px;
+  }
 }
 
 .modern-add-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
-:root {
-  /* Default size (Desktop/Tablets) */
-  --btn-size: 40px;
-  --btn-radius: 10px;
-}
 
-/* Adjust for smaller screens (Mobile) */
-@media (max-width: 600px) {
-  :root {
-    /* Larger tap target for fingers */
-    --btn-size: 48px; 
-    --btn-radius: 12px;
-  }
-}
-
-/* Adjust for very large monitors if needed */
-@media (min-width: 1400px) {
-  :root {
-    --btn-size: 44px;
-  }
-}
-
-.modern-add-btn {
-  width: var(--btn-size);
-  height: var(--btn-size);
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: var(--btn-radius);
-  transition: all 0.2s ease;
-  
-  /* Important for mobile accessibility */
-  cursor: pointer;
-  border: none; 
-  outline: none;
-}
-
-/* Add a subtle hover effect that works across sizes */
-.modern-add-btn:hover {
-  transform: scale(1.05);
-  filter: brightness(1.1);
-}
-
-.modern-add-btn:active {
-  transform: scale(0.95);
+/* Ensure icons/text inside don't break the layout */
+.modern-add-btn > * {
+  pointer-events: none;
 }
