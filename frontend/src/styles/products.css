@@ -81,41 +81,73 @@
   align-items: center;
 }
 
-.search-box {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  background: #f8fafc;
-  padding: 0 16px;
-  border-radius: 12px;
-  height: 48px;
-  border: 1px solid transparent;
-  transition: all 0.2s;
+/* Container to ensure it spans the width of the screen with padding */
+.search-container {
+  width: 100%;
+  padding: 12px 16px;
+  box-sizing: border-box;
 }
 
+.search-box {
+  display: flex;
+  align-items: center;
+  background: #ffffff; /* Brighter background for better contrast */
+  height: 56px; /* Increased height for better mobile touch UX */
+  padding: 0 16px;
+  border-radius: 16px; /* Smoother, more modern corners */
+  border: 1.5px solid #e2e8f0; /* Subtle visible border */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02); /* Soft shadow */
+}
+
+/* UX: Feedback when the user taps to type */
 .search-box:focus-within {
   background: white;
   border-color: #10b981;
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.1), 
+              0 4px 6px -2px rgba(16, 185, 129, 0.05);
+  transform: translateY(-1px); /* Subtle lift effect */
+}
+
+.search-icon {
+  color: #64748b;
+  flex-shrink: 0;
 }
 
 .search-box input {
+  flex: 1;
   border: none;
   background: transparent;
-  width: 100%;
-  padding-left: 12px;
+  height: 100%;
+  padding: 0 12px;
   outline: none;
+  font-size: 16px; /* Prevents iOS auto-zoom on focus */
   font-weight: 500;
+  color: #1e293b;
+}
+
+.search-box input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
 }
 
 .clear-search {
-  background: none;
+  background: #f1f5f9; /* Circular background for the 'X' */
   border: none;
+  border-radius: 50%;
   cursor: pointer;
-  color: #94a3b8;
+  color: #64748b;
   display: flex;
   align-items: center;
-  padding: 4px;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: 8px;
+  transition: background 0.2s;
+}
+
+.clear-search:active {
+  background: #e2e8f0; /* Tap feedback */
 }
 
 .action-buttons {

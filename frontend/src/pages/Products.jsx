@@ -572,19 +572,26 @@ const Products = () => {
         {/* Search and Filter Bar */}
         <div className="action-bar-container">
           <div className="main-search-area">
-            <div className="search-box">
-              <Search size={20} className="search-icon" />
-              <input
-                type="text"
-                placeholder="Search 'Organic Honey' or 'Fresh Apples'..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              {searchTerm && (
-                <button onClick={() => setSearchTerm('')} className="clear-search">
-                  <X size={16} />
-                </button>
-              )}
+            <div className="search-container">
+              <div className="search-box">
+                <Search size={20} className="search-icon" />
+                <input
+                  type="text"
+                  inputMode="search" /* Opens 'Search' key on mobile keyboard */
+                  placeholder="Search 'Organic Honey'..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="clear-search"
+                    aria-label="Clear search"
+                  >
+                    <X size={20} />
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="action-buttons">
