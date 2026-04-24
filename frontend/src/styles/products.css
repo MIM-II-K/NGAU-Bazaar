@@ -568,6 +568,57 @@
   font-size: 0.75rem;
 }
 
+/* Flash Sale Countdown Timer */
+.flash-countdown {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  padding: 6px 12px;
+  border-radius: 50px;
+  margin-top: 8px;
+  width: fit-content;
+}
+
+.countdown-icon {
+  font-size: 14px;
+}
+
+.countdown-timer {
+  display: flex;
+  gap: 6px;
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.countdown-unit {
+  background: #1e293b;
+  color: #f97316;
+  padding: 2px 4px;
+  border-radius: 6px;
+  min-width: 32px;
+  text-align: center;
+}
+
+.countdown-label {
+  font-size: 0.65rem;
+  color: #cbd5e1;
+  margin-right: 2px;
+}
+
+/* List view countdown adjustments */
+.products-grid.list-view .flash-countdown {
+  margin-top: 4px;
+  padding: 4px 10px;
+}
+
+.products-grid.list-view .countdown-unit {
+  min-width: 28px;
+  font-size: 0.75rem;
+}
+
 /* Full Width Add to Cart Button */
 .add-to-cart-full {
   width: 100%;
@@ -815,6 +866,53 @@
     font-size: 0.6rem;
     padding: 3px 8px;
   }
+
+  /* Fix for mobile list view - prevent badge overlap */
+  .products-grid.list-view .product-card-modern {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .products-grid.list-view .image-zoom-container {
+    width: 100%;
+    height: 200px;
+  }
+
+  .products-grid.list-view .product-badges {
+    top: 8px;
+    left: 8px;
+  }
+
+  .products-grid.list-view .stock-count-badge {
+    top: 8px;
+    right: 8px;
+  }
+
+  /* Ensure badges don't overlap in list view on small screens */
+  .products-grid.list-view .product-badges .flash-badge {
+    font-size: 0.65rem;
+    padding: 3px 8px;
+  }
+
+  .products-grid.list-view .stock-count-badge {
+    font-size: 0.55rem;
+    padding: 2px 6px;
+  }
+
+  /* Mobile countdown adjustments */
+  .flash-countdown {
+    padding: 4px 8px;
+  }
+
+  .countdown-unit {
+    min-width: 26px;
+    font-size: 0.7rem;
+    padding: 1px 3px;
+  }
+
+  .countdown-label {
+    font-size: 0.55rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -823,8 +921,8 @@
   }
   
   .products-grid.list-view .image-zoom-container {
-    width: 150px;
-    height: 150px;
+    width: 100%;
+    height: 180px;
   }
   
   .category-pill {
@@ -834,5 +932,36 @@
   
   .hero-title {
     font-size: 1.75rem;
+  }
+
+  /* Further badge spacing for very small screens */
+  .products-grid.list-view .product-badges {
+    top: 6px;
+    left: 6px;
+    gap: 4px;
+  }
+
+  .products-grid.list-view .stock-count-badge {
+    top: 6px;
+    right: 6px;
+  }
+
+  .products-grid.list-view .flash-badge {
+    font-size: 0.6rem;
+    padding: 2px 6px;
+  }
+
+  .flash-countdown {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .countdown-timer {
+    gap: 3px;
+  }
+
+  .countdown-unit {
+    min-width: 22px;
+    font-size: 0.65rem;
   }
 }

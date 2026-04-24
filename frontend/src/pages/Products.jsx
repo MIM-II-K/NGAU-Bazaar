@@ -29,7 +29,8 @@ import {
   Package,
   Tag,
   ChevronDown,
-  CheckCircle
+  CheckCircle,
+  Clock
 } from 'lucide-react';
 import { productApi } from '../utils/productApi';
 import { categoryApi } from '../utils/categoryApi';
@@ -64,6 +65,67 @@ const addToGuestCart = (product) => {
 
   saveGuestCart(guestCart);
   return guestCart;
+};
+
+// Flash Sale Countdown Component
+const FlashCountdown = ({ endTime }) => {
+  const [timeLeft, setTimeLeft] = useState({
+    hours: 0,
+    minutes: 0,
+    seconds: 0
+  });
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    if (!endTime) return;
+
+    const calculateTimeLeft = () => {
+      const now = new Date().getTime();
+      const end = new Date(endTime).getTime();
+      const difference = end - now;
+
+      if (difference <= 0) {
+        setIsExpired(true);
+        return { hours: 0, minutes: 0, seconds: 0 };
+      }
+
+      const hours = Math.floor(difference / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      return { hours, minutes, seconds };
+    };
+
+    setTimeLeft(calculateTimeLeft());
+
+    const timer = setInterval(() => {
+      const newTimeLeft = calculateTimeLeft();
+      setTimeLeft(newTimeLeft);
+      if (newTimeLeft.hours === 0 && newTimeLeft.minutes === 0 && newTimeLeft.seconds === 0) {
+        setIsExpired(true);
+        clearInterval(timer);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [endTime]);
+
+  if (isExpired || !endTime) return null;
+
+  const { hours, minutes, seconds } = timeLeft;
+
+  return (
+    <div className="flash-countdown">
+      <Clock size={14} className="countdown-icon" />
+      <div className="countdown-timer">
+        {hours > 0 && (
+          <span className="countdown-unit">{hours.toString().padStart(2, '0')}<span className="countdown-label">h</span></span>
+        )}
+        <span className="countdown-unit">{minutes.toString().padStart(2, '0')}<span className="countdown-label">m</span></span>
+        <span className="countdown-unit">{seconds.toString().padStart(2, '0')}<span className="countdown-label">s</span></span>
+      </div>
+    </div>
+  );
 };
 
 const Products = () => {
@@ -173,7 +235,8 @@ const Products = () => {
         ...p,
         stock: p.quantity || p.stock || 0,
         category_name: categories.find(c => c.id.toString() === p.category_id?.toString())?.name || p.category_name || 'General',
-        tags: p.tags ? (Array.isArray(p.tags) ? p.tags : p.tags.split(',')) : []
+        tags: p.tags ? (Array.isArray(p.tags) ? p.tags : p.tags.split(',')) : [],
+        flash_sale_end: p.flash_sale_end || null // Add flash sale end time if available from API
       }));
 
       setProducts(mappedProducts);
@@ -278,7 +341,7 @@ const Products = () => {
         style={{ cursor: 'pointer' }}
       >
         <Card className={`product-card-modern ${viewMode === 'list' ? 'list-view' : ''}`}>
-          <div className={`${viewMode === 'list' ? 'd-flex' : ''}`}>
+          <div className={`${viewMode === 'list' ? 'd-flex flex-column flex-sm-row' : ''}`}>
             <div className="image-zoom-container position-relative">
               <Card.Img
                 variant="top"
@@ -391,6 +454,11 @@ const Products = () => {
                   <small className="unit-text">/ {product.unit || 'pc'}</small>
                 </div>
               </div>
+
+              {/* Flash Sale Countdown Timer */}
+              {product.is_flash_deal && product.flash_sale_end && (
+                <FlashCountdown endTime={product.flash_sale_end} />
+              )}
 
               {/* Full Width Add to Cart Button */}
               <motion.button
