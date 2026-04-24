@@ -384,9 +384,13 @@
 
 .image-zoom-container {
   position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
   height: 240px;
   overflow: hidden;
   background: #f8fafc;
+  align-items: center;
+  justify-content: center;
 }
 
 .image-zoom-container img {
@@ -398,6 +402,11 @@
 
 .product-card-modern:hover .image-zoom-container img {
   transform: scale(1.1);
+}
+@media (max-width: 576px) {
+  .image-zoom-container {
+    height: auto; /* Allow aspect-ratio to take over */
+  }
 }
 
 /* Product Badges */

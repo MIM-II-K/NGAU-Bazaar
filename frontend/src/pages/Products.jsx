@@ -691,11 +691,11 @@ const Products = () => {
         <div className="sort-container">
           <div className="sort-selector-mobile">
             <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-              <option value="newest">Newest First</option>
-              <option value="price_asc">Price: Low to High</option>
-              <option value="price_desc">Price: High to Low</option>
-              <option value="name_asc">Name: A-Z</option>
-              <option value="popularity">Most Popular</option>
+              <option value="popularity">Top Rated & Best Sellers</option>
+              <option value="newest">Fresh Arrivals</option>
+              <option value="price_asc">Lowest Price First</option>
+              <option value="price_desc">Premium Selection</option>
+              <option value="name_asc">A to Z</option>
             </select>
           </div>
         </div>
