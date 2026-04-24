@@ -1,46 +1,48 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
-import { 
-  Leaf, 
-  Truck, 
-  Clock, 
-  Users, 
-  Star, 
+import {
+  Leaf,
+  Truck,
+  Clock,
+  Users,
   TrendingUp,
   Shield,
-  ShoppingBag,
   ArrowRight,
   Zap,
   Heart,
   MapPin,
-  Sun,
-  Coffee,
-  Apple,
-  Wheat,
-  Award,
-  Package,
-  RefreshCw,
   Quote,
   ChevronRight,
   Play,
   Pause,
-  Instagram,
-  Facebook,
-  Twitter,
-  Linkedin,
-  Mail,
-  Phone,
   Globe,
-  Mountain,
-  Droplet,
-  Wind,
-  CheckCircle,
   Calendar,
   Target,
   Eye,
-  ChevronLeft
+  ChevronLeft,
+  Sparkles,
+  Sprout,
+  Gem,
+  Crown,
+  Award,
+  Building2,
+  Handshake,
+  BarChart3,
+  Smartphone,
+  Store,
+  Wifi,
+  Coins,
+  Sun,
+  Droplets,
+  Coffee,
+  ShoppingBag,
+  CheckCircle,
+  RefreshCw,
+  Infinity,
+  Network,
+  Rocket
 } from 'lucide-react';
 
 // Import your existing components
@@ -53,241 +55,363 @@ import '../styles/about-us.css';
 const AboutUs = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  
+
   const containerRef = useRef(null);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [hoverCard, setHoverCard] = useState(null);
   const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeStory, setActiveStory] = useState(0);
+  const [activeMilestone, setActiveMilestone] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
-  
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"]
   });
 
-  const backgroundY = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
-  const heroScale = useTransform(scrollYProgress, [0, 0.3], [1, 0.95]);
+  const backgroundY = useTransform(scrollYProgress, [0, 1], ['0%', '40%']);
+  const heroScale = useTransform(scrollYProgress, [0, 0.3], [1, 0.98]);
 
-  // Fetch real products and categories
+  // Fetch real products
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // Fetch featured/best-selling products for "The Collection" section
         const products = await productApi.getAll({ page: 1, limit: 3, sort: 'popularity' });
         setFeaturedProducts(Array.isArray(products) ? products : []);
-        
-        // Fetch categories for the collection filter
-        const cats = await categoryApi.getAll();
-        setCategories(Array.isArray(cats) ? cats.slice(0, 6) : []);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, []);
 
-  // Auto-rotate farmer stories
+  // Auto-rotate milestones
   useEffect(() => {
     if (!isPlaying) return;
     const interval = setInterval(() => {
-      setActiveStory((prev) => (prev + 1) % farmerStories.length);
+      setActiveMilestone((prev) => (prev + 1) % roadmapMilestones.length);
     }, 5000);
     return () => clearInterval(interval);
   }, [isPlaying]);
 
-  const textVariant = {
-    hidden: { opacity: 0, y: 40 },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
-      transition: { duration: 0.8, ease: [0.33, 1, 0.68, 1] } 
-    }
-  };
+  // Mouse move effect
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      setCursorPosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
-  const staggerContainer = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.3
-      }
-    }
-  };
-
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 30 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: { duration: 0.6, ease: "easeOut" }
-    }
-  };
-
-  // Real farmer stories data
-  const farmerStories = [
+  // Roadmap milestones from content
+  const roadmapMilestones = [
     {
-      id: 1,
-      name: "Gopal Tamang",
-      location: "Palpa Hills",
-      story: "Third-generation farmer growing organic kiwi using traditional methods passed down from his grandfather. His dedication to quality has made Palpa kiwi famous across Nepal.",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600",
-      product: "Kiwi Chips",
-      yearsFarming: 25,
-      quote: "The land gives back what you put into it. We treat our soil with respect, and it rewards us with the finest fruits.",
-      stat: "500+ kg monthly harvest"
+      phase: "The Seed",
+      timeline: "Early 2026",
+      description: "Identifying the gap between Palpa's local producers and urban demand.",
+      icon: <Sprout size={24} />,
+      color: "#10b981"
     },
     {
-      id: 2,
-      name: "Sita Gurung",
-      location: "Kaski Region",
-      story: "Preserving ancient recipes for traditional Himalayan spirits. Sita learned the craft from her grandmother and now leads a cooperative of 50 women farmers.",
-      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=600",
-      product: "Hillside Spirits",
-      yearsFarming: 18,
-      quote: "Every bottle tells a story of our mountains, our culture, and our ancestors.",
-      stat: "1000+ bottles monthly"
+      phase: "Development",
+      timeline: "Mid 2026 – Present",
+      description: "Building a robust ecosystem to handle logistics from soil to shelf.",
+      icon: <Building2 size={24} />,
+      color: "#8b5cf6"
     },
     {
-      id: 3,
-      name: "Ram Bahadur",
-      location: "Sindhupalchok",
-      story: "Pioneer in organic terrace farming and sustainable agriculture. Ram transformed his village by introducing modern organic techniques while preserving traditional wisdom.",
-      image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=600",
-      product: "Terrace Greens",
-      yearsFarming: 30,
-      quote: "Sustainability isn't just a buzzword. It's a way of life that ensures our children can also farm these lands.",
-      stat: "200+ farmers trained"
+      phase: "The Launch",
+      timeline: "Mid 2027",
+      description: "Grand Launch of our dedicated web platform and mobile application.",
+      icon: <Rocket size={24} />,
+      color: "#f59e0b"
     }
   ];
 
-  // Company milestones
-  const milestones = [
-    { year: "2020", title: "The Beginning", description: "Started with 50 farmers in Palpa", icon: <Award size={24} />, color: "#10b981" },
-    { year: "2021", title: "Expansion", description: "Reached 200+ farmers across Nepal", icon: <TrendingUp size={24} />, color: "#8b5cf6" },
-    { year: "2022", title: "Digital Launch", description: "Launched our e-commerce platform", icon: <Globe size={24} />, color: "#f59e0b" },
-    { year: "2023", title: "Impact Milestone", description: "85% revenue retained by farmers", icon: <Heart size={24} />, color: "#ef4444" },
-    { year: "2024", title: "Sustainability", description: "Zero plastic packaging initiative", icon: <Leaf size={24} />, color: "#10b981" }
+  // Advantages data
+  const advantages = [
+    {
+      icon: <Sun size={28} />,
+      title: "Unmatched Peak Freshness",
+      description: "Soil-to-shelf model minimizes time between harvest and delivery. No weeks of cold storage.",
+      color: "#f59e0b"
+    },
+    {
+      icon: <Leaf size={28} />,
+      title: "Guaranteed Organic Integrity",
+      description: "Direct from Dholimara ecosystem with traditional, chemical-free methods upheld.",
+      color: "#10b981"
+    },
+    {
+      icon: <Handshake size={28} />,
+      title: "Direct Farmer Empowerment",
+      description: "No 'middleman tax' — farmers transition from survival to dignified, viable profession.",
+      color: "#8b5cf6"
+    },
+    {
+      icon: <TrendingUp size={28} />,
+      title: "Local Economic Growth",
+      description: "Every rupee stays within Palpa and Butwal corridor, funding local infrastructure.",
+      color: "#ec4899"
+    },
+    {
+      icon: <Eye size={28} />,
+      title: "Radical Transparency",
+      description: "Know exactly where your food was grown, the climate it thrived in, and the community you support.",
+      color: "#06b6d4"
+    }
+  ];
+
+  // Stats data
+  const stats = [
+    { value: 100, suffix: "%", label: "Organic Guarantee", icon: <Leaf size={24} />, delay: 0 },
+    { value: 24, suffix: "H", label: "Farm to Table", icon: <Clock size={24} />, delay: 0.1 },
+    { value: 0, suffix: "", label: "Middlemen", icon: <Users size={24} />, delay: 0.2 },
+    { value: 100, suffix: "%", label: "Farmer Revenue", icon: <Heart size={24} />, delay: 0.3 }
   ];
 
   // Values data
   const values = [
-    { icon: <Leaf size={28} />, title: "Organic First", desc: "100% certified organic products", color: "#10b981" },
-    { icon: <Truck size={28} />, title: "Fast Delivery", desc: "2-4 hour delivery in valley", color: "#8b5cf6" },
-    { icon: <Users size={28} />, title: "Farmer First", desc: "85% revenue to farmers", color: "#f59e0b" },
-    { icon: <Shield size={28} />, title: "Quality Assured", desc: "Strict quality control", color: "#ef4444" }
+    { icon: <Leaf size={28} />, title: "Organic First", desc: "100% certified organic from Dholimara", color: "#10b981" },
+    { icon: <Handshake size={28} />, title: "Farmer First", desc: "Full value to those who work the land", color: "#8b5cf6" },
+    { icon: <Shield size={28} />, title: "Radical Transparency", desc: "Know your food's journey", color: "#f59e0b" },
+    { icon: <Globe size={28} />, title: "Local Economy", desc: "Every rupee stays in the community", color: "#ec4899" }
   ];
 
-  // Stats data with real values
-  const stats = [
-    { value: 500, suffix: "+", label: "Local Farmers", icon: <Users size={20} /> },
-    { value: 12, suffix: "H", label: "Max Delivery", icon: <Clock size={20} /> },
-    { value: 85, suffix: "%", label: "Farmer Revenue", icon: <Heart size={20} /> },
-    { value: 100, suffix: "%", label: "Organic", icon: <Leaf size={20} /> }
+  // Featured products from Dholimara
+  const dholimaraProducts = [
+    { name: "Palpa Ginger", description: "Known for its exceptional aroma and medicinal properties", icon: <Sprout size={20} /> },
+    { name: "Himalayan Coffee", description: "Rich, bold flavor from high-altitude cultivation", icon: <Coffee size={20} /> },
+    { name: "Wild Honey", description: "Raw, unfiltered honey from native bees", icon: <Sun size={20} /> }
   ];
 
   return (
-    <div className="about-us-page" ref={containerRef}>
-      {/* Custom Cursor */}
-      <motion.div 
-        className="custom-cursor"
-        animate={{ 
-          x: cursorPosition.x - 10, 
-          y: cursorPosition.y - 10,
-          scale: hoverCard ? 1.5 : 1
-        }}
-        transition={{ type: "spring", stiffness: 500, damping: 28 }}
-      />
+    <div className="about-us-redesign" ref={containerRef}>
+      {/* Background Elements */}
+      <div className="bg-elements">
+        <div className="bg-glow glow-1" />
+        <div className="bg-glow glow-2" />
+        <div className="bg-glow glow-3" />
+      </div>
 
       {/* ========== HERO SECTION ========== */}
-      <section className="hero-fullscreen">
-        <motion.div 
-          className="hero-bg-gradient"
+      <section className="hero-modern">
+        <motion.div
+          className="hero-bg"
           style={{ y: backgroundY }}
         />
-        <motion.div 
-          className="hero-particles"
-          animate={{ scale: heroScale }}
-        />
-        
-        <div className="hero-content">
-          <motion.div 
+
+        <div className="hero-container">
+          <motion.div
+            className="hero-content-modern"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 1.5 }}
+            transition={{ duration: 1.2 }}
           >
-            <motion.div
-              initial={{ clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)" }}
-              animate={{ clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)" }}
-              transition={{ duration: 1.2, ease: [0.77, 0, 0.18, 1] }}
-            >
-              <h1 className="hero-title">
-                <span className="hero-line">PURELY</span>
-                <span className="hero-line text-outline">CULTIVATED</span>
-                <span className="hero-line text-emerald">DIGITALLY SENT</span>
-              </h1>
-            </motion.div>
-            
-            <motion.p 
-              className="hero-tagline"
-              initial={{ opacity: 0, y: 20 }}
+            <motion.h1
+              className="hero-title-modern"
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
+              transition={{ delay: 0.2, duration: 0.8 }}
             >
-              From the terraces of Palpa to your doorstep in hours
+              <span className="title-line">Purely Organic</span>
+              <span className="title-line gradient-text"> From Our Hills</span>
+            </motion.h1>
+
+            <motion.p
+              className="hero-description"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.8 }}
+            >
+              Bringing the farm to your front door. Cutting out middlemen to ensure farmers
+              receive full value while you gain access to organic harvests at peak freshness.
             </motion.p>
-            
-            <motion.button 
-              className="hero-cta"
-              initial={{ opacity: 0, y: 20 }}
+
+            <motion.div
+              className="hero-buttons"
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.8 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/shop')}
+              transition={{ delay: 0.6, duration: 0.8 }}
             >
-              Explore Collection
-              <ArrowRight size={20} />
-            </motion.button>
+              <motion.button
+                className="btn-primary-modern"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/shop')}
+              >
+                Start Shopping
+                <ArrowRight size={18} />
+              </motion.button>
+              <motion.button
+                className="btn-secondary-modern"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  document.getElementById('mission')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                Our Mission
+              </motion.button>
+            </motion.div>
           </motion.div>
         </div>
-        
-        <motion.div 
-          className="scroll-indicator"
-          animate={{ y: [0, 10, 0] }}
-          transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-        >
-          <div className="mouse">
-            <div className="wheel"></div>
-          </div>
-          <span>SCROLL</span>
-        </motion.div>
       </section>
 
-      {/* ========== STATS SECTION WITH COUNTERS ========== */}
-      <section className="stats-showcase">
+      {/* ========== MISSION SECTION ========== */}
+      <section id="mission" className="mission-section">
         <Container>
-          <Row className="g-4">
+          <Row className="align-items-center g-5">
+            <Col lg={6}>
+              <motion.div
+                className="mission-content"
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+              >
+                <div className="section-badge">
+                  <Target size={16} />
+                  <span>Our Mission</span>
+                </div>
+                <h2 className="mission-title">
+                  Bringing the Farm<br />
+                  <span className="gradient-text">to Your Front Door</span>
+                </h2>
+                <p className="mission-text">
+                  At NGAU Bazaar, we believe that the journey from the soil to the table should be a straight line,
+                  defined by respect rather than interference. Born in the rugged, fertile landscapes of
+                  <strong> Dholimara, Palpa</strong>, our mission is to dismantle the traditional supply chains that
+                  have long separated the producer from the person they nourish.
+                </p>
+                <p className="mission-text">
+                  By cutting out the middlemen who dilute both the farmer's profit and the produce's vitality,
+                  we ensure that those who work the land receive the full value of their labor while families
+                  in the city gain access to local, organic harvests at their peak nutritional density.
+                </p>
+                <div className="mission-quote">
+                  <Quote size={28} />
+                  <p>Transforming grocery shopping into a meaningful connection — empowering rural entrepreneurs with every transaction.</p>
+                </div>
+              </motion.div>
+            </Col>
+            <Col lg={6}>
+              <motion.div
+                className="mission-image-wrapper"
+                initial={{ opacity: 0, x: 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+              >
+                <div className="image-frame">
+                  <img
+                    src="../public/dholimara.jpg?auto=format&fit=crop&w=1200"
+                    alt="Terraced farming in Palpa, Nepal"
+                  />
+                  <div className="image-accent" />
+                </div>
+                <div className="floating-card">
+                  <MapPin size={18} />
+                  <span>Dholimara, Palpa</span>
+                </div>
+              </motion.div>
+            </Col>
+          </Row>
+        </Container>
+      </section>
+
+      {/* ========== PROBLEM SECTION ========== */}
+      <section className="problem-section">
+        <Container>
+          <Row className="g-5 align-items-center">
+            <Col lg={5}>
+              <motion.div
+                className="problem-stats"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+              >
+                <div className="stat-circle">
+                  <span className="stat-number">80%</span>
+                  <span className="stat-label">of retail price goes to middlemen</span>
+                </div>
+                <div className="stat-circle">
+                  <span className="stat-number">7+</span>
+                  <span className="stat-label">days from farm to traditional market</span>
+                </div>
+              </motion.div>
+            </Col>
+            <Col lg={7}>
+              <motion.div
+                className="problem-content"
+                initial={{ opacity: 0, x: 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+              >
+                <div className="section-badge">
+                  <Shield size={16} />
+                  <span>The Problem We're Solving</span>
+                </div>
+                <h2 className="problem-title">For too long, farmers received the smallest slice of the pie</h2>
+                <div className="problem-list">
+                  <div className="problem-item">
+                    <div className="problem-icon">
+                      <Sprout size={24} strokeWidth={1.5} className="text-green-500" />
+                    </div>
+                    <div>
+                      <h4>Farmers</h4>
+                      <p>Receive the full reward for their hard work — no more exploitation</p>
+                    </div>
+                  </div>
+
+                  <div className="problem-item">
+                    <div className="problem-icon">
+                      <ShoppingBag size={24} strokeWidth={1.5} className="text-blue-500" />
+                    </div>
+                    <div>
+                      <h4>Consumers</h4>
+                      <p>Get access to organic, local, and 100% fresh produce</p>
+                    </div>
+                  </div>
+
+                  <div className="problem-item">
+                    <div className="problem-icon">
+                      <Eye size={24} strokeWidth={1.5} className="text-purple-500" />
+                    </div>
+                    <div>
+                      <h4>Transparency</h4>
+                      <p>Is at the core of every transaction — know your food's journey</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </Col>
+          </Row>
+        </Container>
+      </section>
+
+      {/* ========== STATS SECTION ========== */}
+      <section className="stats-section">
+        <Container>
+          <Row className="g-4 justify-content-center">
             {stats.map((stat, idx) => (
-              <Col md={3} sm={6} key={idx}>
-                <motion.div 
-                  className="stat-card-premium"
-                  initial={{ opacity: 0, y: 30 }}
+              <Col lg={3} md={6} key={idx}>
+                <motion.div
+                  className="stat-card-modern"
+                  initial={{ opacity: 0, y: 40 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: idx * 0.1 }}
+                  transition={{ delay: stat.delay, duration: 0.6 }}
                   whileHover={{ y: -8 }}
                 >
-                  <div className="stat-icon">{stat.icon}</div>
-                  <Counter end={stat.value} suffix={stat.suffix} />
-                  <span className="stat-label">{stat.label}</span>
+                  <div className="stat-icon-modern">{stat.icon}</div>
+                  <CounterModern end={stat.value} suffix={stat.suffix} />
+                  <span className="stat-label-modern">{stat.label}</span>
                 </motion.div>
               </Col>
             ))}
@@ -295,62 +419,270 @@ const AboutUs = () => {
         </Container>
       </section>
 
-      {/* ========== PHILOSOPHY SECTION ========== */}
-      <section id="philosophy" className="section-padding">
+      {/* ========== ADVANTAGES SECTION ========== */}
+      <section className="advantages-section">
+        <Container>
+          <motion.div
+            className="section-header-modern"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <div className="section-badge">
+              <Crown size={16} />
+              <span>Why NGAU Bazaar?</span>
+            </div>
+            <h2 className="section-title-modern">The NGAU Advantage</h2>
+            <p className="section-subtitle-modern">A fundamental shift in how we value food</p>
+          </motion.div>
+
+          <Row className="g-4">
+            {advantages.map((adv, idx) => (
+              <Col lg={4} md={6} key={idx}>
+                <motion.div
+                  className="advantage-card"
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1 }}
+                  whileHover={{ y: -8 }}
+                >
+                  <div className="advantage-icon" style={{ backgroundColor: `${adv.color}15`, color: adv.color }}>
+                    {adv.icon}
+                  </div>
+                  <h3>{adv.title}</h3>
+                  <p>{adv.description}</p>
+                </motion.div>
+              </Col>
+            ))}
+          </Row>
+        </Container>
+      </section>
+
+      {/* ========== ROADMAP SECTION ========== */}
+      <section className="roadmap-section">
+        <Container>
+          <motion.div
+            className="section-header-modern"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <div className="section-badge">
+              <Calendar size={16} />
+              <span>Our Journey</span>
+            </div>
+            <h2 className="section-title-modern">The Roadmap</h2>
+            <p className="section-subtitle-modern">From soil to shelf — our path forward</p>
+          </motion.div>
+
+          <div className="roadmap-carousel">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeMilestone}
+                className="roadmap-card"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -30 }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className="roadmap-phase" style={{ backgroundColor: roadmapMilestones[activeMilestone].color }}>
+                  {roadmapMilestones[activeMilestone].icon}
+                  <span>{roadmapMilestones[activeMilestone].phase}</span>
+                </div>
+                <div className="roadmap-timeline">{roadmapMilestones[activeMilestone].timeline}</div>
+                <p className="roadmap-description">{roadmapMilestones[activeMilestone].description}</p>
+              </motion.div>
+            </AnimatePresence>
+
+            <div className="roadmap-controls">
+              <button
+                className="roadmap-btn"
+                onClick={() => setActiveMilestone((prev) => (prev - 1 + roadmapMilestones.length) % roadmapMilestones.length)}
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <div className="roadmap-dots">
+                {roadmapMilestones.map((_, idx) => (
+                  <button
+                    key={idx}
+                    className={`roadmap-dot ${activeMilestone === idx ? 'active' : ''}`}
+                    onClick={() => setActiveMilestone(idx)}
+                    style={{ backgroundColor: activeMilestone === idx ? roadmapMilestones[idx].color : 'rgba(0,0,0,0.2)' }}
+                  />
+                ))}
+              </div>
+              <button
+                className="roadmap-btn"
+                onClick={() => setActiveMilestone((prev) => (prev + 1) % roadmapMilestones.length)}
+              >
+                <ChevronRight size={20} />
+              </button>
+              <button
+                className="autoplay-btn"
+                onClick={() => setIsPlaying(!isPlaying)}
+              >
+                {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+              </button>
+            </div>
+          </div>
+        </Container>
+      </section>
+
+      {/* ========== FUTURE VISION SECTION ========== */}
+      <section className="vision-section">
         <Container>
           <Row className="align-items-center g-5">
             <Col lg={6}>
-              <ParallaxImage src="https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?auto=format&fit=crop&w=1400" />
+              <motion.div
+                className="vision-content"
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+              >
+                <div className="section-badge">
+                  <Rocket size={16} />
+                  <span>Looking Ahead</span>
+                </div>
+                <h2 className="vision-title">
+                  The Multi-Vendor<br />
+                  <span className="gradient-text">Ecosystem</span>
+                </h2>
+                <p className="vision-text">
+                  While we began as a managed service to ensure gold standard quality, our ultimate vision
+                  is to decentralize the marketplace. We are architecting a transition into a
+                  <strong> dynamic Multi-Vendor Ecosystem</strong> where the platform evolves into a powerful
+                  digital toolkit, handing the keys of commerce directly to the farmers.
+                </p>
+                <div className="vision-features">
+                  <div className="vision-feature">
+                    <Smartphone size={20} />
+                    <div>
+                      <h4>Manage Digital Inventory</h4>
+                      <p>Real-time control over specific yields</p>
+                    </div>
+                  </div>
+                  <div className="vision-feature">
+                    <Network size={20} />
+                    <div>
+                      <h4>Track Logistics</h4>
+                      <p>Monitor orders from the palm of their hand</p>
+                    </div>
+                  </div>
+                  <div className="vision-feature">
+                    <Coins size={20} />
+                    <div>
+                      <h4>Financial Sovereignty</h4>
+                      <p>Direct access to paychecks and growth metrics</p>
+                    </div>
+                  </div>
+                  <div className="vision-feature">
+                    <Handshake size={20} />
+                    <div>
+                      <h4>Direct Interaction</h4>
+                      <p>Subscribe to the journey of a specific farm</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             </Col>
             <Col lg={6}>
-              <motion.div 
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-100px" }}
-                variants={staggerContainer}
+              <motion.div
+                className="vision-image"
+                initial={{ opacity: 0, x: 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
               >
-                <motion.div variants={fadeInUp}>
-                  <span className="eyebrow">OUR PHILOSOPHY</span>
-                </motion.div>
-                <motion.h2 variants={fadeInUp} className="section-title mb-4">
-                  Magar Heritage, <br/> 
-                  <span className="text-emerald gradient-text">Modern Logic.</span>
-                </motion.h2>
-                <motion.p variants={fadeInUp} className="body-text mb-4">
-                  NGAU Bazaar isn't just a marketplace; it's a bridge. We've eliminated the friction between 
-                  the high-altitude terraces of Palpa and the urban kitchens of Nepal.
-                </motion.p>
-                
-                <motion.div 
-                  className="stats-quote"
-                  variants={fadeInUp}
-                  style = {{color:"black"}}
-                  whileHover={{ x: 10 }}
-                >
-                  <Quote size={24} className="quote-icon" />
-                  <span>Harvested at 4 AM, Delivered by 4 PM.</span>
-                </motion.div>
-                
-                <motion.div 
-                  className="trust-badges"
-                  variants={fadeInUp}
-                >
-                  <div className="badge"
-                  style = {{color: "black"}}>
-                    <Leaf size={16} />
-                    <span>100% Organic</span>
+                <div className="vision-grid">
+                  <div className="vision-card">
+                    <Store size={32} />
+                    <span>Digital Storefronts</span>
                   </div>
-                  <div className="badge"
-                  style = {{color: "black"}}>
-                    <Clock size={16} />
-                    <span>Same Day Delivery</span>
+                  <div className="vision-card">
+                    <Wifi size={32} />
+                    <span>Real-Time Tracking</span>
                   </div>
-                  <div className="badge"
-                  style = {{color: "black"}}>
-                    <Heart size={16} />
-                    <span>Direct from Farmers</span>
+                  <div className="vision-card">
+                    <BarChart3 size={32} />
+                    <span>Growth Analytics</span>
                   </div>
-                </motion.div>
+                  <div className="vision-card">
+                    <Users size={32} />
+                    <span>Community Building</span>
+                  </div>
+                </div>
+              </motion.div>
+            </Col>
+          </Row>
+        </Container>
+      </section>
+
+      {/* ========== QUALITY PROMISE SECTION ========== */}
+      <section className="quality-section">
+        <Container>
+          <Row className="g-5 align-items-center">
+            <Col lg={5}>
+              <motion.div
+                className="quality-products"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+              >
+                <h3>The Palpa Connection</h3>
+                {dholimaraProducts.map((product, idx) => (
+                  <motion.div
+                    key={idx}
+                    className="product-tag"
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: idx * 0.1 }}
+                  >
+                    {product.icon}
+                    <div>
+                      <strong>{product.name}</strong>
+                      <span>{product.description}</span>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </Col>
+            <Col lg={7}>
+              <motion.div
+                className="quality-content"
+                initial={{ opacity: 0, x: 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+              >
+                <div className="section-badge">
+                  <Award size={16} />
+                  <span>Our Quality Promise</span>
+                </div>
+                <h2 className="quality-title">
+                  The "Seed-to-Sack"<br />
+                  <span className="gradient-text">Guarantee</span>
+                </h2>
+                <p className="quality-text">
+                  By eliminating the carbon footprint of industrial transport and the waste of long-term storage,
+                  we ensure a sustainable future for the land and a healthier lifestyle for the individual.
+                </p>
+                <div className="quality-badges">
+                  <div className="quality-badge">
+                    <Leaf size={20} />
+                    <span>100% Chemical-Free</span>
+                  </div>
+                  <div className="quality-badge">
+                    <Clock size={20} />
+                    <span>Peak Harvest Freshness</span>
+                  </div>
+                  <div className="quality-badge">
+                    <MapPin size={20} />
+                    <span>Traceable Origin</span>
+                  </div>
+                </div>
               </motion.div>
             </Col>
           </Row>
@@ -358,31 +690,34 @@ const AboutUs = () => {
       </section>
 
       {/* ========== VALUES SECTION ========== */}
-      <section className="values-section">
+      <section className="values-section-modern">
         <Container>
-          <motion.div 
-            className="section-header text-center"
-            initial={{ opacity: 0, y: 20 }}
+          <motion.div
+            className="section-header-modern"
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <span className="eyebrow">OUR VALUES</span>
-            <h2 className="section-title">What We Stand For</h2>
-            <p className="section-subtitle">The principles that guide everything we do</p>
+            <div className="section-badge">
+              <Gem size={16} />
+              <span>Core Values</span>
+            </div>
+            <h2 className="section-title-modern">What We Stand For</h2>
+            <p className="section-subtitle-modern">Principles that guide our digital bridge</p>
           </motion.div>
-          
+
           <Row className="g-4">
             {values.map((value, idx) => (
-              <Col md={3} key={idx}>
-                <motion.div 
-                  className="value-card"
-                  initial={{ opacity: 0, y: 30 }}
+              <Col lg={3} md={6} key={idx}>
+                <motion.div
+                  className="value-card-modern"
+                  initial={{ opacity: 0, y: 40 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: idx * 0.1 }}
                   whileHover={{ y: -10 }}
                 >
-                  <div className="value-icon" style={{ backgroundColor: `${value.color}15`, color: value.color }}>
+                  <div className="value-icon-modern" style={{ backgroundColor: `${value.color}15`, color: value.color }}>
                     {value.icon}
                   </div>
                   <h3>{value.title}</h3>
@@ -394,132 +729,41 @@ const AboutUs = () => {
         </Container>
       </section>
 
-      {/* ========== FARMER STORIES CAROUSEL ========== */}
-      <section className="farmers-section">
+      {/* ========== FEATURED PRODUCTS ========== */}
+      <section className="products-section">
         <Container>
-          <motion.div 
-            className="section-header text-center"
-            initial={{ opacity: 0, y: 20 }}
+          <motion.div
+            className="section-header-modern"
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <span className="eyebrow">MEET THE GROWERS</span>
-            <h2 className="section-title">Our Farmer Partners</h2>
-            <p className="section-subtitle">The heart behind every product</p>
-          </motion.div>
-          
-          <div className="farmer-carousel">
-            <AnimatePresence mode="wait">
-              <motion.div 
-                key={activeStory}
-                className="farmer-story-card"
-                initial={{ opacity: 0, x: 100 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -100 }}
-                transition={{ duration: 0.5 }}
-              >
-                <Row className="align-items-center g-4">
-                  <Col lg={5}>
-                    <div className="farmer-image-wrapper">
-                      <img src={farmerStories[activeStory].image} alt={farmerStories[activeStory].name} />
-                      <div className="farmer-stats">
-                        <div className="stat-badge">
-                          <Calendar size={14} />
-                          <span>{farmerStories[activeStory].yearsFarming}+ years</span>
-                        </div>
-                      </div>
-                    </div>
-                  </Col>
-                  <Col lg={7}>
-                    <div className="farmer-quote-icon">
-                      <Quote size={48} />
-                    </div>
-                    <p className="farmer-quote">"{farmerStories[activeStory].quote}"</p>
-                    <h3 className="farmer-name">{farmerStories[activeStory].name}</h3>
-                    <div className="farmer-location">
-                      <MapPin size={14} />
-                      <span>{farmerStories[activeStory].location}</span>
-                    </div>
-                    <p className="farmer-story">{farmerStories[activeStory].story}</p>
-                    <div className="farmer-product">
-                      <span>Featured Product:</span>
-                      <strong>{farmerStories[activeStory].product}</strong>
-                    </div>
-                    <div className="farmer-stat">
-                      <TrendingUp size={16} />
-                      <span>{farmerStories[activeStory].stat}</span>
-                    </div>
-                  </Col>
-                </Row>
-              </motion.div>
-            </AnimatePresence>
-            
-            <div className="carousel-controls">
-              <button 
-                className="carousel-btn prev"
-                onClick={() => setActiveStory((prev) => (prev - 1 + farmerStories.length) % farmerStories.length)}
-              >
-                <ChevronLeft size={24} />
-              </button>
-              <div className="carousel-dots">
-                {farmerStories.map((_, idx) => (
-                  <button
-                    key={idx}
-                    className={`dot ${activeStory === idx ? 'active' : ''}`}
-                    onClick={() => setActiveStory(idx)}
-                  />
-                ))}
-              </div>
-              <button 
-                className="carousel-btn next"
-                onClick={() => setActiveStory((prev) => (prev + 1) % farmerStories.length)}
-              >
-                <ChevronRight size={24} />
-              </button>
-              <button 
-                className="autoplay-btn"
-                onClick={() => setIsPlaying(!isPlaying)}
-              >
-                {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-              </button>
+            <div className="section-badge">
+              <ShoppingBag size={16} />
             </div>
-          </div>
-        </Container>
-      </section>
-
-      {/* ========== THE COLLECTION - REAL PRODUCTS ========== */}
-      <section className="section-padding bg-soft-dark">
-        <Container>
-          <motion.div 
-            className="text-center mb-5"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <span className="eyebrow">PREMIUM SELECTION</span>
-            <h3 className="section-title">THE COLLECTION</h3>
-            <p className="text-dim mt-3">Curated from Nepal's finest harvests</p>
+            <h2 className="section-title-modern">Featured Harvests</h2>
+            <p className="section-subtitle-modern">Experience the authentic taste of Palpa</p>
           </motion.div>
-          
+
           {loading ? (
-            <div className="text-center py-5">
+            <div className="loading-spinner">
               <motion.div
                 animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 1 }}
+                transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
               >
-                <RefreshCw size={40} className="text-emerald" />
+                <RefreshCw size={48} />
               </motion.div>
             </div>
           ) : (
             <Row className="g-4">
               {featuredProducts.map((product, idx) => (
-                <Col md={4} key={product.id}>
-                  <motion.div 
+                <Col lg={4} md={6} key={product.id}>
+                  <motion.div
                     initial={{ opacity: 0, y: 50 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-50px" }}
-                    transition={{ delay: idx * 0.15, duration: 0.6 }}
-                    whileHover={{ y: -15 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: idx * 0.1, duration: 0.6 }}
+                    whileHover={{ y: -10 }}
                     onMouseEnter={() => setHoverCard(product.id)}
                     onMouseLeave={() => setHoverCard(null)}
                   >
@@ -529,141 +773,57 @@ const AboutUs = () => {
               ))}
             </Row>
           )}
-          
-          <div className="text-center mt-5">
-            <motion.button 
-              className="view-all-btn"
+
+          <motion.div
+            className="view-all-container"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <motion.button
+              className="view-all-btn-modern"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate('/shop')}
             >
-              View All Products
+              Explore All Products
               <ArrowRight size={18} />
             </motion.button>
-          </div>
+          </motion.div>
         </Container>
       </section>
 
-      {/* ========== MILESTONES TIMELINE ========== */}
-      <section className="milestones-section">
+      {/* ========== CTA SECTION ========== */}
+      <section className="cta-section">
         <Container>
-          <motion.div 
-            className="section-header text-center"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+          <motion.div
+            className="cta-card"
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
           >
-            <span className="eyebrow">OUR JOURNEY</span>
-            <h2 className="section-title">Milestones</h2>
-          </motion.div>
-          
-          <div className="timeline-container">
-            {milestones.map((milestone, idx) => (
-              <motion.div 
-                key={idx}
-                className="timeline-item"
-                initial={{ opacity: 0, x: idx % 2 === 0 ? -50 : 50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
+            <div className="cta-content">
+              <h2>Ready to Taste the Difference?</h2>
+              <p>Join the movement that's transforming how Nepal eats. Fresh, organic, and direct from Dholimara.</p>
+              <motion.button
+                className="cta-btn"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/shop')}
               >
-                <div className="timeline-dot" style={{ backgroundColor: milestone.color }}>
-                  {milestone.icon}
-                </div>
-                <div className="timeline-content">
-                  <div className="timeline-year">{milestone.year}</div>
-                  <h3>{milestone.title}</h3>
-                  <p>{milestone.description}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </Container>
-      </section>
-
-      {/* ========== IMPACT BENTO GRID ========== */}
-      <section id="impact" className="section-padding">
-        <Container>
-          <motion.div 
-            className="text-center mb-5"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <span className="eyebrow">IMPACT METRICS</span>
-            <h3 className="section-title">By The Numbers</h3>
+                Start Your Journey
+                <ArrowRight size={18} />
+              </motion.button>
+            </div>
           </motion.div>
-          
-          <div className="bento-layout">
-            <motion.div 
-              className="bento-cell bento-hero"
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              whileHover={{ scale: 0.98 }}
-            >
-              <span className="cell-tag">NETWORK</span>
-              <div className="bento-number">500+</div>
-              <p>Indigenous farmers connected via our real-time logistics grid.</p>
-            </motion.div>
-            
-            <motion.div 
-              className="bento-cell bento-accent"
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              whileHover={{ scale: 0.98 }}
-            >
-              <span className="cell-tag">SPEED</span>
-              <div className="bento-number">12<span className="small-suffix">H</span></div>
-              <p>From Soil to Kitchen.</p>
-            </motion.div>
-            
-            <motion.div 
-              className="bento-cell"
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
-              whileHover={{ scale: 0.98 }}
-            >
-              <span className="cell-tag">COMMUNITY</span>
-              <div className="bento-number">85<span className="small-suffix">%</span></div>
-              <p>Revenue retained by growers.</p>
-            </motion.div>
-            
-            <motion.div 
-              className="bento-cell bento-wide"
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
-              whileHover={{ scale: 0.98 }}
-            >
-              <h3 className="h2 mb-3">Sustainable Sovereignty</h3>
-              <p>Eliminating middlemen to ensure the future of Himalayan agriculture.</p>
-              <div className="progress-bar mt-3">
-                <motion.div 
-                  className="progress-fill"
-                  initial={{ width: 0 }}
-                  whileInView={{ width: "85%" }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 1, delay: 0.5 }}
-                />
-              </div>
-              <span className="progress-label">85% to 2025 Goal</span>
-            </motion.div>
-          </div>
         </Container>
       </section>
     </div>
   );
 };
 
-// Counter Component with Animation
-const Counter = ({ end, suffix = "" }) => {
+// Modern Counter Component
+const CounterModern = ({ end, suffix = "" }) => {
   const [count, setCount] = useState(0);
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
@@ -673,7 +833,7 @@ const Counter = ({ end, suffix = "" }) => {
       let start = 0;
       const duration = 2000;
       const increment = end / (duration / 16);
-      
+
       const timer = setInterval(() => {
         start += increment;
         if (start >= end) {
@@ -683,36 +843,14 @@ const Counter = ({ end, suffix = "" }) => {
           setCount(Math.floor(start));
         }
       }, 16);
-      
+
       return () => clearInterval(timer);
     }
   }, [isInView, end]);
 
   return (
-    <div className="counter-value" ref={ref}>
+    <div className="counter-modern" ref={ref}>
       {count}{suffix}
-    </div>
-  );
-};
-
-// Enhanced Parallax Component
-const ParallaxImage = ({ src }) => {
-  const ref = useRef(null);
-  const { scrollYProgress } = useScroll({ 
-    target: ref,
-    offset: ["start end", "end start"]
-  });
-  const y = useTransform(scrollYProgress, [0, 1], [0, 150]);
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 1.05]);
-
-  return (
-    <div className="parallax-container" ref={ref}>
-      <motion.img 
-        style={{ y, scale }} 
-        src={src} 
-        alt="Farm landscape" 
-      />
-      <div className="parallax-overlay" />
     </div>
   );
 };
