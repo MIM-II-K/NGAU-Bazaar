@@ -29,7 +29,7 @@ const UserDashboard = () => {
     setErrorOrders('');
     try {
       const data = await orderApi.getOrderHistory();
-      setOrders(data); // local orders state
+      setOrders(data);
     } catch (err) {
       console.error('Failed to load orders:', err);
       setErrorOrders('Unable to load orders.');
@@ -42,7 +42,7 @@ const UserDashboard = () => {
     const syncDashboard = async () => {
       await Promise.all([
         fetchOrders(),
-        refreshUserStats() // Ensure user stats are up-to-date when dashboard loads
+        refreshUserStats()
       ]);
     };
     
@@ -56,9 +56,10 @@ const UserDashboard = () => {
       </div>
     );
   }
+
   return (
     <div className="dashboard-wrapper">
-      {/* --- HERO SECTION --- */}
+      {/* HERO SECTION */}
       <section className="dashboard-hero">
         <Container>
           <motion.div
@@ -87,7 +88,6 @@ const UserDashboard = () => {
                         className="dashboard-avatar-img"
                         onError={(e) => {
                           e.target.style.display = 'none';
-                          // Fallback to initial if image fails to load
                           e.target.parentElement.innerText = user?.username?.charAt(0).toUpperCase() || 'U';
                         }}
                       />
@@ -102,7 +102,7 @@ const UserDashboard = () => {
         </Container>
       </section>
 
-      {/* --- MAIN CONTENT --- */}
+      {/* MAIN CONTENT */}
       <Container className="content-shift">
         <motion.div variants={containerVars} initial="hidden" animate="show">
 
@@ -115,8 +115,8 @@ const UserDashboard = () => {
                 </div>
                 <div className="mt-3">
                   <h4 className="stat-value">Rs.{user?.spending || 0}</h4>
-                  <p className="stat-label">Spending</p>
-                  <span className="stat-trend trend-success">+12%</span>
+                  <p className="stat-label">Total Spending</p>
+                  <span className="stat-trend trend-success">Lifetime</span>
                 </div>
               </motion.div>
             </Col>
@@ -126,7 +126,7 @@ const UserDashboard = () => {
                   <i className="bi bi-truck"></i>
                 </div>
                 <div className="mt-3">
-                  <h4 className="stat-value">{orders.length}</h4>
+                  <h4 className="stat-value">{orders.filter(o => o.status === 'shipped').length}</h4>
                   <p className="stat-label">Active Orders</p>
                   <span className="stat-trend trend-primary">In Transit</span>
                 </div>
@@ -146,7 +146,6 @@ const UserDashboard = () => {
                       Wishlist Items
                     </Link>
                   </p>
-
                   {user?.priceDropCount > 0 && (
                     <span className="stat-trend trend-danger fade-in">
                       <i className="bi bi-graph-down-arrow me-1"></i>
@@ -163,7 +162,7 @@ const UserDashboard = () => {
                 </div>
                 <div className="mt-3">
                   <h4 className="stat-value">{user?.rewards || 0} pts</h4>
-                  <p className="stat-label">Rewards</p>
+                  <p className="stat-label">Reward Points</p>
                   <span className="stat-trend trend-warning">Silver Tier</span>
                 </div>
               </motion.div>
@@ -211,7 +210,7 @@ const UserDashboard = () => {
                           </div>
                         </div>
 
-                        {/* --- NEW: LIVE TRACKING SECTION --- */}
+                        {/* LIVE TRACKING WITH MAPBOX */}
                         {order.status === 'shipped' && (
                           <motion.div
                             initial={{ height: 0, opacity: 0 }}
@@ -259,7 +258,7 @@ const UserDashboard = () => {
           </Row>
         </motion.div>
       </Container>
-    </div >
+    </div>
   );
 };
 

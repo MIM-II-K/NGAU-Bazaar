@@ -55,7 +55,7 @@ button, a, [role="button"] {
 /* --- TYPOGRAPHY --- */
 .fresh-grocery-hero .hero-heading {
   font-family: 'Outfit', sans-serif; /* Adds the premium font */
-  font-size: 4.5rem; /* Larger, more impactful headline */
+  font-size: 4rem; /* Larger, more impactful headline */
   font-weight: 800;
   line-height: 1.05; /* Tighter line height for large text looks cleaner */
   letter-spacing: -0.02em; /* Slight negative tracking for a modern feel */
