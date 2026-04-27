@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+from sqlalchemy import or_
+import json
 
 from schemas.user import UserResponse, UserLogin, Token
 from models.user import User
@@ -18,9 +20,7 @@ def admin_login(credentials: UserLogin, db: Session = Depends(get_db)):
     Similar to user login but explicitly for admin authentication.
     Returns JWT token only if user has admin role.
     """
-    # Find user by email or username
-    from sqlalchemy import or_
-    
+
     db_user = db.query(User).filter(
         or_(
             User.email == credentials.email_or_username,

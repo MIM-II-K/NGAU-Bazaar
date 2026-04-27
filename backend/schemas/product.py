@@ -1,8 +1,9 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from decimal import Decimal
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict
 from .category import CategoryResponse
+
 
 # Schema for creating/updating a product
 class ProductCreate(BaseModel):
@@ -15,7 +16,6 @@ class ProductCreate(BaseModel):
     stock: int = 0
     tags: Optional[List[str]] = []
     slug: Optional[str] = None
-
 class ProductImageResponse(BaseModel):
     id: int
     url: str
@@ -55,7 +55,7 @@ class ProductResponse(BaseModel):
     view_count: int = 0
     created_at: datetime
     is_in_wishlist: bool= False  # To indicate if the product is in the user's wishlist
-
+    
     model_config = ConfigDict(from_attributes = True)
 
 class ProductListResponse(BaseModel):

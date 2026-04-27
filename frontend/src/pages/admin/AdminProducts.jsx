@@ -370,14 +370,21 @@ const AdminProducts = () => {
                         <option value="kg">Kilogram (kg)</option>
                         <option value="g">Gram (g)</option>
                         <option value="500g">500 (g)</option>
+                        <option value="250g">250 (g)</option>
+                        <option value="200g">200 (g)</option>
+                        <option value="100g">100 (g)</option>
                       </optgroup>
                       <optgroup label="Liquid/Volume">
                         <option value="liter">Liter (L)</option>
                         <option value="ml">Milliliter (ml)</option>
+                        <option value="750ml">750 (ml)</option>
+                        <option value="500ml">500 (ml)</option>
+                        <option value="250ml">250 (ml)</option>
                       </optgroup>
                       <optgroup label="Individual/Count">
                         <option value="pc">Piece (pc)</option>
                         <option value="pkt">Packet (pkt)</option>
+                        <option value="bdl">Bundle (bdl)</option>
                       </optgroup>
                     </Form.Select>
                   </div>

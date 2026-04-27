@@ -14,7 +14,6 @@ class Product(Base):
     description = Column(String, nullable=True)
     quantity = Column(Integer, nullable=False, default=0)
     stock = Column(Integer, nullable=False, default=0)
-
     tags = Column(JSON, default=[])
     specifications = Column(String, nullable=True)
     slug = Column(String, unique=True, index=True)
