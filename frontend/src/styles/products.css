@@ -495,7 +495,12 @@
   flex-wrap: wrap;
   gap: 1rem;
 }
-
+.ngau-toolbar-right{
+  gap: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  
+}
 
 .ngau-result-count {
   font-size: 0.9rem;
@@ -553,6 +558,7 @@
   background: var(--bg-gray);
   border-radius: 60px;
   overflow: hidden;
+  width: fit-content;
 }
 
 .ngau-view-btn {
