@@ -9,7 +9,7 @@ import { productApi } from '../utils/productApi';
 import { categoryApi } from '../utils/categoryApi';
 import { addToCart } from '../utils/cartApi';
 import { getProductImageUrl } from '../utils/urlHelper';
-import ProductQuickView from '../components/ProductQuickView';
+import ProductQuickView from '../components/ProductQuickVIew';
 import ToastMessage from '../components/ToastMessage';
 import '../styles/products.css';
 
