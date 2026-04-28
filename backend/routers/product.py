@@ -5,18 +5,19 @@ import shutil
 import uuid
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, Query, File, UploadFile, Form
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import asc, desc, or_, String
+from sqlalchemy.orm import Session, joinedload, selectinload
+from sqlalchemy import asc, desc, or_, String, func
 from typing import List, Optional
 from decimal import Decimal
 from fastapi.responses import Response
 from supabase import create_client, Client
+from math import ceil
 
 from models.user import User
 from models.category import Category
 from models.product import Product, ProductImage, ProductVariant
 from models.wishlist import Wishlist
-from schemas.product import ProductCreate, ProductResponse
+from schemas.product import ProductCreate, ProductResponse, ProductListResponse
 from database import SessionLocal
 from utils.dependencies import admin_only, get_optional_current_user
 
@@ -32,26 +33,21 @@ supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 router = APIRouter(prefix="/products", tags=["products"])
 
 def generate_slug(name: str, db: Session, current_id: int = None) -> str:
-    # 1. Standardize the name (lowercase, remove special chars)
     normalized = re.sub(r'[^\w\s-]', '', name.lower())
     base_slug = re.sub(r'[\s_-]+', '-', normalized).strip('-')
 
-    # 2. Start with the base name
     slug = base_slug
     counter = 1
 
-    # 3. Collision Check: Ensure this slug isn't already used by another product
     while True:
-        # Check if any OTHER product already has this slug
         exists = db.query(Product).filter(
-            Product.slug == slug, 
+            Product.slug == slug,
             Product.id != current_id
         ).first()
-        
+
         if not exists:
             break
-            
-        # If it exists, append a number (e.g., organic-kiwi-1)
+
         slug = f"{base_slug}-{counter}"
         counter += 1
 
@@ -69,36 +65,36 @@ def get_db():
         db.close()
 
 
+# ------------------------------------------------------------------ #
+#  STATIC / SPECIFIC routes MUST come before wildcard /{slug} route  #
+# ------------------------------------------------------------------ #
+
 @router.get("/seo/sitemap.xml")
 def get_sitemap(db: Session = Depends(get_db)):
-    # Fetch all products from PostgreSQL
     products = db.query(Product).all()
-    
-    # Replace with your actual frontend domain
-    base_url = "https://ngau-bazaar.vercel.app" 
-    
+
+    base_url = "https://ngau-bazaar.vercel.app"
+
     xml_items = []
-    # Add static pages
     xml_items.append(f"<url><loc>{base_url}/</loc><priority>1.0</priority></url>")
     xml_items.append(f"<url><loc>{base_url}/shop</loc><priority>0.8</priority></url>")
-    
-    # Add dynamic product pages
+
     for p in products:
         xml_items.append(f"<url><loc>{base_url}/product/{p.slug}</loc><priority>0.7</priority></url>")
-        
+
     xml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
         {"".join(xml_items)}
     </urlset>"""
-    
+
     return Response(content=xml_content, media_type="application/xml")
 
 
 # ---------------- GET PRODUCTS (PUBLIC) ----------------
-@router.get("/", response_model=List[ProductResponse])
+@router.get("/", response_model=ProductListResponse)
 def get_products(
     db: Session = Depends(get_db),
-    user = Depends(get_optional_current_user),
+    user=Depends(get_optional_current_user),
 
     # Filters
     search: str | None = Query(None, description="Search by product name"),
@@ -117,110 +113,161 @@ def get_products(
         description="price_asc | price_desc | name_asc | name_desc | popularity | newest"
     ),
 ):
-    query = db.query(Product).options(
-        joinedload(Product.category),
-        joinedload(Product.images),
-        joinedload(Product.variants)
-    )
+    # FIX 3: Validate price range before querying
+    if min_price is not None and max_price is not None and min_price > max_price:
+        raise HTTPException(
+            status_code=422,
+            detail="min_price cannot be greater than max_price"
+        )
 
-    #Search
+    # FIX 3: Build a base query WITHOUT eager-load options for the COUNT.
+    # joinedload adds a JOIN that can inflate COUNT(*) when one-to-many
+    # relationships are involved. We count on a clean query, then fetch
+    # the full data with options on a separate query.
+    base_query = db.query(Product)
+
+    # --- Apply all filters to base_query ---
     if search:
-        query = query.filter(
+        base_query = base_query.filter(
             or_(
                 Product.name.ilike(f"%{search}%"),
                 Product.tags.cast(String).ilike(f"%{search}%")
-                )
+            )
         )
 
-    #Category filter
     if category:
-    # numeric → category_id
         if category.isdigit():
-            query = query.filter(Product.category_id == int(category))
+            base_query = base_query.filter(Product.category_id == int(category))
         else:
-        # slug/name → join Category
-            query = (
-                query
+            base_query = (
+                base_query
                 .join(Category)
                 .filter(Category.name.ilike(f"%{category}%"))
             )
+
     if tag:
-        query = query.filter(Product.tags.cast(String).ilike(f"%{tag}%"))
+        base_query = base_query.filter(Product.tags.cast(String).ilike(f"%{tag}%"))
 
-    #Price filters
     if min_price is not None:
-        query = query.filter(Product.price >= min_price)
+        base_query = base_query.filter(Product.price >= min_price)
     if max_price is not None:
-        query = query.filter(Product.price <= max_price)
+        base_query = base_query.filter(Product.price <= max_price)
 
-    #Sorting
+    # FIX 4: nulls_last() on popularity so new products (view_count=None)
+    # don't bubble to the top when sorting by popularity DESC.
     sort_map = {
-        "price_asc": asc(Product.price),
+        "price_asc":  asc(Product.price),
         "price_desc": desc(Product.price),
-        "name_asc": asc(Product.name),
-        "name_desc": desc(Product.name),
-        "popularity": desc(Product.view_count),
-        "newest": desc(Product.created_at)
+        "name_asc":   asc(Product.name),
+        "name_desc":  desc(Product.name),
+        "popularity": desc(Product.view_count).nulls_last(),
+        "newest":     desc(Product.created_at),
     }
-    query = query.order_by(sort_map.get(sort, desc(Product.id)))
+    order_clause = sort_map.get(sort, desc(Product.id))
 
-    #Pagination
-    offset = (page - 1) * limit
-    products = query.offset(offset).limit(limit).all()
+    # FIX 3: COUNT on the clean filtered query (no joinedload)
+    total = base_query.count()
+
+    # Now build the data query with eager-loading options + sorting + pagination
+    products = (
+        base_query
+        .options(
+            joinedload(Product.category),   # many-to-one: safe with joinedload
+            selectinload(Product.images),   # one-to-many: use selectinload
+            selectinload(Product.variants)  # one-to-many: use selectinload
+        )
+        .order_by(order_clause)
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .all()
+    )
+
+    total_pages = ceil(total / limit) if total > 0 else 1
 
     if user:
         wishlist_ids = {
             item.product_id for item in
             db.query(Wishlist.product_id).filter(Wishlist.user_id == user.id).all()
         }
-
         for p in products:
             p.is_in_wishlist = p.id in wishlist_ids
     else:
         for p in products:
             p.is_in_wishlist = False
-    return products
+
+    # FIX 1: Return "data" and "totalPages" (camelCase) to match frontend expectations.
+    # Previously returned "items" and "total_pages" which caused the field-name mismatch
+    # that made the frontend fall back to treating the response as a bare array.
+    return {
+        "data": products,        # was "items"  — frontend looks for "data"
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "totalPages": total_pages  # was "total_pages" — frontend looks for "totalPages"
+    }
 
 
-
-@router.get("/{slug}", response_model=ProductResponse)
-def get_product_by_slug(slug: str, db: Session = Depends(get_db)):
-    # 1. Try exact match in the DB column
-    product = db.query(Product).options(
-        joinedload(Product.images),
-        joinedload(Product.variants),
-        joinedload(Product.category)
-    ).filter(Product.slug == slug).first()
-    
-    # 2. If not found, manually check against generated slugs (Temporary Fix)
-    # if not product:
-    #     products = db.query(Product).options(joinedload(Product.images)).all()
-    #     for p in products:
-    #         # This generates 'coffee-beans' from 'Coffee Beans' on the fly
-    #         normalized = re.sub(r'[^\w\s-]', '', p.name.lower())
-    #         generated = re.sub(r'[\s_-]+', '-', normalized).strip('-')
-    #         if generated == slug:
-    #             product = p
-    #             break
-
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    
-    return product
+# ---------------- GET BY ID ----------------
+# FIX 2: Specific routes /id/{product_id} and /{product_id}/related are declared
+# BEFORE the wildcard /{slug} route. Previously /{slug} swallowed all of them
+# because FastAPI matches top-to-bottom and "id" is a valid slug value.
 
 @router.get("/id/{product_id}", response_model=ProductResponse)
 def get_product_detail(product_id: int, db: Session = Depends(get_db)):
     product = db.query(Product).options(
-        joinedload(Product.images),
-        joinedload(Product.variants),
+        selectinload(Product.images),
+        selectinload(Product.variants),
         joinedload(Product.category)
     ).filter(Product.id == product_id).first()
 
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    
+
     return product
 
+
+# ---------------- RELATED PRODUCTS ----------------
+# FIX 2 (continued): Moved above /{slug} so it is reachable.
+# FIX 4: Changed joinedload(Product.images) → selectinload to stay consistent
+# with every other route and avoid duplicate rows on one-to-many joins.
+
+@router.get("/{product_id}/related", response_model=List[ProductResponse])
+def get_related_products(product_id: int, db: Session = Depends(get_db)):
+    target = db.query(Product).filter(Product.id == product_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    related = db.query(Product).options(
+        selectinload(Product.images),   # was joinedload — caused duplicate rows
+        joinedload(Product.category)
+    ).filter(
+        Product.category_id == target.category_id,
+        Product.id != product_id
+    ).limit(4).all()
+
+    return related
+
+
+# ---------------- GET BY SLUG (wildcard — must be last) ----------------
+# FIX 2: This wildcard route is now declared LAST so the specific routes
+# /id/{product_id}, /{product_id}/related, and /seo/sitemap.xml are
+# always matched first and never accidentally caught here.
+
+@router.get("/{slug}", response_model=ProductResponse)
+def get_product_by_slug(slug: str, db: Session = Depends(get_db)):
+    product = db.query(Product).options(
+        selectinload(Product.images),
+        selectinload(Product.variants),
+        joinedload(Product.category)
+    ).filter(Product.slug == slug).first()
+
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    return product
+
+
+# ---------------- CREATE PRODUCT (ADMIN) ----------------
 @router.post("/", response_model=ProductResponse)
 async def add_product(
     name: str = Form(...),
@@ -231,18 +278,15 @@ async def add_product(
     stock: int = Form(0),
     description: str | None = Form(None),
     tags: str | None = Form(None),
-    files: List[UploadFile] = File(...), 
+    files: List[UploadFile] = File(...),
     db: Session = Depends(get_db),
     admin: User = Depends(admin_only),
 ):
-    # 1. Verify Category
     if not db.query(Category).filter(Category.id == category_id).first():
         raise HTTPException(status_code=404, detail="Category not found")
-    
-    tags_list=[t.strip() for t in tags.split(",") if t.strip()] if tags else []
-    
 
-    # 2. Initialize Product (Note: we no longer pass image_url here)
+    tags_list = [t.strip() for t in tags.split(",") if t.strip()] if tags else []
+
     db_product = Product(
         name=name,
         slug=generate_slug(name, db),
@@ -253,17 +297,15 @@ async def add_product(
         stock=stock or 0,
         description=description or "",
         tags=tags_list
-     )
+    )
     try:
         db.add(db_product)
         db.flush()
 
-    # 3. Handle Multiple Image Uploads
         for file in files:
-        # Generate unique filename
             file_extension = file.filename.split(".")[-1]
             unique_filename = f"{uuid.uuid4()}.{file_extension}"
-            
+
             file_content = await file.read()
 
             supabase_client.storage.from_(BUCKET_NAME).upload(
@@ -275,19 +317,20 @@ async def add_product(
             url_str = public_url if isinstance(public_url, str) else public_url.get("publicURL", str(public_url))
 
             db.add(ProductImage(
-                product_id = db_product.id,
+                product_id=db_product.id,
                 url=url_str
-           ))
+            ))
 
         db.commit()
         db.refresh(db_product)
         return db_product
-    
+
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to create to create product: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create product: {str(e)}")
 
 
+# ---------------- UPDATE PRODUCT (ADMIN) ----------------
 @router.put("/{product_id}", response_model=ProductResponse)
 async def update_product(
     product_id: int,
@@ -307,11 +350,10 @@ async def update_product(
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    
+
     if product.name != name:
         product.slug = generate_slug(name, db, current_id=product_id)
 
-    # 1. Update text fields
     product.name = name
     product.price = price
     product.unit = unit
@@ -319,15 +361,13 @@ async def update_product(
     product.quantity = quantity
     product.stock = stock
     product.description = description if description is not None else ""
-    
 
-    # --- CRITICAL JSON FIX FOR TAGS ---
     if tags:
-        # Convert comma-separated string "tag1,tag2" to ["tag1", "tag2"]
         tag_list = [t.strip() for t in tags.split(",") if t.strip()]
-        product.tags = tag_list # SQLAlchemy handles the JSON serialization if the column type is JSON
+        product.tags = tag_list
     else:
-        product.tags = [] # Send an empty list, which Postgres saves as '[]' (valid JSON)
+        product.tags = []
+
     try:
         images_to_delete = []
 
@@ -343,8 +383,7 @@ async def update_product(
 
             for img in images_to_delete:
                 db.delete(img)
-        
-    # 2. Handle Image Updates
+
         if files:
             for file in files:
                 file_extension = file.filename.split(".")[-1]
@@ -354,7 +393,7 @@ async def update_product(
                 supabase_client.storage.from_(BUCKET_NAME).upload(
                     path=unique_filename,
                     file=file_content,
-                    file_options={"content-type":file.content_type}
+                    file_options={"content-type": file.content_type}
                 )
 
                 res = supabase_client.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
@@ -362,20 +401,21 @@ async def update_product(
                     product_id=product.id,
                     url=str(res)
                 ))
+
         db.commit()
-        db.refresh(product) 
+        db.refresh(product)
         return product
+
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to update product: {str(e)}")  
+        raise HTTPException(status_code=500, detail=f"Failed to update product: {str(e)}")
 
 
 # ---------------- DELETE PRODUCT (ADMIN) ----------------
 @router.delete("/{product_id}")
 def delete_product(product_id: int, db: Session = Depends(get_db), admin: User = Depends(admin_only)):
-    # 1. Find the product
     product = db.query(Product).filter(Product.id == product_id).first()
-    
+
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
@@ -393,22 +433,8 @@ def delete_product(product_id: int, db: Session = Depends(get_db), admin: User =
             raise HTTPException(status_code=400, detail="Linked to existing orders/carts.")
         raise HTTPException(status_code=500, detail="Internal server error.")
 
-@router.get("/{product_id}/related", response_model=List[ProductResponse])
-def get_related_products(product_id: int, db: Session = Depends(get_db)):
-    target = db.query(Product).filter(Product.id == product_id).first()
-    if not target:
-        raise HTTPException(status_code=404, detail="Product not found")
-    
-    related = db.query(Product).options(
-        joinedload(Product.images),
-        joinedload(Product.category)
-    ).filter(
-        Product.category_id == target.category_id,
-        Product.id != product_id
-    ).limit(4).all()
 
-    return related
-
+# ---------------- INCREMENT VIEW COUNT ----------------
 @router.post("/{product_id}/view")
 def increment_view(product_id: int, db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.id == product_id).first()

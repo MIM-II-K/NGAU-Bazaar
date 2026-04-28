@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import { CartProvider } from './contexts/CartContext'; 
+import { CartProvider } from './contexts/CartContext';
 
 // Components
 import Navbar from './components/Navbar';
@@ -9,6 +9,9 @@ import RequireAuth from './components/RequireAuth';
 import RequireAdmin from './components/RequireAdmin';
 import SmartBasket from './components/SmartBasket';
 import AdminLayout from './layouts/AdminLayout';
+import ProductQuickView from './components/ProductQuickVIew';
+import LiveOrderMap from './components/LiveOrderMap';
+
 
 // Pages
 import Home from './pages/Home';
@@ -39,11 +42,13 @@ import HelpCenter from './pages/HelpCenter';
 import Privacy from './pages/Privacy';
 import AboutUs from './pages/AboutUs';
 import WishlistPage from './pages/WishlistPage';
+import { WishlistProvider } from './contexts/WishlistContext';
 
 function App() {
   return (
     <Router>
       <AuthProvider>
+        <WishlistProvider>
         <CartProvider>
           <div className="app">
             <Routes>
@@ -119,8 +124,9 @@ function App() {
             </Routes>
           </div>
         </CartProvider>
-      </AuthProvider>
-    </Router>
+      </WishlistProvider>
+    </AuthProvider>
+    </Router >
   );
 }
 

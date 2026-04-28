@@ -1,813 +1,1048 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import {
-  Container,
-  Row,
-  Col,
-  Card,
-  Button,
-  Badge,
-  Spinner,
-  InputGroup,
-  Form,
-  Pagination,
-  Offcanvas
-} from 'react-bootstrap';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { animated } from '@react-spring/web';
-import {
-  Search,
-  Filter,
-  SlidersHorizontal,
-  X,
-  Star,
-  TrendingUp,
-  Grid,
-  List,
-  ShoppingCart,
-  Zap,
-  Package,
-  Tag,
-  ChevronDown,
-  CheckCircle,
-  Clock
-} from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Container, Row, Col, Badge, Spinner, Pagination as BootstrapPagination } from 'react-bootstrap';
+import { Helmet } from 'react-helmet-async';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
 import { productApi } from '../utils/productApi';
 import { categoryApi } from '../utils/categoryApi';
 import { addToCart } from '../utils/cartApi';
-import { useCart } from '../contexts/CartContext';
+import { getProductImageUrl } from '../utils/urlHelper';
+import ProductQuickView from '../components/ProductQuickView';
 import ToastMessage from '../components/ToastMessage';
-import SkeletonLoader from '../components/SkeletonLoader';
 import '../styles/products.css';
 
 const API_BASE_URL = "https://ngau-bazaar.onrender.com";
-const fallbackImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='300' height='300' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%23999'%3ENo Image%3C/text%3E%3C/svg%3E";
 
-// Guest cart management
-const getGuestCart = () => {
-  const saved = localStorage.getItem('guestCart');
-  return saved ? JSON.parse(saved) : [];
+const fallbackImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='400' height='300' fill='%23f0f4f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='16' fill='%23aab8aa'%3ENo Image%3C/text%3E%3C/svg%3E";
+
+const SORT_OPTIONS = [
+  { value: '', label: 'Featured', icon: 'bi-stars' },
+  { value: 'newest', label: 'Newest', icon: 'bi-clock-history' },
+  { value: 'popularity', label: 'Most Popular', icon: 'bi-fire' },
+  { value: 'price_asc', label: 'Price: Low→High', icon: 'bi-sort-numeric-up' },
+  { value: 'price_desc', label: 'Price: High→Low', icon: 'bi-sort-numeric-down' },
+  { value: 'name_asc', label: 'Name: A→Z', icon: 'bi-sort-alpha-up' },
+];
+
+// ---------- Animation Variants ----------
+const pageVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.06, delayChildren: 0.1 } },
 };
 
-const saveGuestCart = (cart) => {
-  localStorage.setItem('guestCart', JSON.stringify(cart));
+const cardVariants = {
+  hidden: { opacity: 0, y: 32, scale: 0.97 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 260, damping: 22 } },
+  exit: { opacity: 0, y: -16, scale: 0.97, transition: { duration: 0.2 } },
 };
 
-const addToGuestCart = (product) => {
-  const guestCart = getGuestCart();
-  const existingItem = guestCart.find(item => item.id === product.id);
-
-  if (existingItem) {
-    existingItem.quantity += 1;
-  } else {
-    guestCart.push({ ...product, quantity: 1 });
-  }
-
-  saveGuestCart(guestCart);
-  return guestCart;
+const filterVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 300, damping: 28 } },
 };
 
-// Flash Sale Countdown Component
-const FlashCountdown = ({ endTime }) => {
-  const [timeLeft, setTimeLeft] = useState({
-    hours: 0,
-    minutes: 0,
-    seconds: 0
-  });
-  const [isExpired, setIsExpired] = useState(false);
+// ---------- Skeleton Card ----------
+const SkeletonCard = () => (
+  <div className="ngau-skeleton-card">
+    <div className="skeleton-img shimmer-block" />
+    <div className="skeleton-body">
+      <div className="skeleton-line w-80 shimmer-block" />
+      <div className="skeleton-line w-50 shimmer-block" />
+      <div className="skeleton-line w-60 shimmer-block" />
+      <div className="skeleton-btn shimmer-block" />
+    </div>
+  </div>
+);
 
-  useEffect(() => {
-    if (!endTime) return;
+// ---------- Product Card ----------
+const ProductCard = ({ product, onQuickView, onAddToCart, wishlistIds, onToggleWishlist }) => {
+  const navigate = useNavigate();
+  const [imgError, setImgError] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [wishlisting, setWishlist] = useState(false);
 
-    const calculateTimeLeft = () => {
-      const now = new Date().getTime();
-      const end = new Date(endTime).getTime();
-      const difference = end - now;
+  const imageUrl = !imgError && product.images?.length > 0
+    ? getProductImageUrl(product.images[0].url, API_BASE_URL)
+    : fallbackImage;
 
-      if (difference <= 0) {
-        setIsExpired(true);
-        return { hours: 0, minutes: 0, seconds: 0 };
-      }
+  const isWishlisted = wishlistIds.has(product.id);
+  const isOutOfStock = product.stock <= 0;
+  const isLowStock = product.stock > 0 && product.stock <= 10;
+  const discountPct = product.is_flash_deal && product.discount_price
+    ? Math.round(((product.price - product.discount_price) / product.price) * 100)
+    : 0;
 
-      const hours = Math.floor(difference / (1000 * 60 * 60));
-      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+  const handleAddToCart = async (e) => {
+    e.stopPropagation();
+    if (isOutOfStock || adding) return;
+    setAdding(true);
+    await onAddToCart(product, 1);
+    setAdding(false);
+  };
 
-      return { hours, minutes, seconds };
-    };
-
-    setTimeLeft(calculateTimeLeft());
-
-    const timer = setInterval(() => {
-      const newTimeLeft = calculateTimeLeft();
-      setTimeLeft(newTimeLeft);
-      if (newTimeLeft.hours === 0 && newTimeLeft.minutes === 0 && newTimeLeft.seconds === 0) {
-        setIsExpired(true);
-        clearInterval(timer);
-      }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [endTime]);
-
-  if (isExpired || !endTime) return null;
-
-  const { hours, minutes, seconds } = timeLeft;
+  const handleWishlist = async (e) => {
+    e.stopPropagation();
+    setWishlist(true);
+    await onToggleWishlist(product.id);
+    setWishlist(false);
+  };
 
   return (
-    <div className="flash-countdown">
-      <Clock size={14} className="countdown-icon" />
-      <div className="countdown-timer">
-        {hours > 0 && (
-          <span className="countdown-unit">{hours.toString().padStart(2, '0')}<span className="countdown-label">h</span></span>
-        )}
-        <span className="countdown-unit">{minutes.toString().padStart(2, '0')}<span className="countdown-label">m</span></span>
-        <span className="countdown-unit">{seconds.toString().padStart(2, '0')}<span className="countdown-label">s</span></span>
+    <motion.div
+      className={`ngau-product-card ${isOutOfStock ? 'out-of-stock' : ''}`}
+      variants={cardVariants}
+      layout
+      whileHover={{ y: -6, boxShadow: '0 20px 60px rgba(52,107,60,0.18)' }}
+      transition={{ duration: 0.25 }}
+    >
+      {/* Image Container */}
+      <div
+        className="ngau-card-image-wrap"
+        onClick={() => navigate(`/products/${product.slug}`)}
+      >
+        <img
+          src={imageUrl}
+          alt={product.name}
+          className="ngau-card-img"
+          onError={() => setImgError(true)}
+          loading="lazy"
+        />
+
+        {/* Overlay actions */}
+        <div className="ngau-card-overlay">
+          <motion.button
+            className="ngau-overlay-btn"
+            whileHover={{ scale: 1.12 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={(e) => { e.stopPropagation(); onQuickView(product); }}
+            title="Quick View"
+          >
+            <i className="bi bi-eye" />
+          </motion.button>
+          <motion.button
+            className={`ngau-overlay-btn wishlist-btn ${isWishlisted ? 'active' : ''}`}
+            whileHover={{ scale: 1.12 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={handleWishlist}
+            disabled={wishlisting}
+            title="Wishlist"
+          >
+            <i className={`bi bi-heart${isWishlisted ? '-fill' : ''}`} />
+          </motion.button>
+        </div>
+
+        {/* Badges */}
+        <div className="ngau-card-badges">
+          {product.is_flash_deal && discountPct > 0 && (
+            <span className="ngau-badge flash">
+              <i className="bi bi-lightning-charge-fill" /> -{discountPct}%
+            </span>
+          )}
+          {isOutOfStock && <span className="ngau-badge oos">Out of Stock</span>}
+          {isLowStock && !isOutOfStock && (
+            <span className="ngau-badge low">
+              <i className="bi bi-hourglass-split" /> {product.stock} left
+            </span>
+          )}
+        </div>
       </div>
+
+      {/* Card Body */}
+      <div className="ngau-card-body">
+        {product.category?.name && (
+          <span className="ngau-card-category">{product.category.name}</span>
+        )}
+
+        <h3
+          className="ngau-card-title"
+          onClick={() => navigate(`/products/${product.slug}`)}
+        >
+          {product.name}
+        </h3>
+
+        {/* Tags */}
+        {product.tags?.length > 0 && (
+          <div className="ngau-card-tags">
+            {product.tags.slice(0, 3).map((tag, i) => (
+              <span key={i} className="ngau-tag">#{tag}</span>
+            ))}
+          </div>
+        )}
+
+        {/* Price Row */}
+        <div className="ngau-card-price-row">
+          {product.is_flash_deal && product.discount_price ? (
+            <>
+              <span className="ngau-price-current">Rs.{product.discount_price}</span>
+              <span className="ngau-price-original">Rs.{product.price}</span>
+            </>
+          ) : (
+            <span className="ngau-price-current">Rs.{product.price}</span>
+          )}
+          <span className="ngau-price-unit">/ {product.unit || 'pc'}</span>
+        </div>
+
+        {/* Add to Cart */}
+        <motion.button
+          className={`ngau-add-btn ${isOutOfStock ? 'disabled' : ''}`}
+          onClick={handleAddToCart}
+          disabled={isOutOfStock || adding}
+          whileTap={!isOutOfStock ? { scale: 0.96 } : {}}
+        >
+          {adding ? (
+            <><span className="ngau-btn-spinner" /> Adding...</>
+          ) : isOutOfStock ? (
+            <><i className="bi bi-x-circle me-2" />Out of Stock</>
+          ) : (
+            <><i className="bi bi-cart-plus-fill me-2" />Add to Cart</>
+          )}
+        </motion.button>
+      </div>
+    </motion.div>
+  );
+};
+
+// ---------- Pagination Component ----------
+const PaginationControls = ({ currentPage, totalPages, onPageChange, isLoading }) => {
+  const getPageNumbers = () => {
+    const delta = 2;
+    const range = [];
+    const rangeWithDots = [];
+    let l;
+
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+        range.push(i);
+      }
+    }
+
+    range.forEach((i) => {
+      if (l) {
+        if (i - l === 2) {
+          rangeWithDots.push(l + 1);
+        } else if (i - l !== 1) {
+          rangeWithDots.push('...');
+        }
+      }
+      rangeWithDots.push(i);
+      l = i;
+    });
+
+    return rangeWithDots;
+  };
+
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="ngau-pagination-wrapper">
+      <BootstrapPagination className="justify-content-center">
+        <BootstrapPagination.First
+          onClick={() => onPageChange(1)}
+          disabled={currentPage === 1 || isLoading}
+        />
+        <BootstrapPagination.Prev
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1 || isLoading}
+        />
+        
+        {getPageNumbers().map((pageNum, idx) => (
+          pageNum === '...' ? (
+            <BootstrapPagination.Ellipsis key={`ellipsis-${idx}`} disabled />
+          ) : (
+            <BootstrapPagination.Item
+              key={pageNum}
+              active={pageNum === currentPage}
+              onClick={() => onPageChange(pageNum)}
+              disabled={isLoading}
+            >
+              {pageNum}
+            </BootstrapPagination.Item>
+          )
+        ))}
+        
+        <BootstrapPagination.Next
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages || isLoading}
+        />
+        <BootstrapPagination.Last
+          onClick={() => onPageChange(totalPages)}
+          disabled={currentPage === totalPages || isLoading}
+        />
+      </BootstrapPagination>
     </div>
   );
 };
 
+// ================================================================
+//  MAIN products PAGE
+// ================================================================
 const Products = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { refreshCart, isAuthenticated } = useCart();
-  const productsRef = useRef(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { refreshCart } = useCart();
+  const { isAuthenticated } = useAuth();
 
-  const searchParams = new URLSearchParams(location.search);
-  const urlCategoryId = searchParams.get('category');
-  const urlSearch = searchParams.get('search');
-  const urlSort = searchParams.get('sort');
-
-  // State
+  // ---- State ----
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const categoryScrollRef = useRef(null);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState(urlSearch || '');
-  const [selectedCategory, setSelectedCategory] = useState(urlCategoryId || 'all');
-  const [sortBy, setSortBy] = useState(urlSort || 'newest');
-  const [priceRange, setPriceRange] = useState([0, 100000]);
-  const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState('grid');
-  const [addingId, setAddingId] = useState(null);
-  const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalProducts, setTotalProducts] = useState(0);
+  const [total, setTotal] = useState(0);
+
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [liveSearch, setLiveSearch] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSugg, setShowSugg] = useState(false);
+
+  const [category, setCategory] = useState(searchParams.get('category') || '');
+  const [sort, setSort] = useState(searchParams.get('sort') || '');
+  const [minPrice, setMinPrice] = useState(searchParams.get('min_price') || '');
+  const [maxPrice, setMaxPrice] = useState(searchParams.get('max_price') || '');
+  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page')) || 1);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
+
+  const [showFilters, setShowFilters] = useState(false);
+  const [quickViewProduct, setQuickViewProduct] = useState(null);
+  const [wishlistIds, setWishlistIds] = useState(new Set());
+
+  const [toastMsg, setToastMsg] = useState('');
   const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState('info');
-  const limit = 12;
 
-  // Animation refs
-  const { scrollYProgress } = useScroll({
-    target: productsRef,
-    offset: ["start start", "end start"]
-  });
-  const headerOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0.8]);
-  const headerY = useTransform(scrollYProgress, [0, 0.3], [0, 50]);
+  const searchRef = useRef(null);
+  const LIMIT = 12;
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  // Update URL when filters change
-  useEffect(() => {
-    updateURLParams();
-  }, [selectedCategory, searchTerm, sortBy, priceRange]);
-
-  // Debounced search and filter
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setPage(1);
-      fetchProducts(1);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchTerm, selectedCategory, sortBy, priceRange]);
-
-  const updateURLParams = () => {
-    const params = new URLSearchParams();
-    if (selectedCategory !== 'all') params.set('category', selectedCategory);
-    if (searchTerm) params.set('search', searchTerm);
-    if (sortBy !== 'newest') params.set('sort', sortBy);
-    const newURL = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
-    window.history.replaceState({}, '', newURL);
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const cats = await categoryApi.getAll();
-      setCategories(Array.isArray(cats) ? cats : []);
-    } catch (err) {
-      console.error('Failed to fetch categories:', err);
-    }
-  };
-
-  const fetchProducts = async (currentPage = 1) => {
+  // ---- Fetch products with pagination ----
+  const fetchProducts = useCallback(async (pageNum = currentPage, shouldPreserveScroll = false) => {
     setLoading(true);
+
     try {
       const params = {
-        page: currentPage,
-        limit,
-        sort: sortBy,
-        min_price: priceRange[0],
-        max_price: priceRange[1]
+        search: search || undefined,
+        category: category || undefined,
+        sort: sort || undefined,
+        min_price: minPrice || undefined,
+        max_price: maxPrice || undefined,
+        page: pageNum,
+        limit: LIMIT,
       };
-
-      if (selectedCategory && selectedCategory !== 'all') {
-        params.category = selectedCategory;
-      }
-      if (searchTerm) params.search = searchTerm;
 
       const res = await productApi.getAll(params);
 
-      let rawProducts = [];
-      let total = 0;
+      // Handle both {data, totalPages} and bare array
+      const items = Array.isArray(res) ? res : (res.data || []);
+      const pages = res.totalPages || 1;
+      const tot = res.total || items.length;
 
-      if (Array.isArray(res)) {
-        rawProducts = res;
-        total = res.length;
-      } else {
-        rawProducts = res.products || [];
-        total = res.total || rawProducts.length;
+      setProducts(items);
+      setCurrentPage(pageNum);
+      setTotalPages(pages);
+      setTotal(tot);
+
+      // Scroll to top on page change unless preserving scroll
+      if (!shouldPreserveScroll) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
 
-      const mappedProducts = rawProducts.map(p => ({
-        ...p,
-        stock: p.quantity || p.stock || 0,
-        category_name: categories.find(c => c.id.toString() === p.category_id?.toString())?.name || p.category_name || 'General',
-        tags: p.tags ? (Array.isArray(p.tags) ? p.tags : p.tags.split(',')) : [],
-        flash_sale_end: p.flash_sale_end || null // Add flash sale end time if available from API
-      }));
+      // Update URL with page parameter
+      const urlParams = {};
+      if (search) urlParams.search = search;
+      if (category) urlParams.category = category;
+      if (sort) urlParams.sort = sort;
+      if (minPrice) urlParams.min_price = minPrice;
+      if (maxPrice) urlParams.max_price = maxPrice;
+      if (pageNum > 1) urlParams.page = pageNum;
+      setSearchParams(urlParams, { replace: true });
 
-      setProducts(mappedProducts);
-      setTotalPages(Math.ceil(total / limit));
-      setTotalProducts(total);
+      // Wishlist IDs
+      if (isAuthenticated()) {
+        const ids = new Set(items.filter(p => p.is_in_wishlist).map(p => p.id));
+        setWishlistIds(ids);
+      }
     } catch (err) {
-      console.error('Failed to fetch products:', err.message);
-      setProducts([]);
-      setTotalPages(1);
-      setTotalProducts(0);
+      console.error('Fetch products error:', err);
     } finally {
       setLoading(false);
     }
+  }, [search, category, sort, minPrice, maxPrice, isAuthenticated, currentPage]);
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await categoryApi.getAll();
+        setCategories([{ id: '', name: 'All' }, ...data]);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+        setCategories([{ id: '', name: 'All' }]);
+      }
+    };
+    fetchCategories();
+  }, []);
+  
+  // Initial fetch + when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+    fetchProducts(1);
+  }, [search, category, sort, minPrice, maxPrice]);
+
+  // Sync URL params and fetch when page changes via pagination
+  useEffect(() => {
+    const pageFromUrl = parseInt(searchParams.get('page')) || 1;
+    if (pageFromUrl !== currentPage) {
+      fetchProducts(pageFromUrl);
+    }
+  }, [searchParams.get('page')]);
+
+  // Live search suggestions debounce
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (liveSearch.length < 2) { 
+        setSuggestions([]); 
+        return;
+      }
+
+      try {
+        const res = await productApi.getAll({ search: liveSearch, limit: 5 });
+        const items = Array.isArray(res) ? res : (res.data || []);
+        setSuggestions(items);
+        setShowSugg(true);
+      } catch { 
+        setSuggestions([]); 
+      }
+    }, 280);
+
+    return () => clearTimeout(timer);
+  }, [liveSearch]);
+
+  // ---- Handlers ----
+  const handlePageChange = (newPage) => {
+    if (newPage === currentPage || newPage < 1 || newPage > totalPages) return;
+    fetchProducts(newPage);
   };
 
-  const handleAddToCart = async (e, product) => {
-    e.stopPropagation();
-    if (product.stock <= 0) {
-      setToastMessage(`Sorry! ${product.name} is out of stock.`);
-      setToastType('warning');
+  const handleSearchSubmit = (e) => {
+    e?.preventDefault();
+    setSearch(liveSearch);
+    setCurrentPage(1);
+    setShowSugg(false);
+  };
+
+  const handleSuggestionClick = (product) => {
+    setShowSugg(false);
+    navigate(`/products/${product.slug}`);
+  };
+
+  const handleAddToCart = async (product, qty) => {
+    try {
+      await addToCart(product.id, qty);
+      await refreshCart();
+      setToastMsg(`✓ ${product.name} added to cart!`);
+    } catch {
+      // Guest fallback
+      const cart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+      const item = cart.find(i => i.productId === product.id);
+      if (item) item.quantity += qty;
+      else cart.push({ productId: product.id, quantity: qty, product: { id: product.id, name: product.name, price: product.discount_price || product.price, image: product.images?.[0]?.url, stock: product.stock } });
+      localStorage.setItem('guestCart', JSON.stringify(cart));
+      setToastMsg(`✓ Added to cart (guest). Login to save!`);
+    }
+    setShowToast(true);
+  };
+
+  const handleToggleWishlist = async (productId) => {
+    if (!isAuthenticated()) {
+      setToastMsg('Please login to manage your wishlist.');
       setShowToast(true);
       return;
     }
 
-    try {
-      setAddingId(product.id);
+    const wasInWishlist = wishlistIds.has(productId);
 
-      if (isAuthenticated) {
-        await addToCart(product.id, 1);
-        await refreshCart();
-        setToastMessage(`Added ${product.name} to cart!`);
-        setToastType('success');
+    // Optimistic update
+    setWishlistIds(prev => {
+      const newSet = new Set(prev);
+      if (wasInWishlist) {
+        newSet.delete(productId);
       } else {
-        // Guest cart fallback
-        addToGuestCart(product);
-        setToastMessage(`Added ${product.name} to guest cart! Login to save your cart.`);
-        setToastType('info');
+        newSet.add(productId);
+      }
+      return newSet;
+    });
+
+    try {
+      const res = await productApi.toggleWishlist(productId);
+      const isNowInWishlist = res.status === 'added';
+
+      if (isNowInWishlist === wasInWishlist) {
+        setToastMsg(isNowInWishlist ? '♥ Added to wishlist' : 'Removed from wishlist');
+      } else {
+        setWishlistIds(prev => {
+          const newSet = new Set(prev);
+          if (isNowInWishlist) {
+            newSet.add(productId);
+          } else {
+            newSet.delete(productId);
+          }
+          return newSet;
+        });
+        setToastMsg(isNowInWishlist ? '♥ Added to wishlist' : 'Removed from wishlist');
       }
       setShowToast(true);
-
-      // Animate the cart icon
-      const cartIcon = document.querySelector('.cart-icon-wrapper, .cart-badge');
-      cartIcon?.classList.add('cart-bump');
-      setTimeout(() => cartIcon?.classList.remove('cart-bump'), 300);
-    } catch (err) {
-      // Fallback to guest cart if API fails
-      addToGuestCart(product);
-      setToastMessage(`Added ${product.name} to guest cart!`);
-      setToastType('info');
+    } catch (error) {
+      // Revert optimistic update on error
+      setWishlistIds(prev => {
+        const newSet = new Set(prev);
+        if (wasInWishlist) {
+          newSet.add(productId);
+        } else {
+          newSet.delete(productId);
+        }
+        return newSet;
+      });
+      setToastMsg('Failed to update wishlist. Please try again.');
       setShowToast(true);
-    } finally {
-      setAddingId(null);
+      console.error('Wishlist toggle error:', error);
     }
   };
 
-  const clearAllFilters = () => {
-    setSearchTerm('');
-    setSelectedCategory('all');
-    setSortBy('newest');
-    setPriceRange([0, 100000]);
-    setPage(1);
+  // Draggable category scroll handler
+  const handleCategoryMouseDown = (e) => {
+    const container = categoryScrollRef.current;
+    if (!container) return;
+    let startX = e.pageX - container.offsetLeft;
+    let scrollLeft = container.scrollLeft;
+
+    const onMouseMove = (e) => {
+      const x = e.pageX - container.offsetLeft;
+      const walk = (x - startX) * 1.5;
+      container.scrollLeft = scrollLeft - walk;
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
   };
 
-  const hasActiveFilters = searchTerm || selectedCategory !== 'all' || sortBy !== 'newest' || priceRange[0] > 0 || priceRange[1] < 100000;
-
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.05
-      }
-    }
+  const clearFilters = () => {
+    setSearch(''); 
+    setLiveSearch(''); 
+    setCategory('');
+    setSort(''); 
+    setMinPrice(''); 
+    setMaxPrice('');
+    setCurrentPage(1);
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
-  };
+  const hasActiveFilters = search || category || sort || minPrice || maxPrice;
 
-  const ProductCardComponent = ({ product, index }) => {
-    const [isHovered, setIsHovered] = useState(false);
-    const discount = product.is_flash_deal && product.discount_price ?
-      Math.round(((product.price - product.discount_price) / product.price) * 100) : 0;
-
-    const displayCategory = categories.find(c => c.id.toString() === product.category_id?.toString())?.name || product.category_name || 'General';
-    const inStock = product.stock > 0;
-    const stockCount = product.stock;
-
-    // Get first 3 tags for display
-    const displayTags = product.tags?.slice(0, 3) || [];
-    const remainingTags = product.tags?.length - 3 || 0;
-
-    return (
-      <motion.div
-        variants={itemVariants}
-        whileHover={{ y: -8 }}
-        onHoverStart={() => setIsHovered(true)}
-        onHoverEnd={() => setIsHovered(false)}
-        onClick={() => navigate(`/products/${product.slug || product.id}`)}
-        style={{ cursor: 'pointer' }}
-      >
-        <Card className={`product-card-modern ${viewMode === 'list' ? 'list-view' : ''}`}>
-          <div className={`${viewMode === 'list' ? 'd-flex flex-column flex-sm-row' : ''}`}>
-            <div className="image-zoom-container position-relative">
-              <Card.Img
-                variant="top"
-                src={product.images?.[0]?.url?.startsWith('http') ? product.images[0].url : `${API_BASE_URL}${product.images?.[0]?.url || ''}`}
-                onError={e => { e.currentTarget.src = fallbackImage; }}
-              />
-
-              {/* Flash Deal Badge */}
-              {product.is_flash_deal && (
-                <div className="product-badges">
-                  <motion.div
-                    className="flash-badge"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 500 }}
-                  >
-                    <Zap size={12} /> {discount}% OFF
-                  </motion.div>
-                </div>
-              )}
-
-              {/* Live Stock Count Badge */}
-              <div className={`stock-count-badge ${inStock ? 'in-stock' : 'out-of-stock'}`}>
-                {inStock ? (
-                  <>
-                    <Package size={12} />
-                    <span>{stockCount} in stock</span>
-                  </>
-                ) : (
-                  <>
-                    <X size={12} />
-                    <span>Out of Stock</span>
-                  </>
-                )}
-              </div>
-
-              {/* Hover Actions */}
-              <motion.div
-                className="product-hover-actions"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: isHovered ? 1 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <motion.button
-                  className="hover-action-btn"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={(e) => handleAddToCart(e, product)}
-                  disabled={addingId === product.id || !inStock}
-                >
-                  <ShoppingCart size={18} />
-                </motion.button>
-              </motion.div>
-            </div>
-
-            <Card.Body className="d-flex flex-column">
-              <div className="product-meta">
-                <span className="category-badge">{displayCategory}</span>
-              </div>
-
-              <Card.Title className="product-title">{product.name}</Card.Title>
-
-              {/* Tags Section */}
-              {displayTags.length > 0 && (
-                <div className="product-tags">
-                  <Tag size={12} className="tags-icon" />
-                  {displayTags.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="product-tag"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSearchTerm(tag.trim());
-                      }}
-                    >
-                      #{tag.trim()}
-                    </span>
-                  ))}
-                  {remainingTags > 0 && (
-                    <span className="product-tag more-tag">+{remainingTags}</span>
-                  )}
-                </div>
-              )}
-
-              {viewMode === 'list' && (
-                <p className="product-description">
-                  {product.description?.substring(0, 100)}...
-                </p>
-              )}
-
-              <div className="product-price-section">
-                <div className="price-info">
-                  {product.is_flash_deal ? (
-                    /* --- FLASH DEAL ACTIVE --- */
-                    <div className="price-wrapper">
-                      {/* Added 'is-flash' class here for the red color */}
-                      <span className="current-price is-flash">
-                        Rs.{product.discount_price}
-                      </span>
-                      <span className="original-price">
-                        Rs.{product.price}
-                      </span>
-                    </div>
-                  ) : (
-                    /* --- NORMAL PRICE --- */
-                    <span className="current-price">
-                      Rs.{product.price}
-                    </span>
-                  )}
-                  <small className="unit-text">/ {product.unit || 'pc'}</small>
-                </div>
-              </div>
-
-              {/* Flash Sale Countdown Timer */}
-              {product.is_flash_deal && product.flash_sale_end && (
-                <FlashCountdown endTime={product.flash_sale_end} />
-              )}
-
-              {/* Full Width Add to Cart Button */}
-              <motion.button
-                className={`add-to-cart-full ${!inStock ? 'disabled' : ''} ${product.is_flash_deal ? 'flash-deal-btn' : ''}`}
-                whileTap={inStock ? { scale: 0.98 } : {}}
-                onClick={(e) => handleAddToCart(e, product)}
-                disabled={addingId === product.id || !inStock}
-              >
-                {addingId === product.id ? (
-                  <Spinner as="span" animation="border" size="sm" />
-                ) : (
-                  <>
-                    <ShoppingCart size={18} />
-                    <span>{inStock ? 'Add to Cart' : 'Out of Stock'}</span>
-                  </>
-                )}
-              </motion.button>
-            </Card.Body>
-          </div>
-        </Card>
-      </motion.div>
-    );
-  };
-
-  // Pagination component
-  const PaginationComponent = () => {
-    const maxVisible = 5;
-    let startPage = Math.max(1, page - Math.floor(maxVisible / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
-
-    if (endPage - startPage + 1 < maxVisible) {
-      startPage = Math.max(1, endPage - maxVisible + 1);
-    }
-
-    const pages = [];
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-
-    return (
-      <div className="pagination-wrapper">
-        <button
-          className="page-btn"
-          disabled={page === 1}
-          onClick={() => setPage(p => p - 1)}
-        >
-          Previous
-        </button>
-
-        {startPage > 1 && (
-          <>
-            <button className="page-number" onClick={() => setPage(1)}>1</button>
-            {startPage > 2 && <span className="page-dots">...</span>}
-          </>
-        )}
-
-        {pages.map(p => (
-          <button
-            key={p}
-            className={`page-number ${page === p ? 'active' : ''}`}
-            onClick={() => setPage(p)}
-          >
-            {p}
-          </button>
-        ))}
-
-        {endPage < totalPages && (
-          <>
-            {endPage < totalPages - 1 && <span className="page-dots">...</span>}
-            <button className="page-number" onClick={() => setPage(totalPages)}>{totalPages}</button>
-          </>
-        )}
-
-        <button
-          className="page-btn"
-          disabled={page === totalPages}
-          onClick={() => setPage(p => p + 1)}
-        >
-          Next
-        </button>
-      </div>
-    );
-  };
-
+  // ============================================================
+  //  RENDER
+  // ============================================================
   return (
-    <div className="products-page" ref={productsRef}>
-      {/* Hero Section with Parallax */}
-      <animated.div className="products-hero" style={{ opacity: headerOpacity, y: headerY }}>
-        <Container>
-          <div className="hero-content">
+    <>
+      <Helmet>
+        <title>Fresh Produce | Ngau Bazaar</title>
+        <meta name="description" content="Browse fresh, organic, local harvest produce directly from farmers at Ngau Bazaar." />
+      </Helmet>
+
+      <div className="ngau-products-root">
+
+        {/* ── HERO STRIP ── */}
+        <div className="ngau-products-hero">
+          <div className="ngau-hero-bg-pattern" />
+          <Container fluid="xl">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              className="ngau-hero-content"
+              initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
             >
-              <Badge bg="soft-primary" className="hero-badge">
-                Fresh Market
-              </Badge>
-              <h1 className="hero-title">
-                Premium <span className="text-gradient">Bazaar</span> Collections
+              <div className="ngau-hero-eyebrow">
+                <span className="ngau-leaf-dot">🌿</span>
+                Fresh from local farms
+              </div>
+              <h1 className="ngau-hero-title">
+                Farm-to-Table <span className="ngau-hero-accent">Harvest</span>
               </h1>
-              <p className="hero-subtitle">
-                Discover the finest organic products from local farmers
+              <p className="ngau-hero-sub">
+                {total > 0 ? `${total} products` : 'Fresh products'} — directly from farmers, zero middlemen
               </p>
+
+              {/* ── SEARCH BAR ── */}
+              <form className="ngau-search-form" onSubmit={handleSearchSubmit}>
+                <div className="ngau-search-wrap" ref={searchRef}>
+                  <i className="bi bi-search ngau-search-icon" />
+                  <input
+                    className="ngau-search-input"
+                    type="text"
+                    placeholder="Search tomatoes, turmeric, organic milk…"
+                    value={liveSearch}
+                    onChange={e => setLiveSearch(e.target.value)}
+                    onFocus={() => suggestions.length > 0 && setShowSugg(true)}
+                    onBlur={() => setTimeout(() => setShowSugg(false), 180)}
+                  />
+                  {liveSearch && (
+                    <button
+                      type="button"
+                      className="ngau-search-clear"
+                      onClick={() => { setLiveSearch(''); setSearch(''); setSuggestions([]); }}
+                    >
+                      <i className="bi bi-x-lg" />
+                    </button>
+                  )}
+                  <button type="submit" className="ngau-search-btn">Search</button>
+
+                  {/* Suggestions Dropdown */}
+                  <AnimatePresence>
+                    {showSugg && suggestions.length > 0 && (
+                      <motion.div
+                        className="ngau-suggestions"
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        {suggestions.map(p => (
+                          <div
+                            key={p.id}
+                            className="ngau-suggestion-item"
+                            onMouseDown={() => handleSuggestionClick(p)}
+                          >
+                            <img
+                              src={p.images?.[0]?.url ? getProductImageUrl(p.images[0].url, API_BASE_URL) : fallbackImage}
+                              alt={p.name}
+                              className="ngau-sugg-img"
+                              onError={e => e.target.src = fallbackImage}
+                            />
+                            <div className="ngau-sugg-info">
+                              <span className="ngau-sugg-name">{p.name}</span>
+                              <span className="ngau-sugg-price">Rs.{p.discount_price || p.price} / {p.unit}</span>
+                            </div>
+                            <i className="bi bi-arrow-right ngau-sugg-arrow" />
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </form>
             </motion.div>
-          </div>
-        </Container>
-      </animated.div>
-
-      <Container className="products-container">
-        {/* Search and Filter Bar */}
-        <div className="action-bar-container">
-          <div className="main-search-area">
-            <div className="search-container">
-              <div className="search-box">
-                <Search size={20} className="search-icon" />
-                <input
-                  type="text"
-                  inputMode="search" /* Opens 'Search' key on mobile keyboard */
-                  placeholder="Search 'Organic Honey'..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="clear-search"
-                    aria-label="Clear search"
-                  >
-                    <X size={20} />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="action-buttons">
-              <motion.button
-                className="filter-trigger"
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowFilters(true)}
-              >
-                <SlidersHorizontal size={18} />
-                <span>Filters</span>
-                {hasActiveFilters && <span className="filter-dot"></span>}
-              </motion.button>
-
-              <div className="view-switcher">
-                <button
-                  className={viewMode === 'grid' ? 'active' : ''}
-                  onClick={() => setViewMode('grid')}
-                >
-                  <Grid size={18} />
-                </button>
-                <button
-                  className={viewMode === 'list' ? 'active' : ''}
-                  onClick={() => setViewMode('list')}
-                >
-                  <List size={18} />
-                </button>
-              </div>
-            </div>
-          </div>
+          </Container>
         </div>
 
-        {/* Active Filters */}
-        <AnimatePresence>
-          {hasActiveFilters && (
-            <motion.div
-              className="active-filters"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+        {/* ── CATEGORY PILLS (Draggable) ── */}
+        <div className="ngau-category-bar">
+          <Container fluid="xl">
+            <div
+              className="ngau-category-scroll"
+              ref={categoryScrollRef}
+              onMouseDown={handleCategoryMouseDown}
             >
-              <span className="filters-label">Active Filters:</span>
-              {searchTerm && (
-                <div className="filter-tag">
-                  Search: {searchTerm}
-                  <button onClick={() => setSearchTerm('')}><X size={12} /></button>
+              {categories.map(cat => (
+                <motion.button
+                  key={cat.id || 'all'}
+                  className={`ngau-cat-pill ${category === cat.id ? 'active' : ''}`}
+                  onClick={() => {
+                    setCategory(cat.id === category ? '' : cat.id);
+                    setCurrentPage(1);
+                  }}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {cat.name}
+                </motion.button>
+              ))}
+            </div>
+          </Container>
+        </div>
+
+        {/* ── MAIN CONTENT ── */}
+        <Container fluid="xl" className="ngau-products-body">
+          <Row className="g-0 g-lg-4">
+
+            {/* ── SIDEBAR FILTERS (Desktop) ── */}
+            <Col lg={3} className="d-none d-lg-block">
+              <motion.div
+                className="ngau-sidebar"
+                variants={filterVariants}
+                initial="hidden"
+                animate="visible"
+              >
+                <div className="ngau-sidebar-header">
+                  <span><i className="bi bi-sliders me-2" />Filters</span>
+                  {hasActiveFilters && (
+                    <button className="ngau-clear-btn" onClick={clearFilters}>
+                      Clear all
+                    </button>
+                  )}
                 </div>
-              )}
-              {selectedCategory !== 'all' && (
-                <div className="filter-tag">
-                  Category: {categories.find(c => c.id.toString() === selectedCategory)?.name}
-                  <button onClick={() => setSelectedCategory('all')}><X size={12} /></button>
+
+                {/* Sort */}
+                <div className="ngau-filter-group">
+                  <label className="ngau-filter-label">Sort By</label>
+                  <select 
+                    className="ngau-sort-select"
+                    value={sort}
+                    onChange={(e) => {
+                      setSort(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    {SORT_OPTIONS.map(opt => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              )}
-              {sortBy !== 'newest' && (
-                <div className="filter-tag">
-                  Sort: {sortBy.replace('_', ' ')}
-                  <button onClick={() => setSortBy('newest')}><X size={12} /></button>
+
+                {/* Categories */}
+                <div className="ngau-filter-group">
+                  <label className="ngau-filter-label">Categories</label>
+                  <div className="ngau-cat-grid">
+                    {categories.map(cat => (
+                      <button
+                        key={cat.id || 'all'}
+                        className={`ngau-cat-grid-item ${category === cat.id ? 'active' : ''}`}
+                        onClick={() => {
+                          setCategory(cat.id === category ? '' : cat.id);
+                          setCurrentPage(1);
+                        }}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              )}
-              {(priceRange[0] > 0 || priceRange[1] < 100000) && (
-                <div className="filter-tag">
-                  Price: Rs.{priceRange[0]} - Rs.{priceRange[1]}
-                  <button onClick={() => setPriceRange([0, 100000])}><X size={12} /></button>
+
+                {/* Price Range */}
+                <div className="ngau-filter-group">
+                  <label className="ngau-filter-label">Price Range (Rs.)</label>
+                  <div className="ngau-price-inputs">
+                    <div className="ngau-price-field">
+                      <span className="ngau-price-prefix">Min</span>
+                      <input
+                        type="number"
+                        className="ngau-price-input"
+                        placeholder="0"
+                        value={minPrice}
+                        min={0}
+                        onChange={e => {
+                          setMinPrice(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                      />
+                    </div>
+                    <span className="ngau-price-sep">—</span>
+                    <div className="ngau-price-field">
+                      <span className="ngau-price-prefix">Max</span>
+                      <input
+                        type="number"
+                        className="ngau-price-input"
+                        placeholder="∞"
+                        value={maxPrice}
+                        min={0}
+                        onChange={e => {
+                          setMaxPrice(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  {minPrice && maxPrice && Number(minPrice) > Number(maxPrice) && (
+                    <p className="ngau-price-error">Min cannot exceed max</p>
+                  )}
                 </div>
+
+                {/* Quick Filters */}
+                <div className="ngau-filter-group">
+                  <label className="ngau-filter-label">Quick Filters</label>
+                  <div className="ngau-quick-chips">
+                    <button
+                      className={`ngau-chip ${sort === 'newest' ? 'active' : ''}`}
+                      onClick={() => {
+                        setSort('newest');
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <i className="bi bi-clock me-1" />New Arrivals
+                    </button>
+                    <button
+                      className={`ngau-chip ${sort === 'popularity' ? 'active' : ''}`}
+                      onClick={() => {
+                        setSort('popularity');
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <i className="bi bi-fire me-1" />Trending
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </Col>
+
+            {/* ── PRODUCTS GRID ── */}
+            <Col lg={9}>
+
+              {/* Toolbar */}
+              <div className="ngau-toolbar">
+                <div className="ngau-toolbar-left">
+                  {loading ? (
+                    <span className="ngau-result-count">Loading…</span>
+                  ) : (
+                    <span className="ngau-result-count">
+                      <strong>{total}</strong> product{total !== 1 ? 's' : ''}
+                      {search && <> for <em>"{search}"</em></>}
+                      {totalPages > 1 && <> · Page {currentPage} of {totalPages}</>}
+                    </span>
+                  )}
+
+                  {/* Active filter chips */}
+                  <div className="ngau-active-chips">
+                    {category && (
+                      <span className="ngau-active-chip">
+                        {categories.find(c => c.id === category)?.name || category}
+                        <button onClick={() => {
+                          setCategory('');
+                          setCurrentPage(1);
+                        }}><i className="bi bi-x" /></button>
+                      </span>
+                    )}
+                    {sort && (
+                      <span className="ngau-active-chip">
+                        {SORT_OPTIONS.find(s => s.value === sort)?.label}
+                        <button onClick={() => {
+                          setSort('');
+                          setCurrentPage(1);
+                        }}><i className="bi bi-x" /></button>
+                      </span>
+                    )}
+                    {(minPrice || maxPrice) && (
+                      <span className="ngau-active-chip">
+                        Rs.{minPrice || '0'} – Rs.{maxPrice || '∞'}
+                        <button onClick={() => { 
+                          setMinPrice(''); 
+                          setMaxPrice('');
+                          setCurrentPage(1);
+                        }}><i className="bi bi-x" /></button>
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="ngau-toolbar-right">
+                  {/* Mobile filter toggle */}
+                  <button
+                    className="ngau-filter-toggle d-lg-none"
+                    onClick={() => setShowFilters(true)}
+                  >
+                    <i className="bi bi-sliders" /> Filters
+                    {hasActiveFilters && <span className="ngau-filter-dot" />}
+                  </button>
+
+                  {/* View mode */}
+                  <div className="ngau-view-toggle">
+                    <button
+                      className={`ngau-view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                      onClick={() => setViewMode('grid')}
+                      title="Grid view"
+                    >
+                      <i className="bi bi-grid-3x3-gap" />
+                    </button>
+                    <button
+                      className={`ngau-view-btn ${viewMode === 'list' ? 'active' : ''}`}
+                      onClick={() => setViewMode('list')}
+                      title="List view"
+                    >
+                      <i className="bi bi-list-ul" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Products */}
+              {loading ? (
+                <div className={`ngau-products-${viewMode}`}>
+                  {Array.from({ length: LIMIT }).map((_, i) => (
+                    <SkeletonCard key={i} />
+                  ))}
+                </div>
+              ) : products.length === 0 ? (
+                <motion.div
+                  className="ngau-empty-state"
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                >
+                  <div className="ngau-empty-icon">🌱</div>
+                  <h3>No products found</h3>
+                  <p>Try adjusting your filters or searching for something else.</p>
+                  <button className="ngau-empty-reset" onClick={clearFilters}>
+                    Reset Filters
+                  </button>
+                </motion.div>
+              ) : (
+                <>
+                  <motion.div
+                    className={`ngau-products-${viewMode}`}
+                    variants={pageVariants}
+                    initial="hidden"
+                    animate="visible"
+                  >
+                    <AnimatePresence mode="popLayout">
+                      {products.map(product => (
+                        <ProductCard
+                          key={product.id}
+                          product={product}
+                          onQuickView={setQuickViewProduct}
+                          onAddToCart={handleAddToCart}
+                          wishlistIds={wishlistIds}
+                          onToggleWishlist={handleToggleWishlist}
+                        />
+                      ))}
+                    </AnimatePresence>
+                  </motion.div>
+
+                  {/* Pagination Controls */}
+                  <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                    isLoading={loading}
+                  />
+                </>
               )}
-              <button className="clear-all-filters" onClick={clearAllFilters}>
-                Clear All
-              </button>
-            </motion.div>
+
+            </Col>
+          </Row>
+        </Container>
+
+        {/* ── MOBILE FILTER DRAWER ── */}
+        <AnimatePresence>
+          {showFilters && (
+            <>
+              <motion.div
+                className="ngau-drawer-overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowFilters(false)}
+              />
+              <motion.div
+                className="ngau-filter-drawer"
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', stiffness: 300, damping: 32 }}
+              >
+                <div className="ngau-drawer-header">
+                  <span><i className="bi bi-sliders me-2" />Filters & Sort</span>
+                  <button className="ngau-drawer-close" onClick={() => setShowFilters(false)}>
+                    <i className="bi bi-x-lg" />
+                  </button>
+                </div>
+                <div className="ngau-drawer-body">
+
+                  <div className="ngau-filter-group">
+                    <label className="ngau-filter-label">Sort By</label>
+                    <div className="ngau-sort-list">
+                      {SORT_OPTIONS.map(opt => (
+                        <button
+                          key={opt.value}
+                          className={`ngau-sort-item ${sort === opt.value ? 'active' : ''}`}
+                          onClick={() => {
+                            setSort(opt.value);
+                            setCurrentPage(1);
+                          }}
+                        >
+                          <i className={`bi ${opt.icon} me-2`} />{opt.label}
+                          {sort === opt.value && <i className="bi bi-check2 ms-auto" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="ngau-filter-group">
+                    <label className="ngau-filter-label">Price Range (Rs.)</label>
+                    <div className="ngau-price-inputs">
+                      <div className="ngau-price-field">
+                        <span className="ngau-price-prefix">Min</span>
+                        <input type="number" className="ngau-price-input" placeholder="0" value={minPrice} min={0} onChange={e => {
+                          setMinPrice(e.target.value);
+                          setCurrentPage(1);
+                        }} />
+                      </div>
+                      <span className="ngau-price-sep">—</span>
+                      <div className="ngau-price-field">
+                        <span className="ngau-price-prefix">Max</span>
+                        <input type="number" className="ngau-price-input" placeholder="∞" value={maxPrice} min={0} onChange={e => {
+                          setMaxPrice(e.target.value);
+                          setCurrentPage(1);
+                        }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="ngau-filter-group">
+                    <label className="ngau-filter-label">Categories</label>
+                    <div className="ngau-cat-grid">
+                      {categories.map(cat => (
+                        <button
+                          key={cat.id || 'all'}
+                          className={`ngau-cat-grid-item ${category === cat.id ? 'active' : ''}`}
+                          onClick={() => {
+                            setCategory(cat.id === category ? '' : cat.id);
+                            setCurrentPage(1);
+                          }}
+                        >
+                          {cat.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="ngau-drawer-footer">
+                  <button className="ngau-drawer-clear" onClick={() => { clearFilters(); setShowFilters(false); }}>
+                    Clear All
+                  </button>
+                  <button className="ngau-drawer-apply" onClick={() => setShowFilters(false)}>
+                    Show Results ({total})
+                  </button>
+                </div>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
 
-        {/* Horizontal Category Pills */}
-        <div className="category-bar">
-          <div className="category-pills-wrapper">
-            <div className="category-pills">
-              <button
-                className={`category-pill ${selectedCategory === 'all' ? 'active' : ''}`}
-                onClick={() => setSelectedCategory('all')}
-              >
-                All Products
-              </button>
+        {/* ── QUICK VIEW MODAL ── */}
+        <AnimatePresence>
+          {quickViewProduct && (
+            <ProductQuickView
+              product={quickViewProduct}
+              onClose={() => setQuickViewProduct(null)}
+              onAddToCart={handleAddToCart}
+              isWishlisted={wishlistIds.has(quickViewProduct.id)}
+              onToggleWishlist={handleToggleWishlist}
+            />
+          )}
+        </AnimatePresence>
 
-              {categories.map(cat => (
-                <button
-                  key={cat.id}
-                  className={`category-pill ${selectedCategory === cat.id.toString() ? 'active' : ''
-                    }`}
-                  onClick={() => setSelectedCategory(cat.id.toString())}
-                >
-                  {cat.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="sort-container">
-          <div className="sort-selector-mobile">
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-              <option value="popularity">Top Rated & Best Sellers</option>
-              <option value="newest">Fresh Arrivals</option>
-              <option value="price_asc">Lowest Price First</option>
-              <option value="price_desc">Premium Selection</option>
-              <option value="name_asc">A to Z</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Results Count */}
-        <div className="results-count-bar">
-          <div className="results-count">
-            {!loading && (
-              <span>Showing {products.length} of {totalProducts} products</span>
-            )}
-          </div>
-        </div>
-
-        {/* Products Grid */}
-        {loading ? (
-          <SkeletonLoader type="product" count={8} />
-        ) : (
-          <>
-            <motion.div
-              className={`products-grid ${viewMode === 'list' ? 'list-view' : ''}`}
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              {products.length > 0 ? (
-                products.map((product, index) => (
-                  <ProductCardComponent key={product.id} product={product} index={index} />
-                ))
-              ) : (
-                <motion.div
-                  className="empty-state"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                >
-                  <div className="empty-icon">🍃</div>
-                  <h3>No products found</h3>
-                  <p>Try adjusting your filters or search terms</p>
-                  <button className="reset-filters-btn" onClick={clearAllFilters}>
-                    Reset All Filters
-                  </button>
-                </motion.div>
-              )}
-            </motion.div>
-
-            {/* Pagination */}
-            {totalPages > 1 && <PaginationComponent />}
-          </>
-        )}
-      </Container>
-
-      {/* Filter Sidebar */}
-      <Offcanvas show={showFilters} onHide={() => setShowFilters(false)} placement="end" className="filter-sidebar">
-        <Offcanvas.Header closeButton>
-          <Offcanvas.Title>
-            <SlidersHorizontal size={20} />
-            Filter Products
-          </Offcanvas.Title>
-        </Offcanvas.Header>
-        <Offcanvas.Body>
-          <div className="filter-section">
-            <h4>Price Range</h4>
-            <div className="price-range">
-              <div className="price-range-labels">
-                <span>Rs. {priceRange[0]}</span>
-                <span>Rs. {priceRange[1]}</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100000"
-                value={priceRange[1]}
-                onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                className="price-slider"
-              />
-              <div className="price-inputs">
-                <input
-                  type="number"
-                  value={priceRange[0]}
-                  onChange={(e) => setPriceRange([parseInt(e.target.value) || 0, priceRange[1]])}
-                  placeholder="Min"
-                />
-                <span>-</span>
-                <input
-                  type="number"
-                  value={priceRange[1]}
-                  onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value) || 100000])}
-                  placeholder="Max"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="filter-section">
-            <h4>Sort By</h4>
-          </div>
-
-          <button
-            className="apply-filters-btn"
-            onClick={() => setShowFilters(false)}
-          >
-            Apply Filters
-          </button>
-        </Offcanvas.Body>
-      </Offcanvas>
-
-      <ToastMessage
-        show={showToast}
-        onClose={() => setShowToast(false)}
-        message={toastMessage}
-        type={toastType}
-      />
-    </div>
+        <ToastMessage
+          show={showToast}
+          onClose={() => setShowToast(false)}
+          message={toastMsg}
+          title="Ngau Bazaar"
+        />
+      </div>
+    </>
   );
 };
 

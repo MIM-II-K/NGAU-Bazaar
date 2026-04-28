@@ -7,6 +7,8 @@ import { productApi } from '../utils/productApi';
 import { addToCart } from '../utils/cartApi';
 import { getProductImageUrl } from '../utils/urlHelper';
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useWishlist } from '../contexts/WishlistContext';
 import AOS from 'aos';
 import ToastMessage from '../components/ToastMessage';
 import ProductCard from '../components/ProductCard';
@@ -36,7 +38,8 @@ const ProductDetail = () => {
     const { slug } = useParams();
     const navigate = useNavigate();
     const { refreshCart } = useCart();
-
+    const { isAuthenticated } = useAuth();
+    const { isInWishlist, toggleWishlist } = useWishlist();
     const [product, setProduct] = useState(null);
     const [relatedProducts, setRelatedProducts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -110,11 +113,11 @@ const ProductDetail = () => {
             setShowToast(true);
         } catch (error) {
             console.error("Cart API error:", error);
-            
+
             try {
                 const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
                 const existingItem = guestCart.find(item => item.productId === product.id);
-                
+
                 if (existingItem) {
                     existingItem.quantity += quantity;
                 } else {
@@ -130,14 +133,14 @@ const ProductDetail = () => {
                         }
                     });
                 }
-                
+
                 localStorage.setItem('guestCart', JSON.stringify(guestCart));
-                
+
                 setProduct(prev => ({
                     ...prev,
                     stock: prev.stock - quantity
                 }));
-                
+
                 setToastMessage(`Added ${quantity} x ${product.name} to guest cart! Login to save permanently.`);
                 setShowToast(true);
             } catch (localError) {
@@ -149,37 +152,22 @@ const ProductDetail = () => {
         }
     };
 
+    // Derived wishlist state using context
+    const isProductWishlisted = product ? isInWishlist(product.id) : false;
+
     const handleWishlistToggle = async () => {
-        const token = localStorage.getItem("token");
-        if (!token) {
+        if (!isAuthenticated()) {
             setToastMessage("Please login to manage your wishlist.");
             setShowToast(true);
             return;
         }
 
         setIsWishlistLoading(true);
-        const wasInWishlist = product.is_in_wishlist;
-        
-        setProduct(prev => ({
-            ...prev,
-            is_in_wishlist: !wasInWishlist
-        }));
-
         try {
-            const response = await productApi.toggleWishlist(product.id);
-            const serverStatus = response.status === "added";
-            setProduct(prev => ({
-                ...prev,
-                is_in_wishlist: serverStatus
-            }));
-            setToastMessage(serverStatus ? "Added to wishlist!" : "Removed from wishlist.");
+            await toggleWishlist(product.id);
+            setToastMessage(isProductWishlisted ? "Removed from wishlist." : "Added to wishlist!");
             setShowToast(true);
         } catch (error) {
-            console.error("Wishlist error:", error);
-            setProduct(prev => ({
-                ...prev,
-                is_in_wishlist: wasInWishlist
-            }));
             setToastMessage("Failed to update wishlist. Please try again.");
             setShowToast(true);
         } finally {
@@ -189,7 +177,7 @@ const ProductDetail = () => {
 
     const handleImageZoom = (e) => {
         if (!isZoomed) return;
-        
+
         const rect = e.currentTarget.getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 100;
         const y = ((e.clientY - rect.top) / rect.height) * 100;
@@ -246,7 +234,7 @@ const ProductDetail = () => {
     };
 
     return (
-        <motion.div 
+        <motion.div
             className="product-detail-wrapper py-5"
             initial="hidden"
             animate="visible"
@@ -259,7 +247,7 @@ const ProductDetail = () => {
                     {JSON.stringify(structuredData)}
                 </script>
             </Helmet>
-            
+
             <Container>
                 {/* Modern Breadcrumb */}
                 <motion.div variants={itemVariants} className="modern-breadcrumb mb-4">
@@ -296,12 +284,12 @@ const ProductDetail = () => {
                 <Row className="gx-lg-5 align-items-start">
                     {/* Image Gallery Section */}
                     <Col lg={6} data-aos="zoom-in">
-                        <motion.div 
+                        <motion.div
                             className="detail-image-card shadow-lg overflow-hidden rounded-4 position-relative mb-3"
                             whileHover={{ scale: 1.02 }}
                             transition={{ duration: 0.3 }}
                         >
-                            <div 
+                            <div
                                 className={`main-image-container ${isZoomed ? 'zoomed' : ''}`}
                                 onMouseMove={handleImageZoom}
                                 onMouseEnter={() => setIsZoomed(true)}
@@ -334,12 +322,12 @@ const ProductDetail = () => {
                                     }}
                                     onError={(e) => { e.currentTarget.src = fallbackImage; }}
                                 />
-                                
+
                                 {/* Stock Badge - Top Right */}
                                 <div className="stock-badge-top-right">
                                     {!isOutOfStock ? (
-                                        <Badge 
-                                            bg={isLowStock ? "warning" : "success"} 
+                                        <Badge
+                                            bg={isLowStock ? "warning" : "success"}
                                             className={`stock-badge ${isLowStock ? 'low-stock' : 'in-stock'}`}
                                         >
                                             <i className={`bi bi-${isLowStock ? 'exclamation-triangle' : 'check-circle-fill'} me-1`}></i>
@@ -355,7 +343,7 @@ const ProductDetail = () => {
 
                                 {/* Flash Deal Badge */}
                                 {product.is_flash_deal && (
-                                    <motion.div 
+                                    <motion.div
                                         className="flash-deal-badge"
                                         initial={{ x: -100, opacity: 0 }}
                                         animate={{ x: 0, opacity: 1 }}
@@ -371,7 +359,7 @@ const ProductDetail = () => {
 
                                 {/* Low Stock Warning */}
                                 {isLowStock && !isOutOfStock && (
-                                    <motion.div 
+                                    <motion.div
                                         className="low-stock-warning"
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
@@ -385,7 +373,7 @@ const ProductDetail = () => {
 
                             {/* Thumbnail Gallery */}
                             {product.images && product.images.length > 1 && (
-                                <motion.div 
+                                <motion.div
                                     className="d-flex gap-2 overflow-auto pb-2 custom-scrollbar mt-3"
                                     variants={itemVariants}
                                 >
@@ -427,9 +415,9 @@ const ProductDetail = () => {
                             <Badge bg="soft-primary" className="text-primary mb-3 px-3 py-2 category-badge">
                                 {product.category?.name || product.category_name || 'Premium Collection'}
                             </Badge>
-                            
+
                             <h1 className="display-5 fw-bold mb-3">{product.name}</h1>
-                            
+
                             {/* Price Section */}
                             <div className="price-section mb-4">
                                 {product.is_flash_deal ? (
@@ -523,8 +511,8 @@ const ProductDetail = () => {
                                 {!isOutOfStock && (
                                     <div className="quantity-selector-wrapper mb-4">
                                         <div className="quantity-selector d-inline-flex align-items-center border rounded-3 p-1">
-                                            <Button 
-                                                variant="link" 
+                                            <Button
+                                                variant="link"
                                                 className="text-dark p-2 text-decoration-none"
                                                 onClick={() => setQuantity(q => Math.max(1, q - 1))}
                                                 disabled={quantity <= 1}
@@ -532,8 +520,8 @@ const ProductDetail = () => {
                                                 <i className="bi bi-dash-lg"></i>
                                             </Button>
                                             <span className="px-4 fw-bold">{quantity}</span>
-                                            <Button 
-                                                variant="link" 
+                                            <Button
+                                                variant="link"
                                                 className="text-dark p-2 text-decoration-none"
                                                 onClick={() => setQuantity(q => Math.min(product.stock, q + 1))}
                                                 disabled={quantity >= product.stock}
@@ -565,9 +553,9 @@ const ProductDetail = () => {
                                         )}
                                     </button>
 
-                                    {/* Heart Only Wishlist Button */}
+                                    {/* Heart Only Wishlist Button - FIXED to use context state */}
                                     <button
-                                        className={`wishlist-heart-btn ${product.is_in_wishlist ? 'active' : ''}`}
+                                        className={`wishlist-heart-btn ${isProductWishlisted ? 'active' : ''}`}
                                         onClick={handleWishlistToggle}
                                         disabled={isWishlistLoading}
                                         aria-label="Add to wishlist"
@@ -575,7 +563,7 @@ const ProductDetail = () => {
                                         {isWishlistLoading ? (
                                             <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
                                         ) : (
-                                            <i className={`bi bi-heart${product.is_in_wishlist ? '-fill' : ''}`}></i>
+                                            <i className={`bi bi-heart${isProductWishlisted ? '-fill' : ''}`}></i>
                                         )}
                                     </button>
                                 </div>
@@ -602,7 +590,7 @@ const ProductDetail = () => {
 
                 {/* Related Products Section */}
                 {relatedProducts.length > 0 && (
-                    <motion.div 
+                    <motion.div
                         className="related-products-section mt-5 pt-5"
                         initial={{ opacity: 0, y: 50 }}
                         whileInView={{ opacity: 1, y: 0 }}

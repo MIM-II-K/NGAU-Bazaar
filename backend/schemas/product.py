@@ -5,7 +5,6 @@ from typing import List, Optional, Dict
 from .category import CategoryResponse
 
 
-# Schema for creating/updating a product
 class ProductCreate(BaseModel):
     name: str
     price: Decimal
@@ -59,11 +58,11 @@ class ProductResponse(BaseModel):
     model_config = ConfigDict(from_attributes = True)
 
 class ProductListResponse(BaseModel):
-    items: List[ProductResponse]
+    data: List[ProductResponse]
     total: int
     page: int
     limit: int
-    total_pages: int
+    totalPages: int
 
 class FlashDealUpdate(BaseModel):
     is_flash_deal: Optional[bool] = None
