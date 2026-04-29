@@ -335,3 +335,29 @@
 .modern-add-btn > * {
   pointer-events: none;
 }
+
+.price-container {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.price-new, .price-regular {
+  font-weight: 700;
+  color: #2d5a27; /* Dark green for a fresh look */
+  font-size: 1.1rem;
+}
+
+.price-old {
+  text-decoration: line-through;
+  color: #9ca3af; /* Muted gray */
+  font-size: 0.9rem;
+}
+
+.unit-text {
+  font-size: 0.85rem;
+  color: #6b7280; /* Lighter gray */
+  font-weight: 400;
+  margin-left: 2px;
+}

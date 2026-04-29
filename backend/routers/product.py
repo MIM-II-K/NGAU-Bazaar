@@ -2,6 +2,7 @@ import re
 import os
 import json
 import shutil
+from time import time
 import uuid
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, Query, File, UploadFile, Form
@@ -33,24 +34,51 @@ supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 router = APIRouter(prefix="/products", tags=["products"])
 
 def generate_slug(name: str, db: Session, current_id: int = None) -> str:
+    """
+    Generate a clean, URL-friendly slug from product name.
+    Example: "Fresh Organic Tomatoes" -> "fresh-organic-tomatoes"
+    If duplicate exists, adds counter: "fresh-organic-tomatoes-2"
+    Never includes product ID in the slug (only counter for duplicates).
+    """
+    if not name:
+        return f"product-{current_id or 0}"
+    
+    # Step 1: Normalize the name
+    # Convert to lowercase, remove special characters, replace spaces with hyphens
     normalized = re.sub(r'[^\w\s-]', '', name.lower())
     base_slug = re.sub(r'[\s_-]+', '-', normalized).strip('-')
-
+    
+    # Step 2: Remove multiple consecutive hyphens
+    base_slug = re.sub(r'-+', '-', base_slug)
+    
+    # Step 3: Handle edge case - if slug is empty after cleaning
+    if not base_slug or base_slug == '-':
+        base_slug = f"product-{current_id or int(time.time())}"
+    
+    # Step 4: Check for duplicates and add counter if needed
     slug = base_slug
     counter = 1
-
+    
     while True:
-        exists = db.query(Product).filter(
-            Product.slug == slug,
-            Product.id != current_id
-        ).first()
-
-        if not exists:
+        # Build query to check if slug exists for a different product
+        query = db.query(Product).filter(Product.slug == slug)
+        if current_id:
+            query = query.filter(Product.id != current_id)
+        
+        existing = query.first()
+        
+        if not existing:
             break
-
+        
+        # Slug exists, append counter
         slug = f"{base_slug}-{counter}"
         counter += 1
-
+        
+        # Safety: prevent infinite loop (max 1000 attempts)
+        if counter > 1000:
+            slug = f"{base_slug}-{current_id or int(time.time())}"
+            break
+    
     return slug
 
 def get_filename_from_url(url: str) -> str:
@@ -287,9 +315,11 @@ async def add_product(
 
     tags_list = [t.strip() for t in tags.split(",") if t.strip()] if tags else []
 
+    slug =  generate_slug(name, db)
+
     db_product = Product(
         name=name,
-        slug=generate_slug(name, db),
+        slug=slug,
         price=price,
         unit=unit,
         category_id=category_id,

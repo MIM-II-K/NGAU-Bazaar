@@ -811,7 +811,157 @@
   cursor: not-allowed;
   background: #e9ecee;
 }
+/* =========================================
+   MODERN TAGS STYLING (from ProductCard)
+========================================= */
 
+.ngau-card-tags-modern {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 8px 0;
+}
+
+.ngau-card-tag {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  display: inline-block;
+}
+
+.ngau-card-tag:hover {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+  transform: translateY(-1px);
+}
+
+.ngau-card-tag.tag-more {
+  background: #e2e8f0;
+  color: #0f172a;
+  font-weight: 700;
+  border-style: dashed;
+}
+
+.ngau-card-tag.tag-more:hover {
+  background: #cbd5e1;
+  color: #0f172a;
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 480px) {
+  .ngau-card-tags-modern {
+    gap: 4px;
+    margin: 8px 0 6px 0;
+  }
+
+  .ngau-card-tag {
+    font-size: 0.6rem;
+    padding: 3px 8px;
+  }
+
+  .ngau-card-tag.tag-more {
+    font-size: 0.6rem;
+  }
+}
+
+/* Stock Information Styles */
+.ngau-stock-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 4px 0;
+  font-size: 0.7rem;
+}
+
+.stock-text-success {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.stock-text-warning {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+/* Modern Tags Styles */
+.ngau-card-tags-modern {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.ngau-card-tag {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  display: inline-block;
+  cursor: default;
+}
+
+.ngau-card-tag:hover {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+  transform: translateY(-1px);
+}
+
+.ngau-card-tag.tag-more {
+  background: #e2e8f0;
+  color: #0f172a;
+  font-weight: 700;
+  border-style: dashed;
+}
+
+.ngau-card-tag.tag-more:hover {
+  background: #cbd5e1;
+  color: #0f172a;
+}
+
+/* Make the entire card clickable */
+.ngau-product-card {
+  cursor: pointer;
+}
+
+/* Ensure overlay buttons still work */
+.ngau-card-overlay button,
+.ngau-add-btn,
+.ngau-card-tag {
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .ngau-card-tags-modern {
+    gap: 4px;
+    margin: 6px 0;
+  }
+
+  .ngau-card-tag {
+    font-size: 0.6rem;
+    padding: 3px 8px;
+  }
+
+  .ngau-stock-info {
+    font-size: 0.65rem;
+    margin: 4px 0;
+  }
+}
 /* Skeleton */
 .ngau-skeleton-card {
   background: white;

@@ -151,10 +151,16 @@ const ProductCard = ({ product }) => {
                             {product.is_flash_deal ? (
                                 <>
                                     <span className="price-old">Rs.{product.price}</span>
-                                    <span className="price-new">Rs.{product.discount_price}</span>
+                                    <span className="price-new">
+                                        Rs.{product.discount_price}
+                                        <span className="unit-text"> / {product.unit}</span>
+                                    </span>
                                 </>
                             ) : (
-                                <span className="price-regular">Rs.{product.price}</span>
+                                <span className="price-regular">
+                                    Rs.{product.price}
+                                    <span className="unit-text"> / {product.unit}</span>
+                                </span>
                             )}
                         </div>
 

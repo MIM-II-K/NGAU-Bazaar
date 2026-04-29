@@ -62,13 +62,57 @@ const ProductDetail = () => {
                 return;
             }
 
-            setProduct({ ...data, stock: data.quantity });
+            // Set product with proper stock field
+            setProduct({ ...data, stock: data.quantity || data.stock || 0 });
             setActiveImage(0);
 
-            if (data.category_id || data.category?.id) {
-                const categoryId = data.category_id || data.category.id;
-                const relatedData = await productApi.getAll({ category: categoryId });
-                setRelatedProducts(relatedData.filter(item => item.slug !== slug).slice(0, 4));
+            // Fetch related products using the product ID
+            if (data.id) {
+                try {
+                    // Use the dedicated related products endpoint
+                    const relatedData = await productApi.getRelated(data.id);
+
+                    // Handle the response - getRelated returns an array directly
+                    let relatedArray = [];
+                    if (Array.isArray(relatedData)) {
+                        relatedArray = relatedData;
+                    } else if (relatedData && relatedData.data && Array.isArray(relatedData.data)) {
+                        relatedArray = relatedData.data;
+                    } else if (relatedData && typeof relatedData === 'object') {
+                        // If it's a single product object
+                        relatedArray = [relatedData];
+                    }
+
+                    // Filter out current product and limit to 4
+                    const filtered = relatedArray
+                        .filter(item => item.slug !== slug)
+                        .slice(0, 4);
+
+                    setRelatedProducts(filtered);
+                } catch (relatedError) {
+                    console.error("Error fetching related products:", relatedError);
+
+                    // Fallback: Fetch by category
+                    if (data.category_id || data.category?.id) {
+                        const categoryId = data.category_id || data.category.id;
+                        const categoryResponse = await productApi.getAll({
+                            category: categoryId,
+                            limit: 10
+                        });
+
+                        // Extract the data array from the response
+                        const categoryProducts = categoryResponse.data || categoryResponse;
+
+                        if (Array.isArray(categoryProducts)) {
+                            const filtered = categoryProducts
+                                .filter(item => item.slug !== slug)
+                                .slice(0, 4);
+                            setRelatedProducts(filtered);
+                        } else {
+                            setRelatedProducts([]);
+                        }
+                    }
+                }
             }
 
         } catch (error) {
@@ -446,7 +490,12 @@ const ProductDetail = () => {
                                         <h2 className="text-primary fw-bold display-6 mb-0">
                                             Rs.{product.price}
                                         </h2>
-                                        <span className="text-muted fs-5 fw-normal">/ {product.unit || 'pc'}</span>
+                                        <span
+                                            className="text-muted fs-5 fw-normal"
+                                            style={{ textTransform: 'lowercase' }} // This forces the browser to render it lowercase
+                                        >
+                                            / {(product.unit?.trim() || 'pc').toLowerCase()}
+                                        </span>
                                     </div>
                                 )}
                             </div>

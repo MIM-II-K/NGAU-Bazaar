@@ -62,10 +62,24 @@ const Home = () => {
     const fetchHomeData = async () => {
       try {
         setLoading(true);
-        const products = await productApi.getAll({ page: 1, limit: 8, sort: 'newest' });
-        setFeaturedProducts(Array.isArray(products) ? products : []);
+        const response = await productApi.getAll({ page: 1, limit: 8, sort: 'newest' });
+        
+        // ✅ FIX: Handle the response correctly
+        // The API returns { data: [], total, page, limit, totalPages }
+        let products = [];
+        if (response && response.data && Array.isArray(response.data)) {
+          products = response.data;
+        } else if (Array.isArray(response)) {
+          products = response;
+        } else {
+          console.warn('Unexpected response format:', response);
+          products = [];
+        }
+        
+        setFeaturedProducts(products);
       } catch (error) {
         console.error('Error loading home data:', error);
+        setFeaturedProducts([]);
       } finally {
         setLoading(false);
       }
@@ -164,7 +178,9 @@ const Home = () => {
                     traditional delicacies, and daily essentials delivered to
                     your doorstep.
                   </p>
-                  <div classname="shop-now-wrapper">
+                  
+                  {/* ✅ FIXED: Changed classname to className */}
+                  <div className="shop-now-wrapper">
                     <button
                       onClick={() => navigate('/shop')}
                       className="btn-shop-now"
@@ -173,6 +189,7 @@ const Home = () => {
                       Start Shopping →
                     </button>
                   </div>
+                  
                   <div className="hero-trust-row">
                     <span>Lightning Delivery</span>
                     <span>100% Local Sourced</span>
@@ -223,6 +240,7 @@ const Home = () => {
           </Container>
         </section>
       </section>
+      
       {/* ========== REST OF YOUR SECTIONS ========== */}
       {/* Stats Section - UPDATED METRICS */}
       <section className="stats-enhanced-section" ref={statsRef}>
@@ -321,6 +339,10 @@ const Home = () => {
               >
                 <RefreshCw size={40} className="text-primary" />
               </motion.div>
+            </div>
+          ) : featuredProducts.length === 0 ? (
+            <div className="text-center py-5">
+              <p className="text-muted">No products available at the moment.</p>
             </div>
           ) : (
             <Row className="g-4">

@@ -68,11 +68,19 @@ const ProductCard = ({ product, onQuickView, onAddToCart, wishlistIds, onToggleW
     : fallbackImage;
 
   const isWishlisted = wishlistIds.has(product.id);
-  const isOutOfStock = product.stock <= 0;
-  const isLowStock = product.stock > 0 && product.stock <= 10;
+  // IMPORTANT: Use product.stock (not quantity) from API
+  const stock = product.stock || product.quantity || 0;
+  const isOutOfStock = stock <= 0;
+  const isLowStock = stock > 0 && stock <= 10;
   const discountPct = product.is_flash_deal && product.discount_price
     ? Math.round(((product.price - product.discount_price) / product.price) * 100)
     : 0;
+
+  const handleProductClick = () => {
+    // Ensure slug exists, fallback to id if needed
+    const identifier = product.slug || product.id;
+    navigate(`/products/${identifier}`);
+  };
 
   const handleAddToCart = async (e) => {
     e.stopPropagation();
@@ -89,6 +97,18 @@ const ProductCard = ({ product, onQuickView, onAddToCart, wishlistIds, onToggleW
     setWishlist(false);
   };
 
+  // Process tags - handle both array and string formats
+  const getTagsArray = () => {
+    if (!product.tags) return [];
+    if (Array.isArray(product.tags)) return product.tags;
+    if (typeof product.tags === 'string') return product.tags.split(',').map(t => t.trim());
+    return [];
+  };
+
+  const tags = getTagsArray();
+  const visibleTags = tags.slice(0, 2);
+  const extraCount = tags.length - visibleTags.length;
+
   return (
     <motion.div
       className={`ngau-product-card ${isOutOfStock ? 'out-of-stock' : ''}`}
@@ -96,12 +116,11 @@ const ProductCard = ({ product, onQuickView, onAddToCart, wishlistIds, onToggleW
       layout
       whileHover={{ y: -6, boxShadow: '0 20px 60px rgba(52,107,60,0.18)' }}
       transition={{ duration: 0.25 }}
+      onClick={handleProductClick} // Add click handler to entire card
+      style={{ cursor: 'pointer' }}
     >
-      {/* Image Container */}
-      <div
-        className="ngau-card-image-wrap"
-        onClick={() => navigate(`/products/${product.slug}`)}
-      >
+      {/* Image Container - Remove onClick from here since parent handles it */}
+      <div className="ngau-card-image-wrap">
         <img
           src={imageUrl}
           alt={product.name}
@@ -110,8 +129,8 @@ const ProductCard = ({ product, onQuickView, onAddToCart, wishlistIds, onToggleW
           loading="lazy"
         />
 
-        {/* Overlay actions */}
-        <div className="ngau-card-overlay">
+        {/* Overlay actions - Stop propagation so clicks don't navigate */}
+        <div className="ngau-card-overlay" onClick={(e) => e.stopPropagation()}>
           <motion.button
             className="ngau-overlay-btn"
             whileHover={{ scale: 1.12 }}
@@ -143,7 +162,7 @@ const ProductCard = ({ product, onQuickView, onAddToCart, wishlistIds, onToggleW
           {isOutOfStock && <span className="ngau-badge oos">Out of Stock</span>}
           {isLowStock && !isOutOfStock && (
             <span className="ngau-badge low">
-              <i className="bi bi-hourglass-split" /> {product.stock} left
+              <i className="bi bi-hourglass-split" /> Only {stock} left
             </span>
           )}
         </div>
@@ -155,19 +174,30 @@ const ProductCard = ({ product, onQuickView, onAddToCart, wishlistIds, onToggleW
           <span className="ngau-card-category">{product.category.name}</span>
         )}
 
-        <h3
-          className="ngau-card-title"
-          onClick={() => navigate(`/products/${product.slug}`)}
-        >
+        {/* Title - No onClick needed as parent handles it, but keep for accessibility */}
+        <h3 className="ngau-card-title">
           {product.name}
         </h3>
 
-        {/* Tags */}
-        {product.tags?.length > 0 && (
-          <div className="ngau-card-tags">
-            {product.tags.slice(0, 3).map((tag, i) => (
-              <span key={i} className="ngau-tag">#{tag}</span>
+        {/* Stock indicator (optional - shows stock status clearly) */}
+        {!isOutOfStock && (
+          <div className="ngau-stock-info">
+            <i className={`bi ${isLowStock ? 'bi-exclamation-triangle-fill text-warning' : 'bi-check-circle-fill text-success'}`} />
+            <span className={isLowStock ? 'stock-text-warning' : 'stock-text-success'}>
+              {isLowStock ? `Only ${stock} left!` : `${stock} in stock`}
+            </span>
+          </div>
+        )}
+
+        {/* Tags Section - Modern styling */}
+        {tags.length > 0 && (
+          <div className="ngau-card-tags-modern">
+            {visibleTags.map((tag, i) => (
+              <span key={i} className="ngau-card-tag" onClick={(e) => e.stopPropagation()}>#{tag}</span>
             ))}
+            {extraCount > 0 && (
+              <span className="ngau-card-tag tag-more" onClick={(e) => e.stopPropagation()}>+{extraCount}</span>
+            )}
           </div>
         )}
 
@@ -184,7 +214,7 @@ const ProductCard = ({ product, onQuickView, onAddToCart, wishlistIds, onToggleW
           <span className="ngau-price-unit">/ {product.unit || 'pc'}</span>
         </div>
 
-        {/* Add to Cart */}
+        {/* Add to Cart Button - Stop propagation */}
         <motion.button
           className={`ngau-add-btn ${isOutOfStock ? 'disabled' : ''}`}
           onClick={handleAddToCart}
@@ -246,7 +276,7 @@ const PaginationControls = ({ currentPage, totalPages, onPageChange, isLoading }
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1 || isLoading}
         />
-        
+
         {getPageNumbers().map((pageNum, idx) => (
           pageNum === '...' ? (
             <BootstrapPagination.Ellipsis key={`ellipsis-${idx}`} disabled />
@@ -261,7 +291,7 @@ const PaginationControls = ({ currentPage, totalPages, onPageChange, isLoading }
             </BootstrapPagination.Item>
           )
         ))}
-        
+
         <BootstrapPagination.Next
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages || isLoading}
@@ -382,7 +412,7 @@ const Products = () => {
     };
     fetchCategories();
   }, []);
-  
+
   // Initial fetch + when filters change
   useEffect(() => {
     setCurrentPage(1);
@@ -400,8 +430,8 @@ const Products = () => {
   // Live search suggestions debounce
   useEffect(() => {
     const timer = setTimeout(async () => {
-      if (liveSearch.length < 2) { 
-        setSuggestions([]); 
+      if (liveSearch.length < 2) {
+        setSuggestions([]);
         return;
       }
 
@@ -410,8 +440,8 @@ const Products = () => {
         const items = Array.isArray(res) ? res : (res.data || []);
         setSuggestions(items);
         setShowSugg(true);
-      } catch { 
-        setSuggestions([]); 
+      } catch {
+        setSuggestions([]);
       }
     }, 280);
 
@@ -532,11 +562,11 @@ const Products = () => {
   };
 
   const clearFilters = () => {
-    setSearch(''); 
-    setLiveSearch(''); 
+    setSearch('');
+    setLiveSearch('');
     setCategory('');
-    setSort(''); 
-    setMinPrice(''); 
+    setSort('');
+    setMinPrice('');
     setMaxPrice('');
     setCurrentPage(1);
   };
@@ -565,12 +595,8 @@ const Products = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: 'easeOut' }}
             >
-              <div className="ngau-hero-eyebrow">
-                <span className="ngau-leaf-dot">🌿</span>
-                Fresh from local farms
-              </div>
               <h1 className="ngau-hero-title">
-                Farm-to-Table <span className="ngau-hero-accent">Harvest</span>
+                Farm-to-Kitchen <span className="ngau-hero-accent">Harvest</span>
               </h1>
               <p className="ngau-hero-sub">
                 {total > 0 ? `${total} products` : 'Fresh products'} — directly from farmers, zero middlemen
@@ -688,7 +714,7 @@ const Products = () => {
                 {/* Sort */}
                 <div className="ngau-filter-group">
                   <label className="ngau-filter-label">Sort By</label>
-                  <select 
+                  <select
                     className="ngau-sort-select"
                     value={sort}
                     onChange={(e) => {
@@ -702,25 +728,6 @@ const Products = () => {
                       </option>
                     ))}
                   </select>
-                </div>
-
-                {/* Categories */}
-                <div className="ngau-filter-group">
-                  <label className="ngau-filter-label">Categories</label>
-                  <div className="ngau-cat-grid">
-                    {categories.map(cat => (
-                      <button
-                        key={cat.id || 'all'}
-                        className={`ngau-cat-grid-item ${category === cat.id ? 'active' : ''}`}
-                        onClick={() => {
-                          setCategory(cat.id === category ? '' : cat.id);
-                          setCurrentPage(1);
-                        }}
-                      >
-                        {cat.name}
-                      </button>
-                    ))}
-                  </div>
                 </div>
 
                 {/* Price Range */}
@@ -828,8 +835,8 @@ const Products = () => {
                     {(minPrice || maxPrice) && (
                       <span className="ngau-active-chip">
                         Rs.{minPrice || '0'} – Rs.{maxPrice || '∞'}
-                        <button onClick={() => { 
-                          setMinPrice(''); 
+                        <button onClick={() => {
+                          setMinPrice('');
                           setMaxPrice('');
                           setCurrentPage(1);
                         }}><i className="bi bi-x" /></button>
@@ -987,24 +994,6 @@ const Products = () => {
                           setCurrentPage(1);
                         }} />
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="ngau-filter-group">
-                    <label className="ngau-filter-label">Categories</label>
-                    <div className="ngau-cat-grid">
-                      {categories.map(cat => (
-                        <button
-                          key={cat.id || 'all'}
-                          className={`ngau-cat-grid-item ${category === cat.id ? 'active' : ''}`}
-                          onClick={() => {
-                            setCategory(cat.id === category ? '' : cat.id);
-                            setCurrentPage(1);
-                          }}
-                        >
-                          {cat.name}
-                        </button>
-                      ))}
                     </div>
                   </div>
                 </div>

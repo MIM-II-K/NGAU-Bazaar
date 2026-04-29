@@ -72,7 +72,7 @@ const ProductQuickView = ({ product, onClose, onAddToCart, isWishlisted, onToggl
 
   const handleViewFull = () => {
     onClose();
-    navigate(`/product/${product.slug}`);
+    navigate(`/products/${product.slug}`);
   };
 
   // Modal content
