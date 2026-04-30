@@ -578,88 +578,101 @@ const Products = () => {
   // ============================================================
   return (
     <>
-      <Helmet>
-        <title>Fresh Produce | Ngau Bazaar</title>
-        <meta name="description" content="Browse fresh, organic, local harvest produce directly from farmers at Ngau Bazaar." />
-      </Helmet>
-
       <div className="ngau-products-root">
 
         {/* ── HERO STRIP ── */}
         <div className="ngau-products-hero">
-          <div className="ngau-hero-bg-pattern" />
+          <div className="ngau-hero-overlay" />
           <Container fluid="xl">
             <motion.div
               className="ngau-hero-content"
-              initial={{ opacity: 0, y: 24 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: 'easeOut' }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             >
+              <div className="ngau-hero-badge">
+                <i className="bi bi-patch-check-fill" /> 100% Farm Fresh
+              </div>
+
               <h1 className="ngau-hero-title">
-                Farm-to-Kitchen <span className="ngau-hero-accent">Harvest</span>
+                The Purest Harvest <br />
+                <span className="ngau-hero-accent">From Soil to Soul</span>
               </h1>
+
               <p className="ngau-hero-sub">
-                {total > 0 ? `${total} products` : 'Fresh products'} — directly from farmers, zero middlemen
+                {total > 0 ? (
+                  <span>Discover <strong>{total}</strong> seasonal delights</span>
+                ) : (
+                  "Premium organic produce"
+                )} — sourced locally, delivered ethically.
               </p>
 
-              {/* ── SEARCH BAR ── */}
-              <form className="ngau-search-form" onSubmit={handleSearchSubmit}>
-                <div className="ngau-search-wrap" ref={searchRef}>
-                  <i className="bi bi-search ngau-search-icon" />
-                  <input
-                    className="ngau-search-input"
-                    type="text"
-                    placeholder="Search tomatoes, turmeric, organic milk…"
-                    value={liveSearch}
-                    onChange={e => setLiveSearch(e.target.value)}
-                    onFocus={() => suggestions.length > 0 && setShowSugg(true)}
-                    onBlur={() => setTimeout(() => setShowSugg(false), 180)}
-                  />
-                  {liveSearch && (
-                    <button
-                      type="button"
-                      className="ngau-search-clear"
-                      onClick={() => { setLiveSearch(''); setSearch(''); setSuggestions([]); }}
-                    >
-                      <i className="bi bi-x-lg" />
-                    </button>
-                  )}
-                  <button type="submit" className="ngau-search-btn">Search</button>
+              <div className="ngau-search-container">
+                <form className="ngau-search-form" onSubmit={handleSearchSubmit}>
+                  <div className="ngau-search-wrap" ref={searchRef}>
+                    <i className="bi bi-search ngau-search-icon" />
+                    <input
+                      className="ngau-search-input"
+                      type="text"
+                      placeholder="Search tomatoes, turmeric, organic milk…"
+                      value={liveSearch}
+                      onChange={e => setLiveSearch(e.target.value)}
+                      onFocus={() => suggestions.length > 0 && setShowSugg(true)}
+                      onBlur={() => setTimeout(() => setShowSugg(false), 200)}
+                    />
 
-                  {/* Suggestions Dropdown */}
-                  <AnimatePresence>
-                    {showSugg && suggestions.length > 0 && (
-                      <motion.div
-                        className="ngau-suggestions"
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.15 }}
+                    {liveSearch && (
+                      <button
+                        type="button"
+                        className="ngau-search-clear-btn"
+                        onClick={() => { setLiveSearch(''); setSearch(''); setSuggestions([]); }}
                       >
-                        {suggestions.map(p => (
-                          <div
-                            key={p.id}
-                            className="ngau-suggestion-item"
-                            onMouseDown={() => handleSuggestionClick(p)}
-                          >
-                            <img
-                              src={p.images?.[0]?.url ? getProductImageUrl(p.images[0].url, API_BASE_URL) : fallbackImage}
-                              alt={p.name}
-                              className="ngau-sugg-img"
-                              onError={e => e.target.src = fallbackImage}
-                            />
-                            <div className="ngau-sugg-info">
-                              <span className="ngau-sugg-name">{p.name}</span>
-                              <span className="ngau-sugg-price">Rs.{p.discount_price || p.price} / {p.unit}</span>
-                            </div>
-                            <i className="bi bi-arrow-right ngau-sugg-arrow" />
-                          </div>
-                        ))}
-                      </motion.div>
+                        <i className="bi bi-x-circle-fill" />
+                      </button>
                     )}
-                  </AnimatePresence>
-                </div>
-              </form>
+
+                    <button type="submit" className="ngau-search-btn">
+                      Search
+                    </button>
+
+                    <AnimatePresence>
+                      {showSugg && suggestions.length > 0 && (
+                        <motion.div
+                          className="ngau-suggestions-card"
+                          initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.98, y: 10 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <div className="ngau-suggestions-header">Top Results</div>
+                          <div className="ngau-suggestions-list">
+                            {suggestions.map(p => (
+                              <div
+                                key={p.id}
+                                className="ngau-suggestion-row"
+                                onMouseDown={() => handleSuggestionClick(p)}
+                              >
+                                <div className="ngau-sugg-img-wrapper">
+                                  <img
+                                    src={p.images?.[0]?.url ? getProductImageUrl(p.images[0].url, API_BASE_URL) : fallbackImage}
+                                    alt={p.name}
+                                    onError={e => e.target.src = fallbackImage}
+                                  />
+                                </div>
+                                <div className="ngau-sugg-details">
+                                  <span className="ngau-sugg-name">{p.name}</span>
+                                  <span className="ngau-sugg-meta">Rs. {p.discount_price || p.price} • {p.unit}</span>
+                                </div>
+                                <i className="bi bi-chevron-right" />
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </form>
+              </div>
             </motion.div>
           </Container>
         </div>

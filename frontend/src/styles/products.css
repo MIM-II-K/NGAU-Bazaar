@@ -45,228 +45,202 @@
 /* ---------- Hero Section ---------- */
 .ngau-products-hero {
   position: relative;
-  background: linear-gradient(135deg, #1e3a1e 0%, #2b5e2b 45%, #3a7a3a 100%);
-  padding: 3rem 0 4rem;
-  margin-bottom: 0;
-  overflow: hidden;
+  min-height: 500px;
+  padding: 80px 0;
+  display: flex;
+  align-items: center;
+  background-image: url('https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?auto=format&fit=crop&q=80&w=2000'); /* Farm Background */
+  background-size: cover;
+  background-position: center;
+  z-index: 100;
 }
 
-.ngau-hero-bg-pattern {
+/* Dark gradient overlay for text readability */
+.ngau-hero-overlay {
   position: absolute;
   inset: 0;
-  opacity: 0.08;
-  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5L40 20H20L30 5z' fill='%23ffffff' /%3E%3Cpath d='M30 55L20 40H40L30 55z' fill='%23ffffff' /%3E%3Cpath d='M5 30L20 20V40L5 30z' fill='%23ffffff' /%3E%3Cpath d='M55 30L40 20V40L55 30z' fill='%23ffffff' /%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 28px;
-  pointer-events: none;
+  background: linear-gradient(to right, rgba(0,0,0,0.7), rgba(0,0,0,0.3), rgba(0,0,0,0.7));
+  z-index: 1;
 }
 
 .ngau-hero-content {
   position: relative;
   z-index: 2;
   text-align: center;
-  max-width: 780px;
+  max-width: 800px;
   margin: 0 auto;
-  padding: 0 1.5rem;
 }
 
-.ngau-hero-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(8px);
-  padding: 0.45rem 1.2rem;
-  border-radius: 100px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #f0f7e6;
+.ngau-hero-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  padding: 6px 16px;
+  border-radius: 50px;
+  color: #fff;
+  font-size: 0.9rem;
   margin-bottom: 1.5rem;
-  letter-spacing: 0.3px;
-}
-
-.ngau-leaf-dot {
-  font-size: 1rem;
+  border: 1px solid rgba(255,255,255,0.3);
 }
 
 .ngau-hero-title {
-  font-size: 3.2rem;
-  font-weight: 700;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 800;
   color: white;
-  margin-bottom: 1rem;
-  line-height: 1.2;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
 }
 
 .ngau-hero-accent {
-  background: linear-gradient(120deg, #f9e45b, #ffc857);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  text-shadow: none;
+  color: #ffd93d; /* Vibrant sun-yellow */
+  text-shadow: 0 0 20px rgba(255, 217, 61, 0.3);
 }
 
 .ngau-hero-sub {
-  font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.85);
-  margin-bottom: 2rem;
+  font-size: 1.25rem;
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 3rem;
 }
 
-/* ---------- Search Bar ---------- */
-.ngau-search-form {
-  max-width: 620px;
+/* ---------- Advanced Search Bar ---------- */
+.ngau-search-container {
+  max-width: 650px;
   margin: 0 auto;
-  position: relative;
+  position: relative; /* Anchor for suggestions */
 }
 
 .ngau-search-wrap {
-  position: relative;
   display: flex;
   align-items: center;
   background: white;
+  padding: 6px;
   border-radius: 100px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  transition: box-shadow var(--transition-base);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+  position: relative;
+  width: 100%;
 }
 
-.ngau-search-wrap:focus-within {
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12), 0 0 0 3px rgba(255, 200, 87, 0.4);
+.ngau-search-input {
+  flex: 1;
+  border: none;
+  padding: 14px 110px 14px 55px;
+  font-size: 1.1rem;
+  border-radius: 100px;
+  outline: none;
+  width: 100%;
+}
+.ngau-search-clear-btn {
+  position: absolute;
+  right: 125px; /* Positions it before the Search button */
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 1.3rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+  padding: 0;
+  z-index: 5;
+}
+
+.ngau-search-clear-btn:hover {
+  color: #666;
 }
 
 .ngau-search-icon {
   position: absolute;
-  left: 1.25rem;
-  color: var(--text-light);
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
   font-size: 1.2rem;
-  pointer-events: none;
-}
-
-.ngau-search-input {
-  width: 100%;
-  padding: 1rem 5rem 1rem 3.2rem;
-  border: none;
-  background: transparent;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--text-dark);
-  border-radius: 100px;
-  outline: none;
-}
-
-.ngau-search-input::placeholder {
-  color: #b9c8b3;
-  font-weight: 400;
-}
-
-.ngau-search-clear {
-  position: absolute;
-  right: 6rem;
-  background: none;
-  border: none;
-  color: var(--text-light);
-  cursor: pointer;
-  padding: 0.4rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s;
-}
-
-.ngau-search-clear:hover {
-  background: var(--bg-gray);
-  color: var(--text-dark);
 }
 
 .ngau-search-btn {
   position: absolute;
-  right: 0.5rem;
-  background: var(--primary);
-  border: none;
-  padding: 0.55rem 1.6rem;
-  border-radius: 50px;
+  right: 6px;
+  background: #2b5e2b;
   color: white;
+  border: none;
+  padding: 0 28px;
+  height: calc(100% - 12px);
+  border-radius: 100px;
   font-weight: 600;
-  font-size: 0.9rem;
-  transition: all 0.2s;
-  cursor: pointer;
+  transition: 0.3s;
+  z-index: 4;
 }
 
 .ngau-search-btn:hover {
-  background: var(--primary-dark);
-  transform: scale(0.96);
+  background: #1e3a1e;
+  transform: translateX(2px);
 }
 
-/* Suggestions Dropdown */
-.ngau-suggestions {
+/* ---------- Fixed Suggestions Dropdown ---------- */
+.ngau-suggestions-card {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 12px);
   left: 0;
   right: 0;
   background: white;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
-  z-index: 100;
-  max-height: 380px;
-  overflow-y: auto;
-  list-style: none;
-  padding: 0.5rem;
-  margin: 0;
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  z-index: 1000; /* Ensure it stays above categories */
+  overflow: hidden;
+  text-align: left;
 }
 
-.ngau-suggestion-item {
+.ngau-suggestions-header {
+  padding: 14px 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #999;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.ngau-suggestion-row {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-sm);
+  padding: 14px 20px;
+  gap: 15px;
   cursor: pointer;
-  transition: background 0.2s;
+  border-bottom: 1px solid #f5f5f5;
+  transition: 0.2s;
 }
 
-.ngau-suggestion-item:hover {
-  background: var(--bg-soft);
+.ngau-suggestion-row:hover {
+  background: #f8faf8;
 }
 
-.ngau-sugg-img {
-  width: 48px;
-  height: 48px;
+.ngau-sugg-img-wrapper img {
+  width: 45px;
+  height: 45px;
+  border-radius: 10px;
   object-fit: cover;
-  border-radius: 12px;
-  background: var(--bg-gray);
 }
 
-.ngau-sugg-info {
+.ngau-sugg-details {
   flex: 1;
-  display: flex;
-  flex-direction: column;
 }
 
 .ngau-sugg-name {
+  display: block;
   font-weight: 600;
-  color: var(--text-dark);
+  color: #222;
 }
 
-.ngau-sugg-price {
-  font-size: 0.8rem;
-  color: var(--primary);
+.ngau-sugg-meta {
+  font-size: 0.85rem;
+  color: #2b5e2b;
   font-weight: 500;
-}
-
-.ngau-sugg-arrow {
-  color: var(--text-light);
-  opacity: 0;
-  transform: translateX(-6px);
-  transition: all 0.2s;
-}
-
-.ngau-suggestion-item:hover .ngau-sugg-arrow {
-  opacity: 1;
-  transform: translateX(0);
 }
 
 /* ---------- Category Pills ---------- */
 .ngau-category-bar {
+  position: sticky;
   background: white;
   border-bottom: 1px solid var(--border-light);
   padding: 1rem 0;
