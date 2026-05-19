@@ -1,43 +1,45 @@
 import React, { useState } from 'react';
 import { Card, Badge, Button, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { addToCart } from '../utils/cartApi';
 import { useCart } from '../contexts/CartContext';
-import { getProductImageUrl } from '../utils/urlHelper';
-import { productApi } from '../utils/productApi';
+import { useWishlist } from '../contexts/WishlistContext'; // <-- Import Context
 import { useAuth } from '../contexts/AuthContext';
+import { getProductImageUrl } from '../utils/urlHelper';
 import '../styles/product-card.css';
 
 const API_BASE_URL = 'https://ngau-bazaar.onrender.com';
 const fallbackImage = "https://via.placeholder.com/300x200?text=No+Image";
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, onWishlistToggle }) => { // <-- Accept optional callback
     const navigate = useNavigate();
     const { refreshCart } = useCart();
     const { refreshUserStats } = useAuth();
+    const { isInWishlist, toggleWishlist } = useWishlist(); // <-- Consume hook
 
     const [loading, setLoading] = useState(false);
-    const [isWishlisted, setIsWishlisted] = useState(product.is_in_wishlist);
     const [isHoveringWishlist, setIsHoveringWishlist] = useState(false);
+
+    // Read the truth directly from the global context
+    const isWishlisted = isInWishlist(product.id);
 
     const handleWishlistToggle = async (e) => {
         e.stopPropagation();
-        const token = localStorage.getItem('token');
-        if (!token) {
-            alert("Please login to manage wishlist");
-            return;
-        }
-
-        const prevState = isWishlisted;
-        setIsWishlisted(!prevState);
-
+        
         try {
-            await productApi.toggleWishlist(product.id);
+            // central logic handles optimization, error catching, and login checking
+            await toggleWishlist(product.id);
+            
             if (refreshUserStats) await refreshUserStats();
+            
+            // If explicit handling is needed (like un-mounting inside the Wishlist Page)
+            if (onWishlistToggle) {
+                onWishlistToggle(product.id);
+            }
         } catch (error) {
-            setIsWishlisted(prevState);
-            console.error("Wishlist toggle error:", error);
+            console.error("Wishlist toggle error:", error.message);
+            alert(error.message || "Something went wrong managing your wishlist.");
         }
     };
 
@@ -71,8 +73,6 @@ const ProductCard = ({ product }) => {
         >
             <Card className="modern-product-card h-100 border-0 shadow-sm" onClick={handleCardClick}>
                 <div className="card-image-wrapper">
-                    {/* Badge Stack */}
-                    {/* Badge Stack with Discount Percentage */}
                     <div className="badge-stack">
                         {product.is_flash_deal && product.price > 0 && (
                             <Badge bg="danger" className="discount-badge">
@@ -103,7 +103,6 @@ const ProductCard = ({ product }) => {
                         onError={(e) => { e.currentTarget.src = fallbackImage; }}
                     />
 
-                    {/* Hover Quick View Overlay */}
                     <div className="card-hover-overlay"
                         style={{
                             opacity: isHoveringWishlist ? 0 : undefined,
@@ -120,12 +119,8 @@ const ProductCard = ({ product }) => {
                     <div className="category-label text-uppercase">{product.category?.name || 'Organic'}</div>
                     <Card.Title className="modern-card-title">{product.name}</Card.Title>
 
-                    {/* Tags Section */}
                     {product.tags && (() => {
-                        const tags = Array.isArray(product.tags)
-                            ? product.tags
-                            : product.tags.split(',');
-
+                        const tags = Array.isArray(product.tags) ? product.tags : product.tags.split(',');
                         const visibleTags = tags.slice(0, 2);
                         const extraCount = tags.length - visibleTags.length;
 
@@ -136,7 +131,6 @@ const ProductCard = ({ product }) => {
                                         #{tag.trim()}
                                     </span>
                                 ))}
-
                                 {extraCount > 0 && (
                                     <span className="card-tag tag-more">
                                         +{extraCount} more

@@ -1,25 +1,27 @@
 import { useState, useEffect } from 'react';
 import { Container, Row, Col, Button, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { productApi } from '../utils/productApi'; // Ensure this has getWishlist()
+import { useWishlist } from '../contexts/WishlistContext'; // <-- Import Context
+import { productApi } from '../utils/productApi';
 import ProductCard from '../components/ProductCard';
 import AOS from 'aos';
 
 const WishlistPage = () => {
     const [wishlistItems, setWishlistItems] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [fetching, setFetching] = useState(true);
     const navigate = useNavigate();
+    const { refresh } = useWishlist(); // <-- Get context refresh action
 
     const fetchWishlist = async () => {
         try {
-            setLoading(true);
-            const data = await productApi.getWishlist(); // Calls GET /wishlist/
+            setFetching(true);
+            const data = await productApi.getWishlist();
             setWishlistItems(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error("Error fetching wishlist:", error);
             setWishlistItems([]);
         } finally {
-            setLoading(false);
+            setFetching(false);
         }
     };
 
@@ -28,12 +30,14 @@ const WishlistPage = () => {
         fetchWishlist();
     }, []);
 
-    // Function to remove item from list locally after toggle
-    const handleRemoveFromList = (productId) => {
+    // Cleanly un-mount items on list page when un-hearted
+    const handleRemoveFromList = async (productId) => {
         setWishlistItems(prev => prev.filter(item => item.id !== productId));
+        // Force sync back to Global context context tracking
+        await refresh(); 
     };
 
-    if (loading) return (
+    if (fetching) return (
         <div className="min-vh-100 d-flex align-items-center justify-content-center">
             <Spinner animation="border" variant="primary" />
         </div>
@@ -55,10 +59,9 @@ const WishlistPage = () => {
                 <Row className="g-4">
                     {wishlistItems.map((item) => (
                         <Col key={item.id} xs={12} sm={6} md={4} lg={3} data-aos="fade-up">
-                            {/* Pass a callback so the card disappears when un-hearted */}
                             <ProductCard 
                                 product={item} 
-                                onWishlistToggle={() => handleRemoveFromList(item.id)} 
+                                onWishlistToggle={handleRemoveFromList} 
                             />
                         </Col>
                     ))}
