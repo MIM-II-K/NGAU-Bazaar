@@ -15,51 +15,61 @@ const SmartBasket = () => {
 
     const generateBasket = async () => {
         setLoading(true);
-        setResult(null); // Force reset to trigger re-animations and clear old state
+        setResult(null);
+
         try {
             const res = await apiClient.get('/smart-basket/generate', {
-                params: { 
-                    family_size: parseInt(params.familySize), 
-                    budget: parseInt(params.budget) 
+                params: {
+                    family_size: parseInt(params.familySize),
+                    budget: parseInt(params.budget)
                 }
             });
 
-            // If backend returns success but 0 items (budget too low)
-            if (res.data && res.data.items.length === 0) {
-                alert("We couldn't find enough items within this budget. Please try a higher amount.");
-            } else {
-                setResult(res.data);
+            console.log("SMART BASKET RESPONSE:", res);
+
+            // res already IS response.data
+            if (!res?.items || res.items.length === 0) {
+                alert("No suitable products found for this budget.");
+                return;
             }
+
+            setResult(res);
+
         } catch (err) {
-            console.error("Generation error:", err.response?.data || err.message);
-            alert("Could not generate basket. Please ensure your categories are set up correctly in the database.");
+            console.error("Generation error:", err);
+            alert(err.message || "Could not generate basket.");
         } finally {
             setLoading(false);
         }
     };
 
     const handleAddAll = async () => {
-        // Guard clause to ensure result and items exist
-        if (!result || !result.items || result.items.length === 0) return;
+        if (!result?.items?.length) return;
 
         setSyncing(true);
+
         try {
             const payload = result.items.map(item => ({
                 product_id: item.product_id,
-                quantity: item.qty
+                quantity: item.qty || 1
             }));
 
-            // Sync with your bulk API
-            await bulkAddToCart(payload);
-            
-            // Critical: Refresh context so the Cart Page updates immediately
-            if (refreshCart) await refreshCart();
+            console.log("CART PAYLOAD:", payload);
 
-            setResult(null); 
-            alert("🛒 Success! Your weekly basket is ready in the cart.");
+            await bulkAddToCart(payload);
+
+            await refreshCart();
+
+            // Trigger navbar/cart updates
+            window.dispatchEvent(new Event('cartUpdated'));
+
+            setResult(null);
+
+            alert("🛒 Basket added to cart successfully!");
+
         } catch (err) {
-            console.error("Sync error:", err.response?.data || err.message);
-            alert("Failed to sync basket to cart. Are you logged in?");
+            console.error("Sync error:", err);
+            alert(err.message || "Failed to sync basket.");
         } finally {
             setSyncing(false);
         }
@@ -71,7 +81,7 @@ const SmartBasket = () => {
             <div className="glow-orb orb-2"></div>
 
             <header className="sb-hero-section">
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="sb-badge"
@@ -87,10 +97,10 @@ const SmartBasket = () => {
                     <div className="input-box">
                         <label><Users size={18} /> Family Size</label>
                         <div className="range-wrapper">
-                            <input 
-                                type="range" min="1" max="10" 
-                                value={params.familySize} 
-                                onChange={(e) => setParams({...params, familySize: e.target.value})} 
+                            <input
+                                type="range" min="1" max="10"
+                                value={params.familySize}
+                                onChange={(e) => setParams({ ...params, familySize: e.target.value })}
                             />
                             <span className="count-display">{params.familySize} Members</span>
                         </div>
@@ -98,17 +108,17 @@ const SmartBasket = () => {
 
                     <div className="input-box">
                         <label><Wallet size={18} /> Weekly Budget (रू)</label>
-                        <input 
-                            type="number" 
+                        <input
+                            type="number"
                             className="modern-number-input"
-                            value={params.budget} 
-                            onChange={(e) => setParams({...params, budget: e.target.value})} 
+                            value={params.budget}
+                            onChange={(e) => setParams({ ...params, budget: e.target.value })}
                         />
                     </div>
                 </div>
 
-                <button 
-                    onClick={generateBasket} 
+                <button
+                    onClick={generateBasket}
                     className={`btn-ai-generate ${loading ? 'loading' : ''}`}
                     disabled={loading}
                 >
@@ -119,7 +129,7 @@ const SmartBasket = () => {
 
             <AnimatePresence>
                 {result && result.items && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
@@ -130,9 +140,9 @@ const SmartBasket = () => {
                                 <h3>Your Weekly Essentials</h3>
                                 <span>Estimated Total: <strong>रू {result.meta.actual_total}</strong></span>
                             </div>
-                            <button 
-                                className="btn-bulk-add" 
-                                onClick={handleAddAll} 
+                            <button
+                                className="btn-bulk-add"
+                                onClick={handleAddAll}
                                 disabled={syncing}
                             >
                                 {syncing ? "Syncing..." : <>Add All to Cart <ShoppingBag size={18} /></>}
@@ -141,7 +151,7 @@ const SmartBasket = () => {
 
                         <div className="sb-product-grid">
                             {result.items.map((item, index) => (
-                                <motion.div 
+                                <motion.div
                                     key={item.product_id}
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
