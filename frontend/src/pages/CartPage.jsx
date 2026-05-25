@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from '../contexts/CartContext';
 import ToastMessage from "../components/ToastMessage";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
-import SmartBasket from "../components/SmartBasket";
+// import SmartBasket from "../components/SmartBasket";
 import { getProductImageUrl } from "../utils/urlHelper";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -161,9 +161,9 @@ const CartPage = () => {
             </div>
 
             {/* Integrated Smart Basket Component */}
-            <div className="smart-basket-integrated shadow-lg rounded-5 overflow-hidden">
+            {/* <div className="smart-basket-integrated shadow-lg rounded-5 overflow-hidden">
               <SmartBasket />
-            </div>
+            </div> */}
           </div>
         ) : (
           <Row className="g-5">
