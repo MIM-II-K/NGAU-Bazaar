@@ -129,7 +129,7 @@ const AccountSettings = () => {
                   </div>
 
                   <h4 className="fw-bold mt-3 mb-1">{formData.username || 'Bazaar User'}</h4>
-                  <p className="text-muted small mb-3">{formData.email}</p>
+                  <p className="text-muted small mb-3 text-lowercase">{formData.email}</p>
                   <Badge bg="soft-primary" className="text-primary rounded-pill px-3 mb-4">Verified Member</Badge>
 
                   <div className="d-grid gap-2">

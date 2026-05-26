@@ -1,11 +1,27 @@
 import smtplib
 import os
 import socket
+from pathlib import Path
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
+from jinja2 import Environment, FileSystemLoader
 
-def send_email(to_email, subject, body_html, attachment_path=None):
+# Resolve templates directory paths cleanly
+TEMPLATE_DIR = Path(__file__).parent.parent / "templates" / "email"
+os.makedirs(TEMPLATE_DIR, exist_ok=True)
+jinja_env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+
+def render_email_template(template_name: str, context: dict) -> str:
+    """Compiles dynamic Jinja context arrays down to plain HTML text string."""
+    try:
+        template = jinja_env.get_template(template_name)
+        return template.render(**context)
+    except Exception as e:
+        print(f"❌ Template compilation failure: {e}")
+        raise e
+
+def send_email(to_email: str, subject: str, body_html: str, attachment_path=None):
     EMAIL_HOST = os.getenv("EMAIL_HOST")
     EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
     EMAIL_USER = os.getenv("EMAIL_USER")
@@ -28,18 +44,12 @@ def send_email(to_email, subject, body_html, attachment_path=None):
     server = None
     try:
         print(f"Connecting to {EMAIL_HOST}:{EMAIL_PORT}...")
-        
-        # We set a 15-second timeout. 
-        # 'Network unreachable' often happens if the DNS resolution hangs.
         server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT, timeout=15)
-        
-        # Identify ourselves to the server
         server.ehlo() 
         
-        # Secure the connection
         if server.has_extn("STARTTLS"):
             server.starttls()
-            server.ehlo() # Re-identify after encryption
+            server.ehlo() 
         
         print("Logging in...")
         server.login(EMAIL_USER, EMAIL_PASS)
@@ -53,7 +63,6 @@ def send_email(to_email, subject, body_html, attachment_path=None):
         raise Exception("SMTP Timeout")
     except socket.error as e:
         print(f"❌ Network Error (Errno 101/111): {e}")
-        # This is where 'Network unreachable' is caught.
         raise Exception(f"Network unreachable: Check if Render allows outbound on {EMAIL_PORT}")
     except Exception as e:
         print(f"❌ Unexpected SMTP Error: {e}")

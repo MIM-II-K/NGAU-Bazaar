@@ -5,13 +5,12 @@ from models.order import Order, OrderItem
 from database import SessionLocal
 from utils.dependencies import get_current_user
 from utils.invoice import generate_invoice_pro
-from utils.email import send_email
+from utils.email import send_email, render_email_template
 from datetime import datetime
 import os
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
 
-# Dependency to get database session
 def get_db():
     db = SessionLocal()
     try:
@@ -19,17 +18,29 @@ def get_db():
     finally:
         db.close()
 
+def execute_email_worker(recipient_email: str, subject: str, body_html: str, asset_filepath: str):
+    """Safely runs delivery worker thread and drops isolated assets when done."""
+    try:
+        send_email(
+            to_email=recipient_email,
+            subject=subject,
+            body_html=body_html,
+            attachment_path=asset_filepath
+        )
+    finally:
+        if asset_filepath and os.path.exists(asset_filepath):
+            try:
+                os.remove(asset_filepath)
+                print(f"🗑️ Cleaned up ephemeral attachment: {asset_filepath}")
+            except Exception as e:
+                print(f"Failed to clear temp file {asset_filepath}: {e}")
+
 @router.get("/{order_id}")
 def download_invoice(
     order_id: str, 
     db: Session = Depends(get_db), 
     user=Depends(get_current_user)
 ):
-    """
-    Retrieves and generates a PDF invoice for a specific order.
-    Access is restricted to the order owner or administrators.
-    """
-    # Fetch order with related user and product data
     order = (
         db.query(Order)
         .options(
@@ -43,39 +54,32 @@ def download_invoice(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    # Security Check: Only the owner of the order or an admin can download
     if user.role != "admin" and order.user_id != user.id:
         raise HTTPException(status_code=403, detail="Not authorized to access this invoice")
 
-    # Business Logic: Invoices are typically only available once payment is confirmed
     if order.status not in ["paid", "shipped", "delivered"]:
         raise HTTPException(
             status_code=400, 
             detail=f"Invoice not available for order status: {order.status}"
         )
 
-    # Define file path
     filename = f"invoice_order_{order.id}.pdf"
     
     try:
-        # Generate the PDF using your utility function
-        # We pass order.user to ensure the invoice has the correct billing details
         generate_invoice_pro(order, order.user, filename)
 
         if not os.path.exists(filename):
             raise HTTPException(status_code=500, detail="Failed to generate invoice file")
 
-        # Return the file as a downloadable response
         return FileResponse(
             path=filename,
             media_type="application/pdf",
             filename=f"NGAU-Bazaar-Invoice-{order.id[:8]}.pdf"
         )
-        
     except Exception as e:
-        # Log the error in a real production environment
         print(f"Error generating invoice: {e}")
         raise HTTPException(status_code=500, detail="Internal server error during PDF generation")
+
 
 @router.post("/{order_id}/send-email")
 def resend_invoice_email(
@@ -85,9 +89,18 @@ def resend_invoice_email(
     user=Depends(get_current_user)
 ):
     """
-    Manually triggers an email resend of the invoice to the user.
+    Triggers an asynchronous email resend of compiled premium HTML invoice summaries.
     """
-    order = db.query(Order).filter(Order.id == order_id).first()
+    # Force eager loading inside the safe scope boundary of our main router thread request
+    order = (
+        db.query(Order)
+        .options(
+            joinedload(Order.user),
+            joinedload(Order.items).joinedload(OrderItem.product)
+        )
+        .filter(Order.id == order_id)
+        .first()
+    )
     
     if not order or (user.role != "admin" and order.user_id != user.id):
         raise HTTPException(status_code=404, detail="Order not found or unauthorized")
@@ -95,22 +108,30 @@ def resend_invoice_email(
     if order.status not in ["paid", "shipped", "delivered"]:
         raise HTTPException(status_code=400, detail="Order must be paid to send an invoice")
 
-    filename = f"invoice_order_{order.id}.pdf"
-    generate_invoice_pro(order, order.user, filename)
+    # Generate distinct ephemeral filename to prevent asset collisions across overlapping threads
+    temp_filename = f"temp_invoice_{order.id}_{int(datetime.now().timestamp())}.pdf"
+    generate_invoice_pro(order, order.user, temp_filename)
 
-    def process_email():
-        filename = f"temp_invoice_{order.id}.pdf"
-        generate_invoice_pro(order, order.user, filename)
+    # Compile the Jinja context parameters inside the safe timeline loop
+    email_context = {
+        "username": order.user.username,
+        "order_id": order.id,
+        "items": order.items,
+        "current_year": datetime.now().year
+    }
+    
+    # Render the structured HTML 
+    compiled_body = render_email_template("invoice_order.html", email_context)
+    email_subject = f"Invoice #{order.id[:8]} - NGAU Bazaar"
+    recipient_address = order.user.email
 
-        body = f"<h2>Payment verified</h2><p>Hello {order.user.username}, your invoice is attached.</p>"
-        send_email(
-            order.user.email,
-            f"Invoice #{order.id[:8]} - NGAU Bazaar",
-            body,
-            filename
-        )
+    # Offload to the background worker execution flow
+    background_tasks.add_task(
+        execute_email_worker,
+        recipient_email=recipient_address,
+        subject=email_subject,
+        body_html=compiled_body,
+        asset_filepath=temp_filename
+    )
 
-        if os.path.exists(filename):
-            os.remove(filename)
-    background_tasks.add_task(process_email)
-    return {"message": "Invoice email sent successfully"}
+    return {"message": "Invoice email delivery added to background worker queue"}

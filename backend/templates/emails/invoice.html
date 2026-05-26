@@ -1,20 +1,21 @@
 <!DOCTYPE html>
 <html>
 <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6;">
-    <div style="max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-        <div style="background-color: #2563eb; color: white; padding: 20px; text-align: center;">
-            <h1 style="margin: 0;">NGAU Bazaar</h1>
+    <div style="max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background-color: #10b981; color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0; font-size: 24px; letter-spacing: 0.05em;">NGAU BAZAAR</h1>
+            <p style="margin: 5px 0 0 0; opacity: 0.8; font-size: 13px;">Palpa - Butwal D2C Bridge</p>
         </div>
         <div style="padding: 20px;">
             <h2>Hello, {{ username }}!</h2>
-            <p>Thank you for your order. We've successfully processed your payment for <strong>Order #{{ order_id }}</strong>.</p>
+            <p>Thank you for your order. We've successfully processed your payment for <strong>Order #{{ order_id[:8] }}</strong>.</p>
             
-            <h3 style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">Order Summary</h3>
+            <h3 style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; color: #1f2937;">Order Summary</h3>
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                 <thead>
                     <tr style="background-color: #f8fafc;">
-                        <th style="text-align: left; padding: 10px; border: 1px solid #e2e8f0;">Product</th>
-                        <th style="text-align: center; padding: 10px; border: 1px solid #e2e8f0;">Qty</th>
+                        <th style="text-align: left; padding: 10px; border: 1px solid #e2e8f0; color: #475569;">Product</th>
+                        <th style="text-align: center; padding: 10px; border: 1px solid #e2e8f0; color: #475569;">Qty</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -27,9 +28,9 @@
                 </tbody>
             </table>
 
-            <p>Your invoice is attached to this email. If you have any questions, reply to this email or contact support@ngau-bazaar.com.</p>
+            <p>Your official invoice document is attached to this transmission message. If you have any inquiries, reply directly to this mail or reach out via support@ngau-bazaar.com.</p>
         </div>
-        <div style="background-color: #f8fafc; color: #64748b; padding: 15px; text-align: center; font-size: 12px;">
+        <div style="background-color: #f8fafc; color: #64748b; padding: 15px; text-align: center; font-size: 12px; border-top: 1px solid #edf2f7;">
             &copy; {{ current_year }} NGAU Bazaar. All rights reserved.
         </div>
     </div>

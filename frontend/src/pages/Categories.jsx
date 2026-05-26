@@ -49,7 +49,7 @@ const Categories = () => {
                   <Card.Body className="d-flex flex-column justify-content-center align-items-center text-center">
                     <h5 className="fw-bold mb-2">{cat.name}</h5>
                     <Link 
-                      to={`/products?category=${cat.id}`} 
+                      to={`/shop?category=${cat.id}`} 
                       className="btn btn-outline-primary btn-sm mt-2"
                     >
                       View Products
