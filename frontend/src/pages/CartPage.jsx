@@ -5,7 +5,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from '../contexts/CartContext';
 import ToastMessage from "../components/ToastMessage";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
-import SmartBasket from "../components/SmartBasket";
 import { getProductImageUrl } from "../utils/urlHelper";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -158,11 +157,6 @@ const CartPage = () => {
               <span className="badge rounded-pill bg-light text-dark px-3 py-2 border">
                 Or let AI plan for you
               </span>
-            </div>
-
-            {/* Integrated Smart Basket Component */}
-            <div className="smart-basket-integrated shadow-lg rounded-5 overflow-hidden">
-              <SmartBasket />
             </div>
           </div>
         ) : (

@@ -31,6 +31,7 @@ import { productApi } from '../utils/productApi';
 import { categoryApi } from '../utils/categoryApi';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/home.css';
+import SmartBasket from '../components/SmartBasket';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -281,10 +282,16 @@ const Home = () => {
           >
             <div className="impact-track">
               <div className="impact-fill" style={{ width: '85%' }}>
-                <span className="impact-label">85% to 2025 Goal</span>
+                <span className="impact-label">85% to 2027 Goal</span>
               </div>
             </div>
           </motion.div>
+        </Container>
+      </section>
+
+      <section className="smart-basket-section">
+        <Container>
+          <SmartBasket />
         </Container>
       </section>
 
