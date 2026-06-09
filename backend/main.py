@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 # --- 1. Import Models ---
 # Ensure these match the filenames in your /models folder
 from models.user import User
+from models.vendor import Vendor
 from models.product import Product, ProductImage, ProductVariant, Review
 from models.category import Category
 from models.wishlist import Wishlist
@@ -88,6 +89,7 @@ from routers.set_password import router as set_password_router
 from routers.invoice import router as invoice_router
 from routers.wishlist import router as wishlist_router
 from routers.basket import router as basket_router
+from routers.vendor import router as vendor_router
 
 # --- 7. Include Routers ---
 app.include_router(user_router)
@@ -103,6 +105,7 @@ app.include_router(set_password_router)
 app.include_router(invoice_router)
 app.include_router(wishlist_router)
 app.include_router(basket_router)
+app.include_router(vendor_router)
 
 # --- 8. Static Files Setup ---
 # Main directory for all uploads
@@ -144,6 +147,11 @@ class WishlistAdmin(ModelView, model=Wishlist):
     column_list = [Wishlist.id, Wishlist.user_id, Wishlist.product_id]
     icon = "fa-solid fa-heart"
 
+class VendorAdmin(ModelView, model=Vendor):
+    column_list = [Vendor.id, Vendor.user_id, Vendor.store_name, Vendor.slug, Vendor.is_verified, Vendor.is_active]
+    icon = "fa-solid fa-store"
+
+
 # Registering views to the admin panel
 admin.add_view(UserAdmin)
 admin.add_view(CategoryAdmin)
@@ -151,7 +159,7 @@ admin.add_view(ProductAdmin)
 admin.add_view(ProductImageAdmin)
 admin.add_view(ProductVariantAdmin)
 admin.add_view(WishlistAdmin)
-
+admin.add_view(VendorAdmin)
 # --- 10. Background Tasks & Health Checks ---
 @app.get("/")
 def root():

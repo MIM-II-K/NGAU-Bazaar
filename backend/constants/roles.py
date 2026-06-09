@@ -1,0 +1,10 @@
+class Role:
+    USER = "USER"
+    VENDOR = "VENDOR"   
+    SUPERADMIN = "SUPERADMIN"
+
+class VendorStatus:
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    SUSPENDED = "SUSPENDED"

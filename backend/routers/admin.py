@@ -7,7 +7,7 @@ import json
 from schemas.user import UserResponse, UserLogin, Token
 from models.user import User
 from utils.auth import verify_password, create_access_token
-from utils.dependencies import get_db, admin_only
+from utils.dependencies import get_db, superadmin_only
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -37,7 +37,7 @@ def admin_login(credentials: UserLogin, db: Session = Depends(get_db)):
         )
     
     # Check if user has admin role
-    if db_user.role != "admin":
+    if db_user.role != "SUPERADMIN":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin privileges required"
@@ -56,7 +56,7 @@ def admin_login(credentials: UserLogin, db: Session = Depends(get_db)):
 
 
 @router.get("/me", response_model=UserResponse)
-def get_admin_profile(admin: User = Depends(admin_only)):
+def get_admin_profile(admin: User = Depends(superadmin_only)):
     """
     Get current admin's profile.
     
@@ -70,7 +70,7 @@ def get_all_users(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    admin: User = Depends(admin_only)
+    admin: User = Depends(superadmin_only)
 ):
     """
     Get all users (admin only).
@@ -85,7 +85,7 @@ def get_all_users(
 def get_user_by_id_admin(
     user_id: int,
     db: Session = Depends(get_db),
-    admin: User = Depends(admin_only)
+    admin: User = Depends(superadmin_only)
 ):
     """
     Get a specific user by ID (admin only).
@@ -106,17 +106,17 @@ def update_user_role(
     user_id: int,
     new_role: str,
     db: Session = Depends(get_db),
-    admin: User = Depends(admin_only)
+    admin: User = Depends(superadmin_only)
 ):
     """
     Update a user's role (admin only).
     
-    Allowed roles: 'user', 'admin'
+    Allowed roles: 'USER', 'VENDOR', 'SUPERADMIN'
     """
-    if new_role not in ["user", "admin"]:
+    if new_role not in ["USER", "VENDOR", "SUPERADMIN"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid role. Allowed values: 'user', 'admin'"
+            detail="Invalid role. Allowed values: 'USER', 'VENDOR', 'SUPERADMIN'"
         )
     
     user = db.query(User).filter(User.id == user_id).first()
@@ -142,7 +142,7 @@ def update_user_role(
 def delete_user(
     user_id: int,
     db: Session = Depends(get_db),
-    admin: User = Depends(admin_only)
+    admin: User = Depends(superadmin_only)
 ):
     """
     Delete a user (admin only).
@@ -176,7 +176,7 @@ def delete_user(
 @router.get("/dashboard/stats")
 def get_dashboard_stats(
     db: Session = Depends(get_db),
-    admin: User = Depends(admin_only)
+    admin: User = Depends(superadmin_only)
 ):
     """
     Get dashboard statistics (admin only).
@@ -184,11 +184,13 @@ def get_dashboard_stats(
     Example of how to protect any admin route.
     """
     total_users = db.query(User).count()
-    admin_count = db.query(User).filter(User.role == "admin").count()
-    user_count = db.query(User).filter(User.role == "user").count()
-    
+    admin_count = db.query(User).filter(User.role == "SUPERADMIN").count()
+    user_count = db.query(User).filter(User.role == "USER").count()
+    vendor_count = db.query(User).filter(User.role == "VENDOR").count()
+
     return {
         "total_users": total_users,
         "admin_count": admin_count,
-        "user_count": user_count
+        "user_count": user_count,
+        "vendor_count": vendor_count
     }

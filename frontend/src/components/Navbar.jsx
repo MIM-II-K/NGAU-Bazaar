@@ -96,7 +96,7 @@ const Navbar = () => {
                     <Dropdown.Menu className="dropdown-menu-modern shadow-lg border-0">
                       <div className="dropdown-header-custom px-3 py-2">
                         <p className="mb-0 fw-bold">{user?.username}</p>
-                        <small className="text-muted">{user?.email || 'Customer'}</small>
+                        <small className="text-muted text-lowercase">{user?.email || 'Customer'}</small>
                       </div>
                       <Dropdown.Divider />
                       <Dropdown.Item as={Link} to={isAdmin() ? "/admin/dashboard" : "/dashboard"}>

@@ -11,7 +11,7 @@ from schemas.order import (
     OrderHistoryResponse, OrderAdminResponse, OrderItemAdminResponse,
     OrderLocationUpdate
 )
-from utils.dependencies import get_current_user, admin_only
+from utils.dependencies import get_current_user, superadmin_only
 from utils.email import send_email
 from utils.websocket_manager import manager
 
@@ -28,7 +28,7 @@ def get_db():
 @router.get("/admin", response_model=list[OrderAdminResponse])
 def get_all_orders(
     db: Session = Depends(get_db),
-    user=Depends(admin_only),
+    user=Depends(superadmin_only),
     status: str | None = None,
     page: int = 1,
     limit: int = 50
@@ -95,7 +95,7 @@ def get_all_orders(
 def get_admin_order_detail(
     order_id: str, 
     db: Session = Depends(get_db), 
-    user=Depends(admin_only)
+    user=Depends(superadmin_only)
 ):
     # Fetch the order with all necessary relations (user, items, products, images)
     order = (
@@ -157,7 +157,7 @@ async def update_order_status(
     status: str,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    user=Depends(admin_only)
+    user=Depends(superadmin_only)
 ):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
@@ -283,7 +283,7 @@ async def update_order_location(
     order_id: str,
     location: OrderLocationUpdate,
     db: Session = Depends(get_db),
-    user=Depends(admin_only) # Or a specific 'driver' dependency if you add one
+    user=Depends(superadmin_only) # Or a specific 'driver' dependency if you add one
 ):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:

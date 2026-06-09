@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from models.category import Category
 from schemas.category import CategoryCreate, CategoryResponse
 from database import SessionLocal
-from utils.dependencies import admin_only
+from utils.dependencies import superadmin_only
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 
@@ -23,7 +23,7 @@ def get_categories(db: Session = Depends(get_db)):
 
 # ---------------- ADMIN: CREATE ----------------
 @router.post("/", response_model=CategoryResponse)
-def add_category(category: CategoryCreate, db: Session = Depends(get_db), admin=Depends(admin_only)):
+def add_category(category: CategoryCreate, db: Session = Depends(get_db), admin=Depends(superadmin_only)):
     if db.query(Category).filter(Category.name == category.name).first():
         raise HTTPException(status_code=400, detail="Category already exists")
     
@@ -36,7 +36,7 @@ def add_category(category: CategoryCreate, db: Session = Depends(get_db), admin=
 
 # ---------------- ADMIN: UPDATE ----------------
 @router.put("/{category_id}", response_model=CategoryResponse)
-def update_category(category_id: int, category: CategoryCreate, db: Session = Depends(get_db), admin=Depends(admin_only)):
+def update_category(category_id: int, category: CategoryCreate, db: Session = Depends(get_db), admin=Depends(superadmin_only)):
     db_category = db.query(Category).filter(Category.id == category_id).first()
     if not db_category:
         raise HTTPException(status_code=404, detail="Category not found")
@@ -53,7 +53,7 @@ def update_category(category_id: int, category: CategoryCreate, db: Session = De
 
 # ---------------- ADMIN: DELETE ----------------
 @router.delete("/{category_id}", response_model=dict)
-def delete_category(category_id: int, db: Session = Depends(get_db), admin=Depends(admin_only)):
+def delete_category(category_id: int, db: Session = Depends(get_db), admin=Depends(superadmin_only)):
     db_category = db.query(Category).filter(Category.id == category_id).first()
     if not db_category:
         raise HTTPException(status_code=404, detail="Category not found")

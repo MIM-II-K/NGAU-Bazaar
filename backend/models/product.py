@@ -11,6 +11,7 @@ class Product(Base):
     price = Column(Numeric(10,2), nullable=False)
     unit = Column(String, nullable=False, default="pc")
     category_id = Column(Integer, ForeignKey("categories.id"))
+    vendor_id = Column(Integer, ForeignKey("vendors.id", ondelete="SET NULL"), nullable=True)
     description = Column(String, nullable=True)
     quantity = Column(Integer, nullable=False, default=0)
     stock = Column(Integer, nullable=False, default=0)
@@ -26,6 +27,7 @@ class Product(Base):
 
     # Relationships
     category = relationship("Category", back_populates="products")
+    vendor = relationship("Vendor", back_populates="products")
     images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan")
     variants = relationship("ProductVariant", back_populates="product", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="product", cascade="all, delete-orphan")

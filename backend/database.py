@@ -1,11 +1,24 @@
 import os
+from urllib.parse import quote_plus
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DB_USER = os.getenv("DB_USER")
+DB_PASS = quote_plus(os.getenv("DB_PASS"))
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
+
+DATABASE_URL = (
+    f"postgresql+psycopg2://{DB_USER}:{DB_PASS}"
+    f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+)
+
+print("DATABASE_URL =", DATABASE_URL)
+
 
 engine = create_engine(DATABASE_URL,
                        pool_size=20,
@@ -13,7 +26,7 @@ engine = create_engine(DATABASE_URL,
                        pool_timeout=30,
                        pool_pre_ping=True,
                        echo=False,
-                       connect_args={"sslmode": "require"}
+                    #    connect_args={"sslmode": "require"}
                        )
 SessionLocal = sessionmaker(
     autocommit=False,

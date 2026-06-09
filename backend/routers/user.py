@@ -23,8 +23,9 @@ from utils.auth import (
     create_password_reset_token,
     decode_password_reset_token,
 )
-from utils.dependencies import get_db, get_current_user, admin_only
+from utils.dependencies import get_db, get_current_user, superadmin_only
 from utils.email import send_email
+from constants.roles import Role
 
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
@@ -40,7 +41,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 @router.get("/all", response_model=List[UserResponse])
 def get_all_users(
     db: Session = Depends(get_db),
-    admin: User = Depends(admin_only),
+    admin: User = Depends(superadmin_only),
 ):
     return db.query(User).all()
 
@@ -71,7 +72,7 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
         email=user_data.email,
         username=user_data.username,
         hashed_password=hash_password(user_data.password),
-        role="user",
+        role=Role.USER,  # Default role is USER
     )
 
     db.add(new_user)
@@ -105,7 +106,7 @@ def login_user(credentials: UserLogin, db: Session = Depends(get_db)):
 
     token = create_access_token(
         user_id=db_user.id,
-        role=db_user.role,
+        role=db_user.role.upper(),
     )
 
     return {

@@ -20,7 +20,7 @@ from models.product import Product, ProductImage, ProductVariant
 from models.wishlist import Wishlist
 from schemas.product import ProductCreate, ProductResponse, ProductListResponse
 from database import SessionLocal
-from utils.dependencies import admin_only, get_optional_current_user
+from utils.dependencies import superadmin_only, get_optional_current_user, get_product_manager_context, ProductManagerContext
 
 
 load_dotenv()
@@ -130,6 +130,7 @@ def get_products(
     tag: str | None = Query(None, description="Filter by a specific tag"),
     min_price: float | None = Query(None, ge=0),
     max_price: float | None = Query(None, ge=0),
+    vendor_id: int | None = Query(None, description="Filter by vendor ID"),
 
     # Pagination
     page: int = Query(1, ge=1),
@@ -141,17 +142,12 @@ def get_products(
         description="price_asc | price_desc | name_asc | name_desc | popularity | newest"
     ),
 ):
-    # FIX 3: Validate price range before querying
     if min_price is not None and max_price is not None and min_price > max_price:
         raise HTTPException(
             status_code=422,
             detail="min_price cannot be greater than max_price"
         )
 
-    # FIX 3: Build a base query WITHOUT eager-load options for the COUNT.
-    # joinedload adds a JOIN that can inflate COUNT(*) when one-to-many
-    # relationships are involved. We count on a clean query, then fetch
-    # the full data with options on a separate query.
     base_query = db.query(Product)
 
     # --- Apply all filters to base_query ---
@@ -181,8 +177,6 @@ def get_products(
     if max_price is not None:
         base_query = base_query.filter(Product.price <= max_price)
 
-    # FIX 4: nulls_last() on popularity so new products (view_count=None)
-    # don't bubble to the top when sorting by popularity DESC.
     sort_map = {
         "price_asc":  asc(Product.price),
         "price_desc": desc(Product.price),
@@ -192,11 +186,9 @@ def get_products(
         "newest":     desc(Product.created_at),
     }
     order_clause = sort_map.get(sort, desc(Product.id))
-
-    # FIX 3: COUNT on the clean filtered query (no joinedload)
+    
     total = base_query.count()
-
-    # Now build the data query with eager-loading options + sorting + pagination
+    
     products = (
         base_query
         .options(
@@ -223,22 +215,16 @@ def get_products(
         for p in products:
             p.is_in_wishlist = False
 
-    # FIX 1: Return "data" and "totalPages" (camelCase) to match frontend expectations.
-    # Previously returned "items" and "total_pages" which caused the field-name mismatch
-    # that made the frontend fall back to treating the response as a bare array.
     return {
-        "data": products,        # was "items"  — frontend looks for "data"
+        "data": products,   
         "total": total,
         "page": page,
         "limit": limit,
-        "totalPages": total_pages  # was "total_pages" — frontend looks for "totalPages"
+        "totalPages": total_pages  
     }
 
 
 # ---------------- GET BY ID ----------------
-# FIX 2: Specific routes /id/{product_id} and /{product_id}/related are declared
-# BEFORE the wildcard /{slug} route. Previously /{slug} swallowed all of them
-# because FastAPI matches top-to-bottom and "id" is a valid slug value.
 
 @router.get("/id/{product_id}", response_model=ProductResponse)
 def get_product_detail(product_id: int, db: Session = Depends(get_db)):
@@ -255,9 +241,6 @@ def get_product_detail(product_id: int, db: Session = Depends(get_db)):
 
 
 # ---------------- RELATED PRODUCTS ----------------
-# FIX 2 (continued): Moved above /{slug} so it is reachable.
-# FIX 4: Changed joinedload(Product.images) → selectinload to stay consistent
-# with every other route and avoid duplicate rows on one-to-many joins.
 
 @router.get("/{product_id}/related", response_model=List[ProductResponse])
 def get_related_products(product_id: int, db: Session = Depends(get_db)):
@@ -266,7 +249,7 @@ def get_related_products(product_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Product not found")
 
     related = db.query(Product).options(
-        selectinload(Product.images),   # was joinedload — caused duplicate rows
+        selectinload(Product.images),  
         joinedload(Product.category)
     ).filter(
         Product.category_id == target.category_id,
@@ -277,9 +260,6 @@ def get_related_products(product_id: int, db: Session = Depends(get_db)):
 
 
 # ---------------- GET BY SLUG (wildcard — must be last) ----------------
-# FIX 2: This wildcard route is now declared LAST so the specific routes
-# /id/{product_id}, /{product_id}/related, and /seo/sitemap.xml are
-# always matched first and never accidentally caught here.
 
 @router.get("/{slug}", response_model=ProductResponse)
 def get_product_by_slug(slug: str, db: Session = Depends(get_db)):
@@ -296,6 +276,7 @@ def get_product_by_slug(slug: str, db: Session = Depends(get_db)):
 
 
 # ---------------- CREATE PRODUCT (ADMIN) ----------------
+
 @router.post("/", response_model=ProductResponse)
 async def add_product(
     name: str = Form(...),
@@ -306,9 +287,10 @@ async def add_product(
     stock: int = Form(0),
     description: str | None = Form(None),
     tags: str | None = Form(None),
+    vendor_id: Optional[int] = Form(None),
     files: List[UploadFile] = File(...),
     db: Session = Depends(get_db),
-    admin: User = Depends(admin_only),
+    ctx: ProductManagerContext = Depends(get_product_manager_context)
 ):
     if not db.query(Category).filter(Category.id == category_id).first():
         raise HTTPException(status_code=404, detail="Category not found")
@@ -316,6 +298,8 @@ async def add_product(
     tags_list = [t.strip() for t in tags.split(",") if t.strip()] if tags else []
 
     slug =  generate_slug(name, db)
+
+    assigned_vendor_id = ctx.vendor.id if not ctx.is_admin else vendor_id
 
     db_product = Product(
         name=name,
@@ -326,7 +310,8 @@ async def add_product(
         quantity=quantity or 0,
         stock=stock or 0,
         description=description or "",
-        tags=tags_list
+        tags=tags_list,
+        vendor_id=assigned_vendor_id
     )
     try:
         db.add(db_product)
@@ -375,12 +360,15 @@ async def update_product(
     remove_image_ids: Optional[str] = Form(None),
     files: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_db),
-    admin: User = Depends(admin_only),
+    ctx: ProductManagerContext = Depends(get_product_manager_context)
 ):
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-
+    
+    if not ctx.is_admin and product.vendor_id != ctx.vendor.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this product")
+    
     if product.name != name:
         product.slug = generate_slug(name, db, current_id=product_id)
 
@@ -443,11 +431,14 @@ async def update_product(
 
 # ---------------- DELETE PRODUCT (ADMIN) ----------------
 @router.delete("/{product_id}")
-def delete_product(product_id: int, db: Session = Depends(get_db), admin: User = Depends(admin_only)):
+def delete_product(product_id: int, db: Session = Depends(get_db), ctx: ProductManagerContext = Depends(get_product_manager_context)):
     product = db.query(Product).filter(Product.id == product_id).first()
 
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
+
+    if not ctx.is_admin and product.vendor_id != ctx.vendor.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this product")
 
     filenames = [get_filename_from_url(img.url) for img in product.images]
 
