@@ -31,8 +31,6 @@ const Categories = () => {
   return (
     <div className="user-main-content">
       <Container className="py-4">
-        <h2 className="fw-bold mb-4" data-aos="fade-down">Shop by Category</h2>
-
         {error && <Alert variant="danger">{error}</Alert>}
 
         {loading ? (
